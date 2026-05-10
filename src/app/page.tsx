@@ -1,4 +1,4 @@
-import { ResumeTemplate } from "@/components/resume/ResumeTemplate";
+import { ClassicTemplate } from "@/components/resume/ClassicTemplate";
 import { sampleResume } from "@/data/sample-resume";
 
 export default function Home() {
@@ -29,7 +29,7 @@ export default function Home() {
         </section>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-          <ResumeTemplate resume={sampleResume} />
+          <ClassicTemplate resume={sampleResume} />
         </section>
       </div>
     </main>

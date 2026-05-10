@@ -2,7 +2,7 @@ import type { Resume } from "@/types/resume";
 
 import { ResumeSection } from "./ResumeSection";
 
-export function ResumeTemplate({ resume }: { resume: Resume }) {
+export function ClassicTemplate({ resume }: { resume: Resume }) {
   return (
     <article className="mx-auto min-h-[11in] max-w-[8.5in] bg-white p-10 shadow-sm ring-1 ring-slate-200">
       <header className="border-b border-slate-300 pb-4 text-center">

@@ -6,12 +6,12 @@ export function ResumeSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="mt-5">
-      <h3 className="border-b border-slate-200 pb-1 text-sm font-bold uppercase tracking-[0.16em] text-slate-700">
+    <section className="mt-3">
+      <h3 className="border-t-2 border-slate-900 pt-1 text-[11px] font-bold uppercase tracking-[0.08em] text-slate-900">
         {title}
       </h3>
 
-      <div className="mt-2">{children}</div>
+      <div className="mt-1.5">{children}</div>
     </section>
   );
 }

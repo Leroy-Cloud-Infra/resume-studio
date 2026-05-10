@@ -2,7 +2,7 @@ export type Resume = {
   title: string;
   header: ResumeHeader;
   summary: string;
-  skills: string[];
+  skills: ResumeSkillGroup[];
   experience: ResumeExperienceItem[];
   projects: ResumeProjectItem[];
   education: ResumeEducationItem[];
@@ -24,6 +24,11 @@ export type ResumeExperienceItem = {
   bullets: string[];
 };
 
+export type ResumeSkillGroup = {
+  category: string;
+  items: string[];
+};
+
 export type ResumeProjectItem = {
   name: string;
   description: string;
@@ -34,4 +39,6 @@ export type ResumeEducationItem = {
   school: string;
   degree: string;
   dates: string;
+  location?: string;
+  coursework?: string[];
 };

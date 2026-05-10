@@ -1,7 +1,13 @@
-import { ClassicTemplate } from "@/components/resume/ClassicTemplate";
 import { sampleResume } from "@/data/sample-resume";
+import { getResumeTemplate } from "@/templates/resume-templates";
 
 export default function Home() {
+const selectedTemplate = getResumeTemplate("classic");
+
+if (!selectedTemplate) {
+  return null;
+}
+const SelectedTemplate = selectedTemplate.component;
   return (
     <main className="min-h-screen bg-slate-100 px-6 py-8 text-slate-950">
       <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[360px_1fr]">
@@ -29,7 +35,7 @@ export default function Home() {
         </section>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-          <ClassicTemplate resume={sampleResume} />
+          <SelectedTemplate resume={sampleResume} />
         </section>
       </div>
     </main>

@@ -1,4 +1,5 @@
-export const sampleResume = {
+import type { Resume } from "@/types/resume";
+export const sampleResume: Resume = {
   title: "Software Engineering Resume",
   header: {
     name: "Cesar Hernandez",

@@ -1,34 +1,6 @@
-import { ResumeSection } from "./ResumeSection";
+import type { Resume } from "@/types/resume";
 
-type Resume = {
-  title: string;
-  header: {
-    name: string;
-    email: string;
-    phone: string;
-    location: string;
-    links: string[];
-  };
-  summary: string;
-  skills: string[];
-  experience: {
-    company: string;
-    title: string;
-    location: string;
-    dates: string;
-    bullets: string[];
-  }[];
-  projects: {
-    name: string;
-    description: string;
-    bullets: string[];
-  }[];
-  education: {
-    school: string;
-    degree: string;
-    dates: string;
-  }[];
-};
+import { ResumeSection } from "./ResumeSection";
 
 export function ResumeTemplate({ resume }: { resume: Resume }) {
   return (

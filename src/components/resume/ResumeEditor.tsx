@@ -1004,58 +1004,53 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
     : pageAwareness.isNearLimit
       ? `About ${pageFillPercent}% used`
       : "Fits";
-  const pageStatusClasses = pageAwareness.isOverflowing
-    ? "border-amber-300 bg-amber-50 text-amber-800"
-    : pageAwareness.isNearLimit
-      ? "border-sky-300 bg-sky-50 text-sky-800"
-      : "border-emerald-200 bg-emerald-50 text-emerald-800";
+  const toolbarTitle = resume.title.trim() || resume.header.name.trim() || "Untitled resume";
+  const toolbarIdentityNote =
+    resume.header.name.trim() && resume.header.name.trim() !== toolbarTitle
+      ? resume.header.name.trim()
+      : "Draft";
 
   return (
     <main className="resume-app-shell">
-      <div className="resume-workspace">
-        <section className="resume-editor-panel">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">
-                Resume Editor
-              </p>
-              <h1 className="mt-2 text-3xl font-bold tracking-tight">
-                Live resume editor
-              </h1>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                Structured fields autosave in your browser and update the preview instantly.
-              </p>
+      <header className="resume-shell-toolbar" aria-label="Workspace toolbar">
+        <div className="resume-shell-toolbar-rail">
+          <div className="resume-shell-toolbar-group resume-shell-toolbar-group--identity">
+            <div className="resume-shell-toolbar-block">
+              <p className="resume-shell-toolbar-kicker">Resume</p>
+              <p className="resume-shell-toolbar-title">{toolbarTitle}</p>
+              <p className="resume-shell-toolbar-note">{toolbarIdentityNote}</p>
             </div>
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              <div
-                className={`rounded-md border px-2.5 py-1 text-right text-xs leading-tight ${pageStatusClasses}`}
-                title={pageStatusDetail}
-              >
-                <p className="font-semibold">{pageStatusLabel}</p>
-                <p className="text-[10px] opacity-75">{pageStatusDetail}</p>
-              </div>
+          </div>
+
+          <div className="resume-shell-toolbar-group resume-shell-toolbar-group--right">
+            <div className="resume-shell-toolbar-meta">
+              <p className="resume-shell-toolbar-meta-label">{pageStatusLabel}</p>
+              <p className="resume-shell-toolbar-meta-detail">{pageStatusDetail}</p>
+            </div>
+
+            <div className="resume-shell-toolbar-actions">
               <button
-                className={BUTTON_SECONDARY_CLASSES}
+                className="resume-shell-toolbar-button resume-shell-toolbar-button--subtle"
+                type="button"
+                onClick={handleReset}
+              >
+                Reset sample
+              </button>
+              <button
+                className="resume-shell-toolbar-button resume-shell-toolbar-button--export"
                 type="button"
                 onClick={handleExportPDF}
               >
                 Export PDF
               </button>
-              <button
-                className={BUTTON_SECONDARY_CLASSES}
-                type="button"
-                onClick={handleReset}
-              >
-                Reset to sample
-              </button>
             </div>
           </div>
+        </div>
+      </header>
 
-          <p className="mt-3 text-xs text-slate-500">
-            Dates, bullets, and skills are stored as structured data for cleaner template rendering.
-          </p>
-
-          <div className="mt-6 space-y-7">
+      <div className="resume-workspace">
+        <section className="resume-editor-panel">
+          <div className="space-y-7">
             <div className="space-y-3">
               <div>
                 <h2 className="text-sm font-semibold uppercase tracking-[0.1em] text-slate-700">

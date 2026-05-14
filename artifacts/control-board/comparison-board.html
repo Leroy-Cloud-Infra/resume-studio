@@ -1,0 +1,1509 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Control Comparison Board</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4f1ea;
+        --paper: #fffdf8;
+        --ink: #181512;
+        --muted: #686158;
+        --soft: rgba(24, 21, 18, 0.06);
+        --line: rgba(24, 21, 18, 0.1);
+        --accent: #2950a0;
+        --accent-2: #8a5b25;
+        --active: #0f6f60;
+        --shadow: 0 10px 28px rgba(49, 34, 14, 0.06);
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background:
+          radial-gradient(circle at top left, rgba(255,255,255,0.88), transparent 36%),
+          linear-gradient(165deg, #f8f4ec 0%, #f1ebdf 55%, #ece4d7 100%);
+      }
+
+      .page {
+        max-width: 1760px;
+        margin: 0 auto;
+        padding: 30px 26px 44px;
+      }
+
+      .intro {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.95fr);
+        align-items: end;
+        margin-bottom: 22px;
+      }
+
+      .eyebrow {
+        margin: 0 0 10px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: var(--accent-2);
+      }
+
+      h1 {
+        margin: 0;
+        max-width: 14ch;
+        font-family: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, serif;
+        font-size: clamp(2.2rem, 4.2vw, 4.8rem);
+        line-height: 0.94;
+        letter-spacing: -0.06em;
+      }
+
+      .lede {
+        margin: 14px 0 0;
+        max-width: 74ch;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.7;
+      }
+
+      .panel {
+        padding: 18px 20px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: rgba(255,255,255,0.8);
+        box-shadow: var(--shadow);
+      }
+
+      .panel h2 {
+        margin: 0 0 8px;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .panel p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .board-section {
+        margin-top: 20px;
+      }
+
+      .section-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: baseline;
+        margin-bottom: 10px;
+      }
+
+      .section-head h2 {
+        margin: 0;
+        font-family: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, serif;
+        font-size: clamp(1.5rem, 2vw, 2.1rem);
+        line-height: 1.02;
+        letter-spacing: -0.04em;
+      }
+
+      .section-head p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .matrix {
+        display: grid;
+        gap: 10px;
+      }
+
+      .matrix-head,
+      .matrix-row {
+        display: grid;
+        grid-template-columns: 280px repeat(4, minmax(240px, 1fr));
+        gap: 10px;
+      }
+
+      .matrix-head {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        padding-bottom: 2px;
+      }
+
+      .head-cell,
+      .label-cell,
+      .state-cell {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: rgba(255,255,255,0.8);
+      }
+
+      .head-cell {
+        padding: 14px 14px 12px;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .label-cell {
+        padding: 14px;
+      }
+
+      .label-name {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 800;
+        line-height: 1.35;
+      }
+
+      .label-desc {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .state-cell {
+        min-height: 166px;
+        padding: 12px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .state-title {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 10px;
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .demo {
+        height: 100%;
+        border-radius: 12px;
+        background: rgba(255,255,255,0.86);
+        border: 1px solid rgba(24,21,18,0.06);
+        padding: 12px 12px 10px;
+      }
+
+      .section-row {
+        display: grid;
+        grid-template-columns: 20px minmax(0, 1fr) auto;
+        gap: 10px;
+        align-items: start;
+      }
+
+      .section-row .title {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 800;
+        line-height: 1.3;
+      }
+
+      .section-row .meta {
+        margin: 2px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      .body {
+        margin-top: 10px;
+        border-top: 1px solid rgba(24,21,18,0.08);
+        padding-top: 10px;
+        color: rgba(24,21,18,0.82);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .body p {
+        margin: 0 0 6px;
+      }
+
+      .mini-note {
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.45;
+      }
+
+      .cell-collapsed .body,
+      .cell-hover .body {
+        display: none;
+      }
+
+      .cell-hover {
+        background: linear-gradient(180deg, rgba(41, 80, 160, 0.03), rgba(255,255,255,0.8));
+      }
+
+      .cell-active {
+        border-color: rgba(15, 111, 96, 0.18);
+        box-shadow: inset 2px 0 0 rgba(15,111,96,0.55);
+      }
+
+      .focus-ring {
+        outline: 2px solid rgba(41, 80, 160, 0.25);
+        outline-offset: 0;
+      }
+
+      .rail {
+        position: absolute;
+        left: 12px;
+        top: 12px;
+        bottom: 12px;
+        width: 2px;
+        border-radius: 999px;
+        background: rgba(24,21,18,0.18);
+      }
+
+      .rail.active {
+        background: rgba(15,111,96,0.7);
+      }
+
+      .bracket {
+        position: absolute;
+        left: 10px;
+        top: 12px;
+        bottom: 12px;
+        width: 11px;
+        border-left: 2px solid rgba(24,21,18,0.18);
+        border-top: 2px solid rgba(24,21,18,0.18);
+        border-bottom: 2px solid rgba(24,21,18,0.18);
+        border-radius: 10px 0 0 10px;
+      }
+
+      .underline {
+        position: absolute;
+        left: 14px;
+        right: 14px;
+        bottom: 14px;
+        height: 2px;
+        background: rgba(24,21,18,0.12);
+      }
+
+      .underline.active {
+        background: rgba(15,111,96,0.72);
+        height: 3px;
+      }
+
+      .row-copy {
+        margin-left: 2px;
+      }
+
+      .marker {
+        width: 18px;
+        height: 18px;
+        display: grid;
+        place-items: center;
+        color: #756c62;
+        font-size: 13px;
+        line-height: 1;
+        font-weight: 700;
+      }
+
+      .marker.number {
+        width: auto;
+        height: auto;
+        min-width: 22px;
+        padding-top: 1px;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0.04em;
+      }
+
+      .marker.none {
+        color: transparent;
+      }
+
+      .marker.plus {
+        font-size: 15px;
+      }
+
+      .section-mini {
+        border-radius: 10px;
+        padding: 2px 0 0;
+      }
+
+      .state-cell:hover .demo {
+        box-shadow: inset 0 0 0 1px rgba(41,80,160,0.12);
+      }
+
+      .disclosure-grid .matrix-row:nth-child(odd) .state-cell {
+        background: rgba(255,255,255,0.72);
+      }
+
+      .reorder-grid .matrix-row:nth-child(odd) .state-cell {
+        background: rgba(255,255,255,0.72);
+      }
+
+      .reorder-row {
+        display: grid;
+        grid-template-columns: 18px minmax(0, 1fr) auto;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .reorder-row .role {
+        font-size: 13px;
+        font-weight: 800;
+        margin: 0;
+      }
+
+      .reorder-row .sub {
+        margin: 2px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      .bullet-row {
+        display: grid;
+        grid-template-columns: 18px minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: center;
+        margin-top: 8px;
+      }
+
+      .bullet-text {
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      .dots {
+        display: grid;
+        grid-template-columns: repeat(2, 4px);
+        gap: 3px;
+        width: 11px;
+        margin-top: 2px;
+      }
+
+      .dots span {
+        width: 4px;
+        height: 4px;
+        border-radius: 999px;
+        background: rgba(24,21,18,0.34);
+      }
+
+      .drag-rail {
+        width: 3px;
+        height: 36px;
+        border-radius: 999px;
+        background: rgba(24,21,18,0.18);
+      }
+
+      .drag-rail.active {
+        background: rgba(15,111,96,0.7);
+      }
+
+      .grab-handle {
+        opacity: 0;
+        color: rgba(24,21,18,0.55);
+        font-size: 13px;
+        letter-spacing: 0.08em;
+      }
+
+      .state-cell:hover .grab-handle,
+      .state-cell:hover .menu,
+      .state-cell:hover .shortcut {
+        opacity: 1;
+      }
+
+      .menu {
+        opacity: 0.7;
+        color: rgba(24,21,18,0.62);
+        font-weight: 700;
+        letter-spacing: 0.08em;
+      }
+
+      .shortcut {
+        opacity: 0.8;
+        color: rgba(24,21,18,0.62);
+        font-size: 11px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .move-badge {
+        opacity: 0.88;
+        color: rgba(24,21,18,0.64);
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .hover-row {
+        background: linear-gradient(180deg, rgba(41,80,160,0.03), rgba(255,255,255,0.92));
+      }
+
+      .dragging-row {
+        background: rgba(255,255,255,0.94);
+        border-color: rgba(15,111,96,0.18);
+        box-shadow: var(--shadow);
+      }
+
+      .insert-line {
+        margin: 8px 0 10px;
+        height: 2px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, transparent, rgba(41,80,160,0.68), transparent);
+      }
+
+      .menu-sheet {
+        margin-top: 8px;
+        width: 126px;
+        border: 1px solid rgba(24,21,18,0.1);
+        border-radius: 12px;
+        background: rgba(255,255,255,0.98);
+        box-shadow: var(--shadow);
+        padding: 6px;
+        font-size: 11px;
+        line-height: 1.45;
+      }
+
+      .menu-sheet div {
+        padding: 5px 6px;
+        border-radius: 8px;
+      }
+
+      .menu-sheet .danger {
+        color: #8b5d54;
+      }
+
+      .kbd {
+        display: inline-flex;
+        gap: 4px;
+        flex-wrap: wrap;
+      }
+
+      .kbd span {
+        padding: 0;
+        border: 0;
+        background: transparent;
+        font-weight: 700;
+      }
+
+      .muted-line {
+        color: var(--muted);
+      }
+
+      @media (max-width: 1500px) {
+        .matrix-head,
+        .matrix-row {
+          grid-template-columns: 250px repeat(4, minmax(210px, 1fr));
+        }
+
+        .state-cell { min-height: 176px; }
+      }
+
+      @media (max-width: 1200px) {
+        .intro {
+          grid-template-columns: 1fr;
+        }
+
+        .matrix-head,
+        .matrix-row {
+          grid-template-columns: 1fr;
+        }
+
+        .head-cell {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="intro">
+        <div>
+          <p class="eyebrow">Micro-control study</p>
+          <h1>Control language for a continuous resume editor.</h1>
+          <p class="lede">
+            This board isolates the small visual controls only. The editor flow stays fixed: stacked
+            sections, in-place expansion, reorderable roles, and live preview. The question here is
+            how disclosure and reorder controls should look and feel in production.
+          </p>
+        </div>
+        <div class="panel">
+          <h2>What to compare</h2>
+          <p>
+            Section disclosure, hover/focus signaling, drag affordances, and action reduction. The
+            goal is not more UI, just a more mature control language.
+          </p>
+        </div>
+      </section>
+
+      <section class="board-section disclosure-grid">
+        <div class="section-head">
+          <div>
+            <h2>Section expand/collapse indicator options</h2>
+            <p>Collapsed, expanded, hover/focus, and active states are shown for the same work-experience section row.</p>
+          </div>
+          <p>8 variations · 4 states each</p>
+        </div>
+
+        <div class="matrix">
+          <div class="matrix-head">
+            <div class="head-cell">Option</div>
+            <div class="head-cell">Collapsed</div>
+            <div class="head-cell">Expanded</div>
+            <div class="head-cell">Hover / Focus</div>
+            <div class="head-cell">Active section</div>
+          </div>
+
+          <div class="matrix-row">
+            <div class="label-cell">
+              <p class="label-name">1. Chevron, but restrained</p>
+              <p class="label-desc">The familiar indicator, reduced to a small structural mark instead of a UI-kit button.</p>
+            </div>
+            <div class="state-cell cell-collapsed">
+              <div class="state-title">Collapsed</div>
+              <div class="demo">
+                <div class="section-row">
+                  <div class="marker">▸</div>
+                  <div class="row-copy">
+                    <p class="title">Work Experience</p>
+                    <p class="meta">3 roles · collapsed</p>
+                  </div>
+                  <div class="menu">Edit</div>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell">
+              <div class="state-title">Expanded</div>
+              <div class="demo">
+                <div class="section-row">
+                  <div class="marker">▾</div>
+                  <div class="row-copy">
+                    <p class="title">Work Experience</p>
+                    <p class="meta">3 roles · open</p>
+                  </div>
+                  <div class="menu">Edit</div>
+                </div>
+                <div class="body">
+                  <p>IT Support Technician · Independent · Jun 2022 - Present</p>
+                  <p>Resolved endpoint, access, and onboarding issues for a 180-person mixed-device team.</p>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell cell-hover">
+              <div class="state-title">Hover / Focus</div>
+              <div class="demo focus-ring">
+                <div class="section-row">
+                  <div class="marker">▸</div>
+                  <div class="row-copy">
+                    <p class="title">Work Experience</p>
+                    <p class="meta">Hover reveals the control, not the chrome.</p>
+                  </div>
+                  <div class="menu">Edit</div>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell cell-active">
+              <div class="state-title">Active section</div>
+              <div class="demo">
+                <div class="section-row">
+                  <div class="marker">▾</div>
+                  <div class="row-copy">
+                    <p class="title">Work Experience</p>
+                    <p class="meta">Active structure is slightly stronger, not louder.</p>
+                  </div>
+                  <div class="menu">Edit</div>
+                </div>
+                <div class="body">
+                  <p>IT Support Technician · Independent · Jun 2022 - Present</p>
+                  <p>Keep the active section visually anchored while the rest stays quiet.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="matrix-row">
+            <div class="label-cell">
+              <p class="label-name">2. Plus / minus</p>
+              <p class="label-desc">Direct and compact, but slightly more interface-y than structural.</p>
+            </div>
+            <div class="state-cell cell-collapsed">
+              <div class="state-title">Collapsed</div>
+              <div class="demo">
+                <div class="section-row">
+                  <div class="marker plus">+</div>
+                  <div class="row-copy">
+                    <p class="title">Work Experience</p>
+                    <p class="meta">3 roles · collapsed</p>
+                  </div>
+                  <div class="menu">Open</div>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell">
+              <div class="state-title">Expanded</div>
+              <div class="demo">
+                <div class="section-row">
+                  <div class="marker plus">−</div>
+                  <div class="row-copy">
+                    <p class="title">Work Experience</p>
+                    <p class="meta">3 roles · open</p>
+                  </div>
+                  <div class="menu">Close</div>
+                </div>
+                <div class="body">
+                  <p>IT Support Technician · Independent · Jun 2022 - Present</p>
+                  <p>Expanded state is legible, but the symbol is more functional than editorial.</p>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell cell-hover">
+              <div class="state-title">Hover / Focus</div>
+              <div class="demo focus-ring">
+                <div class="section-row">
+                  <div class="marker plus">+</div>
+                  <div class="row-copy">
+                    <p class="title">Work Experience</p>
+                    <p class="meta">Hover should not feel like a button skin.</p>
+                  </div>
+                  <div class="menu">Open</div>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell cell-active">
+              <div class="state-title">Active section</div>
+              <div class="demo">
+                <div class="section-row">
+                  <div class="marker plus">−</div>
+                  <div class="row-copy">
+                    <p class="title">Work Experience</p>
+                    <p class="meta">Active section, still compact.</p>
+                  </div>
+                  <div class="menu">Close</div>
+                </div>
+                <div class="body">
+                  <p>Active content remains visible without a chunky control skin.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="matrix-row">
+            <div class="label-cell">
+              <p class="label-name">3. Left rail marker</p>
+              <p class="label-desc">A thin structural bar communicates section state without a visible button.</p>
+            </div>
+            <div class="state-cell cell-collapsed">
+              <div class="state-title">Collapsed</div>
+              <div class="demo">
+                <div class="rail"></div>
+                <div class="section-row" style="padding-left: 10px;">
+                  <div class="marker none">•</div>
+                  <div class="row-copy">
+                    <p class="title">Work Experience</p>
+                    <p class="meta">Collapsed · rail at left</p>
+                  </div>
+                  <div class="menu">Open</div>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell">
+              <div class="state-title">Expanded</div>
+              <div class="demo">
+                <div class="rail active"></div>
+                <div class="section-row" style="padding-left: 10px;">
+                  <div class="marker none">•</div>
+                  <div class="row-copy">
+                    <p class="title">Work Experience</p>
+                    <p class="meta">Expanded · rail strengthens.</p>
+                  </div>
+                  <div class="menu">Open</div>
+                </div>
+                <div class="body">
+                  <p>Subtle and highly structural. Good for a dense editor stack.</p>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell cell-hover">
+              <div class="state-title">Hover / Focus</div>
+              <div class="demo focus-ring">
+                <div class="rail"></div>
+                <div class="section-row" style="padding-left: 10px;">
+                  <div class="marker none">•</div>
+                  <div class="row-copy">
+                    <p class="title">Work Experience</p>
+                    <p class="meta">Hover reveals the structure, not a widget.</p>
+                  </div>
+                  <div class="menu">Open</div>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell cell-active">
+              <div class="state-title">Active section</div>
+              <div class="demo">
+                <div class="rail active"></div>
+                <div class="section-row" style="padding-left: 10px;">
+                  <div class="marker none">•</div>
+                  <div class="row-copy">
+                    <p class="title">Work Experience</p>
+                    <p class="meta">Active section gets a stronger rail.</p>
+                  </div>
+                  <div class="menu">Open</div>
+                </div>
+                <div class="body">
+                  <p>Probably the cleanest non-button disclosure language here.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="matrix-row">
+            <div class="label-cell">
+              <p class="label-name">4. Bracket / indent marker</p>
+              <p class="label-desc">A mature editorial shape that feels closer to structure than navigation.</p>
+            </div>
+            <div class="state-cell cell-collapsed">
+              <div class="state-title">Collapsed</div>
+              <div class="demo">
+                <div class="bracket"></div>
+                <div class="section-row" style="padding-left: 16px;">
+                  <div class="marker none">•</div>
+                  <div class="row-copy">
+                    <p class="title">Work Experience</p>
+                    <p class="meta">Collapsed · bracketed</p>
+                  </div>
+                  <div class="menu">Open</div>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell">
+              <div class="state-title">Expanded</div>
+              <div class="demo">
+                <div class="bracket"></div>
+                <div class="section-row" style="padding-left: 16px;">
+                  <div class="marker none">•</div>
+                  <div class="row-copy">
+                    <p class="title">Work Experience</p>
+                    <p class="meta">Expanded · bracket carries through content.</p>
+                  </div>
+                  <div class="menu">Open</div>
+                </div>
+                <div class="body">
+                  <p>Feels more like editorial structure than a control component.</p>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell cell-hover">
+              <div class="state-title">Hover / Focus</div>
+              <div class="demo focus-ring">
+                <div class="bracket"></div>
+                <div class="section-row" style="padding-left: 16px;">
+                  <div class="marker none">•</div>
+                  <div class="row-copy">
+                    <p class="title">Work Experience</p>
+                    <p class="meta">Hover could slightly thicken the bracket.</p>
+                  </div>
+                  <div class="menu">Open</div>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell cell-active">
+              <div class="state-title">Active section</div>
+              <div class="demo">
+                <div class="bracket" style="border-color: rgba(15,111,96,0.7);"></div>
+                <div class="section-row" style="padding-left: 16px;">
+                  <div class="marker none">•</div>
+                  <div class="row-copy">
+                    <p class="title">Work Experience</p>
+                    <p class="meta">Active section with a slightly stronger frame.</p>
+                  </div>
+                  <div class="menu">Open</div>
+                </div>
+                <div class="body">
+                  <p>Could work well if the editor needs more editorial gravity.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="matrix-row">
+            <div class="label-cell">
+              <p class="label-name">5. Text-only active row</p>
+              <p class="label-desc">The section row itself carries the state, with no marker except hierarchy.</p>
+            </div>
+            <div class="state-cell cell-collapsed">
+              <div class="state-title">Collapsed</div>
+              <div class="demo">
+                <div class="section-row">
+                  <div class="marker none">•</div>
+                  <div class="row-copy">
+                    <p class="title">Work Experience</p>
+                    <p class="meta">Collapsed · row looks like content.</p>
+                  </div>
+                  <div class="menu">Open</div>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell">
+              <div class="state-title">Expanded</div>
+              <div class="demo">
+                <div class="section-row">
+                  <div class="marker none">•</div>
+                  <div class="row-copy">
+                    <p class="title" style="font-size: 14px;">Work Experience</p>
+                    <p class="meta">Expanded by hierarchy, not iconography.</p>
+                  </div>
+                  <div class="menu">Open</div>
+                </div>
+                <div class="body">
+                  <p>The text treatment is the control. Strong, but easy to overdo.</p>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell cell-hover">
+              <div class="state-title">Hover / Focus</div>
+              <div class="demo focus-ring">
+                <div class="section-row">
+                  <div class="marker none">•</div>
+                  <div class="row-copy">
+                    <p class="title" style="font-size: 14px;">Work Experience</p>
+                    <p class="meta">Hover could rely on background and weight only.</p>
+                  </div>
+                  <div class="menu">Open</div>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell cell-active">
+              <div class="state-title">Active section</div>
+              <div class="demo">
+                <div class="section-row">
+                  <div class="marker none">•</div>
+                  <div class="row-copy">
+                    <p class="title" style="font-size: 14px;">Work Experience</p>
+                    <p class="meta">Active row stays readable and intentional.</p>
+                  </div>
+                  <div class="menu">Open</div>
+                </div>
+                <div class="body">
+                  <p>Useful if Resume Studio wants to feel more document-native than app-like.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="matrix-row">
+            <div class="label-cell">
+              <p class="label-name">6. Section number marker</p>
+              <p class="label-desc">Structured numbering adds hierarchy without relying on a triangle.</p>
+            </div>
+            <div class="state-cell cell-collapsed">
+              <div class="state-title">Collapsed</div>
+              <div class="demo">
+                <div class="section-row">
+                  <div class="marker number">03</div>
+                  <div class="row-copy">
+                    <p class="title">Work Experience</p>
+                    <p class="meta">Section index marker</p>
+                  </div>
+                  <div class="menu">Open</div>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell">
+              <div class="state-title">Expanded</div>
+              <div class="demo">
+                <div class="section-row">
+                  <div class="marker number">03</div>
+                  <div class="row-copy">
+                    <p class="title">Work Experience</p>
+                    <p class="meta">Open · still compact.</p>
+                  </div>
+                  <div class="menu">Open</div>
+                </div>
+                <div class="body">
+                  <p>Numbering works best if the whole stack has consistent order.</p>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell cell-hover">
+              <div class="state-title">Hover / Focus</div>
+              <div class="demo focus-ring">
+                <div class="section-row">
+                  <div class="marker number">03</div>
+                  <div class="row-copy">
+                    <p class="title">Work Experience</p>
+                    <p class="meta">Hover can nudge the number tone or weight.</p>
+                  </div>
+                  <div class="menu">Open</div>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell cell-active">
+              <div class="state-title">Active section</div>
+              <div class="demo">
+                <div class="section-row">
+                  <div class="marker number" style="color: var(--active);">03</div>
+                  <div class="row-copy">
+                    <p class="title">Work Experience</p>
+                    <p class="meta">Active section keeps the number but makes it quiet.</p>
+                  </div>
+                  <div class="menu">Open</div>
+                </div>
+                <div class="body">
+                  <p>Feels orderly and professional, especially in long resumes.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="matrix-row">
+            <div class="label-cell">
+              <p class="label-name">7. Underline / active rule marker</p>
+              <p class="label-desc">The control is essentially a rule, which is very calm when done lightly.</p>
+            </div>
+            <div class="state-cell cell-collapsed">
+              <div class="state-title">Collapsed</div>
+              <div class="demo">
+                <div class="section-row">
+                  <div class="marker none">•</div>
+                  <div class="row-copy">
+                    <p class="title">Work Experience</p>
+                    <p class="meta">Rule sits under the title.</p>
+                  </div>
+                  <div class="menu">Open</div>
+                </div>
+                <div class="underline"></div>
+              </div>
+            </div>
+            <div class="state-cell">
+              <div class="state-title">Expanded</div>
+              <div class="demo">
+                <div class="section-row">
+                  <div class="marker none">•</div>
+                  <div class="row-copy">
+                    <p class="title">Work Experience</p>
+                    <p class="meta">Expanded section uses the rule as the indicator.</p>
+                  </div>
+                  <div class="menu">Open</div>
+                </div>
+                <div class="underline active"></div>
+                <div class="body">
+                  <p>Very controlled and text-forward. Good for a mature tool.</p>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell cell-hover">
+              <div class="state-title">Hover / Focus</div>
+              <div class="demo focus-ring">
+                <div class="section-row">
+                  <div class="marker none">•</div>
+                  <div class="row-copy">
+                    <p class="title">Work Experience</p>
+                    <p class="meta">Hover can extend the rule slightly.</p>
+                  </div>
+                  <div class="menu">Open</div>
+                </div>
+                <div class="underline"></div>
+              </div>
+            </div>
+            <div class="state-cell cell-active">
+              <div class="state-title">Active section</div>
+              <div class="demo">
+                <div class="section-row">
+                  <div class="marker none">•</div>
+                  <div class="row-copy">
+                    <p class="title">Work Experience</p>
+                    <p class="meta">Active rule gets stronger color only.</p>
+                  </div>
+                  <div class="menu">Open</div>
+                </div>
+                <div class="underline active"></div>
+                <div class="body">
+                  <p>A clean option if Resume Studio wants almost no visible iconography.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="matrix-row">
+            <div class="label-cell">
+              <p class="label-name">8. No visible icon</p>
+              <p class="label-desc">The row is clickable by implication alone. Strongest when the stack is very familiar.</p>
+            </div>
+            <div class="state-cell cell-collapsed">
+              <div class="state-title">Collapsed</div>
+              <div class="demo">
+                <div class="section-row">
+                  <div class="marker none">•</div>
+                  <div class="row-copy">
+                    <p class="title">Work Experience</p>
+                    <p class="meta">No icon · row click implied</p>
+                  </div>
+                  <div class="menu">Open</div>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell">
+              <div class="state-title">Expanded</div>
+              <div class="demo">
+                <div class="section-row">
+                  <div class="marker none">•</div>
+                  <div class="row-copy">
+                    <p class="title">Work Experience</p>
+                    <p class="meta">Expanded by row state only.</p>
+                  </div>
+                  <div class="menu">Open</div>
+                </div>
+                <div class="body">
+                  <p>Very minimal, but the affordance depends heavily on layout familiarity.</p>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell cell-hover">
+              <div class="state-title">Hover / Focus</div>
+              <div class="demo focus-ring">
+                <div class="section-row">
+                  <div class="marker none">•</div>
+                  <div class="row-copy">
+                    <p class="title">Work Experience</p>
+                    <p class="meta">Hover uses background and spacing only.</p>
+                  </div>
+                  <div class="menu">Open</div>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell cell-active">
+              <div class="state-title">Active section</div>
+              <div class="demo">
+                <div class="section-row">
+                  <div class="marker none">•</div>
+                  <div class="row-copy">
+                    <p class="title">Work Experience</p>
+                    <p class="meta">Active row is enough to imply state.</p>
+                  </div>
+                  <div class="menu">Open</div>
+                </div>
+                <div class="body">
+                  <p>Strongly document-native, but the affordance is the least explicit.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board-section reorder-grid" style="margin-top: 28px;">
+        <div class="section-head">
+          <div>
+            <h2>Reorder / drag affordance options</h2>
+            <p>Normal, hover, and dragging or reorder states are shown for role and bullet rows.</p>
+          </div>
+          <p>8 variations · 3 states each</p>
+        </div>
+
+        <div class="matrix">
+          <div class="matrix-head">
+            <div class="head-cell">Option</div>
+            <div class="head-cell">Normal</div>
+            <div class="head-cell">Hover</div>
+            <div class="head-cell">Dragging / reorder</div>
+          </div>
+
+          <div class="matrix-row">
+            <div class="label-cell">
+              <p class="label-name">1. Hidden handle on hover</p>
+              <p class="label-desc">The classic move affordance, but only visible when the row is interacted with.</p>
+            </div>
+            <div class="state-cell">
+              <div class="state-title">Normal</div>
+              <div class="demo">
+                <div class="reorder-row">
+                  <div class="grab-handle">⋮⋮</div>
+                  <div>
+                    <p class="role">IT Support Technician</p>
+                    <p class="sub">Independent · Jun 2022 - Present</p>
+                  </div>
+                  <div class="menu">Open</div>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell cell-hover">
+              <div class="state-title">Hover</div>
+              <div class="demo hover-row">
+                <div class="reorder-row">
+                  <div class="grab-handle">⋮⋮</div>
+                  <div>
+                    <p class="role">IT Support Technician</p>
+                    <p class="sub">Hover reveals the handle without shouting.</p>
+                  </div>
+                  <div class="menu">Open</div>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell">
+              <div class="state-title">Dragging</div>
+              <div class="demo dragging-row">
+                <div class="reorder-row">
+                  <div class="grab-handle">⋮⋮</div>
+                  <div>
+                    <p class="role">IT Support Technician</p>
+                    <p class="sub">Dragging state with subtle lift.</p>
+                  </div>
+                  <div class="menu">Open</div>
+                </div>
+                <div class="insert-line"></div>
+                <div class="drag-note muted-line">Drop before next role</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="matrix-row">
+            <div class="label-cell">
+              <p class="label-name">2. Small dot grip</p>
+              <p class="label-desc">Familiar, but less visual weight than a full three-line handle.</p>
+            </div>
+            <div class="state-cell">
+              <div class="state-title">Normal</div>
+              <div class="demo">
+                <div class="reorder-row">
+                  <div class="dots"><span></span><span></span><span></span><span></span></div>
+                  <div>
+                    <p class="role">Bullet row</p>
+                    <p class="sub">Move affordance is compact and understated.</p>
+                  </div>
+                  <div class="shortcut">Move</div>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell cell-hover">
+              <div class="state-title">Hover</div>
+              <div class="demo hover-row">
+                <div class="reorder-row">
+                  <div class="dots"><span></span><span></span><span></span><span></span></div>
+                  <div>
+                    <p class="role">Bullet row</p>
+                    <p class="sub">Dots darken, but remain small.</p>
+                  </div>
+                  <div class="shortcut">Move</div>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell">
+              <div class="state-title">Dragging</div>
+              <div class="demo dragging-row">
+                <div class="reorder-row">
+                  <div class="dots"><span></span><span></span><span></span><span></span></div>
+                  <div>
+                    <p class="role">Bullet row</p>
+                    <p class="sub">Lifted state with a visible drop cue.</p>
+                  </div>
+                  <div class="shortcut">Insert</div>
+                </div>
+                <div class="insert-line"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="matrix-row">
+            <div class="label-cell">
+              <p class="label-name">3. Left edge drag rail</p>
+              <p class="label-desc">The control lives in the margin and makes the row feel structurally movable.</p>
+            </div>
+            <div class="state-cell">
+              <div class="state-title">Normal</div>
+              <div class="demo">
+                <div class="reorder-row">
+                  <div class="drag-rail"></div>
+                  <div>
+                    <p class="role">Role row</p>
+                    <p class="sub">Drag rail sits quietly in the margin.</p>
+                  </div>
+                  <div class="menu">Move</div>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell cell-hover">
+              <div class="state-title">Hover</div>
+              <div class="demo hover-row">
+                <div class="reorder-row">
+                  <div class="drag-rail"></div>
+                  <div>
+                    <p class="role">Role row</p>
+                    <p class="sub">Hover strengthens the rail, not the chrome.</p>
+                  </div>
+                  <div class="menu">Move</div>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell">
+              <div class="state-title">Dragging</div>
+              <div class="demo dragging-row">
+                <div class="reorder-row">
+                  <div class="drag-rail active"></div>
+                  <div>
+                    <p class="role">Role row</p>
+                    <p class="sub">The rail turns active while the row lifts.</p>
+                  </div>
+                  <div class="menu">Move</div>
+                </div>
+                <div class="insert-line"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="matrix-row">
+            <div class="label-cell">
+              <p class="label-name">4. Whole row draggable</p>
+              <p class="label-desc">No separate handle. The entire row becomes the move target.</p>
+            </div>
+            <div class="state-cell">
+              <div class="state-title">Normal</div>
+              <div class="demo">
+                <div class="reorder-row">
+                  <div class="marker none">•</div>
+                  <div>
+                    <p class="role">Role row</p>
+                    <p class="sub">Everything in the row is part of the target.</p>
+                  </div>
+                  <div class="shortcut">↕</div>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell cell-hover">
+              <div class="state-title">Hover</div>
+              <div class="demo hover-row">
+                <div class="reorder-row">
+                  <div class="marker none">•</div>
+                  <div>
+                    <p class="role">Role row</p>
+                    <p class="sub">Hover state can use the entire row surface.</p>
+                  </div>
+                  <div class="shortcut">Drag</div>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell">
+              <div class="state-title">Dragging</div>
+              <div class="demo dragging-row">
+                <div class="reorder-row">
+                  <div class="marker none">•</div>
+                  <div>
+                    <p class="role">Role row</p>
+                    <p class="sub">Lifted whole-row state with a clean drop cue.</p>
+                  </div>
+                  <div class="shortcut">Drop</div>
+                </div>
+                <div class="insert-line"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="matrix-row">
+            <div class="label-cell">
+              <p class="label-name">5. Reorder mode only</p>
+              <p class="label-desc">The row is quiet until the user deliberately enters a reorder state.</p>
+            </div>
+            <div class="state-cell">
+              <div class="state-title">Normal</div>
+              <div class="demo">
+                <div class="reorder-row">
+                  <div class="marker none">•</div>
+                  <div>
+                    <p class="role">Role row</p>
+                    <p class="sub">No reorder chrome in normal edit mode.</p>
+                  </div>
+                  <div class="menu">⋯</div>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell cell-hover">
+              <div class="state-title">Hover</div>
+              <div class="demo hover-row">
+                <div class="reorder-row">
+                  <div class="marker none">•</div>
+                  <div>
+                    <p class="role">Role row</p>
+                    <p class="sub">A dedicated reorder mode could reveal row tools.</p>
+                  </div>
+                  <div class="menu">Reorder</div>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell">
+              <div class="state-title">Dragging</div>
+              <div class="demo dragging-row">
+                <div class="reorder-row">
+                  <div class="marker none">•</div>
+                  <div>
+                    <p class="role">Role row</p>
+                    <p class="sub">In reorder mode, the row uses a calmer lift state.</p>
+                  </div>
+                  <div class="shortcut">Mode on</div>
+                </div>
+                <div class="insert-line"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="matrix-row">
+            <div class="label-cell">
+              <p class="label-name">6. Insertion line only</p>
+              <p class="label-desc">Very restrained. The move target is implied by the drop line rather than a handle.</p>
+            </div>
+            <div class="state-cell">
+              <div class="state-title">Normal</div>
+              <div class="demo">
+                <div class="reorder-row">
+                  <div class="marker none">•</div>
+                  <div>
+                    <p class="role">Role row</p>
+                    <p class="sub">No visible move control in the resting state.</p>
+                  </div>
+                  <div class="muted-line">—</div>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell cell-hover">
+              <div class="state-title">Hover</div>
+              <div class="demo hover-row">
+                <div class="reorder-row">
+                  <div class="marker none">•</div>
+                  <div>
+                    <p class="role">Role row</p>
+                    <p class="sub">Hover suggests motion through subtle surface change.</p>
+                  </div>
+                  <div class="muted-line">—</div>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell">
+              <div class="state-title">Dragging</div>
+              <div class="demo dragging-row">
+                <div class="insert-line"></div>
+                <div class="reorder-row">
+                  <div class="marker none">•</div>
+                  <div>
+                    <p class="role">Role row</p>
+                    <p class="sub">The drop line is the only strong signal.</p>
+                  </div>
+                  <div class="muted-line">—</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="matrix-row">
+            <div class="label-cell">
+              <p class="label-name">7. Overflow menu move controls</p>
+              <p class="label-desc">Actions sit behind a compact menu, which keeps the row surface clean.</p>
+            </div>
+            <div class="state-cell">
+              <div class="state-title">Normal</div>
+              <div class="demo">
+                <div class="reorder-row">
+                  <div class="marker none">•</div>
+                  <div>
+                    <p class="role">Role row</p>
+                    <p class="sub">Menu-only actions preserve a calm surface.</p>
+                  </div>
+                  <div class="menu">⋯</div>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell cell-hover">
+              <div class="state-title">Hover</div>
+              <div class="demo hover-row">
+                <div class="reorder-row">
+                  <div class="marker none">•</div>
+                  <div>
+                    <p class="role">Role row</p>
+                    <p class="sub">Hover opens a small, sober action menu.</p>
+                  </div>
+                  <div class="menu">⋯</div>
+                </div>
+                <div class="menu-sheet">
+                  <div>Move up</div>
+                  <div>Move down</div>
+                  <div>Duplicate</div>
+                  <div class="danger">Remove</div>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell">
+              <div class="state-title">Dragging</div>
+              <div class="demo dragging-row">
+                <div class="reorder-row">
+                  <div class="marker none">•</div>
+                  <div>
+                    <p class="role">Role row</p>
+                    <p class="sub">Menu stays quiet while dragging is in progress.</p>
+                  </div>
+                  <div class="menu">⋯</div>
+                </div>
+                <div class="insert-line"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="matrix-row">
+            <div class="label-cell">
+              <p class="label-name">8. Keyboard move controls</p>
+              <p class="label-desc">Best for power users when the editor already feels text-centric and structured.</p>
+            </div>
+            <div class="state-cell">
+              <div class="state-title">Normal</div>
+              <div class="demo">
+                <div class="reorder-row">
+                  <div class="marker none">•</div>
+                  <div>
+                    <p class="role">Role row</p>
+                    <p class="sub">Movement is available by keyboard, not by constant chrome.</p>
+                  </div>
+                  <div class="shortcut">⌘↑ ⌘↓</div>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell cell-hover">
+              <div class="state-title">Hover</div>
+              <div class="demo hover-row">
+                <div class="reorder-row">
+                  <div class="marker none">•</div>
+                  <div>
+                    <p class="role">Role row</p>
+                    <p class="sub">Hover can surface the shortcut hint more clearly.</p>
+                  </div>
+                  <div class="shortcut">Move</div>
+                </div>
+              </div>
+            </div>
+            <div class="state-cell">
+              <div class="state-title">Dragging / reorder</div>
+              <div class="demo dragging-row">
+                <div class="reorder-row">
+                  <div class="marker none">•</div>
+                  <div>
+                    <p class="role">Role row</p>
+                    <p class="sub">Focused reorder state with keyboard hints and drop cue.</p>
+                  </div>
+                  <div class="shortcut">⌘↑ ⌘↓</div>
+                </div>
+                <div class="insert-line"></div>
+                <div class="drag-note muted-line">Use shortcuts to move the focused row.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

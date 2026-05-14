@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Direction 02 - AI Command Center</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #07111f;
+        --panel: rgba(10, 18, 32, 0.8);
+        --panel-2: rgba(16, 27, 47, 0.86);
+        --panel-3: rgba(20, 34, 58, 0.88);
+        --ink: #eef4ff;
+        --muted: #9fb0cf;
+        --line: rgba(163, 187, 228, 0.14);
+        --accent: #67a1ff;
+        --accent-2: #7ef0c1;
+        --accent-3: #ffbf74;
+        --shadow: 0 32px 90px rgba(0, 0, 0, 0.35);
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background:
+          radial-gradient(circle at 20% 0%, rgba(103, 161, 255, 0.24), transparent 24%),
+          radial-gradient(circle at 80% 8%, rgba(126, 240, 193, 0.18), transparent 22%),
+          radial-gradient(circle at 50% 120%, rgba(152, 85, 255, 0.16), transparent 26%),
+          linear-gradient(180deg, #08101d 0%, #0a1426 52%, #070e18 100%);
+      }
+
+      .shell {
+        max-width: 1540px;
+        margin: 0 auto;
+        padding: 28px;
+      }
+
+      .chrome {
+        display: grid;
+        gap: 16px;
+        padding: 18px;
+        border-radius: 28px;
+        border: 1px solid rgba(169, 194, 235, 0.12);
+        background: linear-gradient(180deg, rgba(9, 16, 29, 0.72), rgba(12, 20, 36, 0.88));
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(18px);
+      }
+
+      .header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .brand {
+        display: grid;
+        gap: 6px;
+      }
+
+      .brand .eyebrow {
+        margin: 0;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--accent-2);
+      }
+
+      .brand h1 {
+        margin: 0;
+        font-size: clamp(1.9rem, 3vw, 3.2rem);
+        line-height: 0.98;
+        letter-spacing: -0.05em;
+      }
+
+      .brand p {
+        margin: 0;
+        max-width: 72ch;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.65;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .button {
+        min-height: 40px;
+        padding: 0 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(181, 202, 235, 0.18);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--ink);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .button.primary {
+        background: linear-gradient(135deg, rgba(103, 161, 255, 0.95), rgba(126, 240, 193, 0.95));
+        color: #09111f;
+      }
+
+      .metrics {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .metric {
+        padding: 14px 16px;
+        border-radius: 20px;
+        background:
+          linear-gradient(180deg, rgba(15, 24, 42, 0.95), rgba(13, 20, 35, 0.95)),
+          var(--panel);
+        border: 1px solid rgba(169, 194, 235, 0.1);
+      }
+
+      .metric .label {
+        margin: 0 0 8px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .metric .value {
+        margin: 0;
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+      }
+
+      .metric .hint {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .workspace {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: 300px minmax(0, 1fr) 360px;
+        align-items: start;
+      }
+
+      .rail,
+      .inspector,
+      .canvas {
+        border-radius: 26px;
+        border: 1px solid rgba(169, 194, 235, 0.12);
+        background: linear-gradient(180deg, rgba(12, 20, 35, 0.88), rgba(11, 18, 31, 0.92));
+        box-shadow: var(--shadow);
+      }
+
+      .rail,
+      .inspector {
+        padding: 18px;
+      }
+
+      .canvas {
+        padding: 18px;
+        background:
+          radial-gradient(circle at 20% 0%, rgba(103, 161, 255, 0.12), transparent 30%),
+          radial-gradient(circle at 90% 18%, rgba(126, 240, 193, 0.08), transparent 28%),
+          linear-gradient(180deg, rgba(13, 21, 38, 0.84), rgba(10, 16, 29, 0.94));
+      }
+
+      .rail h2,
+      .inspector h2 {
+        margin: 0 0 12px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent-2);
+      }
+
+      .assistant,
+      .stack-item,
+      .insight,
+      .field,
+      .panel {
+        border-radius: 18px;
+        border: 1px solid rgba(169, 194, 235, 0.12);
+        background: linear-gradient(180deg, rgba(15, 24, 41, 0.84), rgba(10, 17, 30, 0.94));
+      }
+
+      .assistant {
+        padding: 16px;
+      }
+
+      .assistant p,
+      .stack-item p,
+      .insight p,
+      .field p,
+      .panel p {
+        margin: 0;
+      }
+
+      .assistant .title {
+        font-size: 14px;
+        font-weight: 800;
+      }
+
+      .assistant .body {
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 32px;
+        padding: 0 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(169, 194, 235, 0.14);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--ink);
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .chip.good { color: #98ffd4; }
+      .chip.warn { color: #ffcf8d; }
+      .chip.info { color: #9dc0ff; }
+
+      .stack {
+        display: grid;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .stack-item {
+        padding: 14px 14px 12px;
+      }
+
+      .stack-item .kicker {
+        margin-bottom: 6px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .stack-item .main {
+        font-size: 14px;
+        font-weight: 700;
+        line-height: 1.45;
+      }
+
+      .stack-item .sub {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .preview-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 14px;
+        padding: 10px 12px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(169, 194, 235, 0.1);
+      }
+
+      .preview-toolbar .left,
+      .preview-toolbar .right {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .preview-toolbar .label {
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .sheet {
+        min-height: 970px;
+        padding: 26px;
+        border-radius: 24px;
+        background:
+          linear-gradient(180deg, rgba(247, 250, 255, 0.98), rgba(235, 241, 250, 0.98)),
+          #fff;
+        color: #0d1220;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+      }
+
+      .sheet-head {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 14px;
+        align-items: end;
+        padding-bottom: 14px;
+        border-bottom: 1px solid rgba(10, 17, 31, 0.12);
+      }
+
+      .sheet-head h3 {
+        margin: 0;
+        font-size: clamp(1.8rem, 2.5vw, 3.2rem);
+        line-height: 0.96;
+        letter-spacing: -0.05em;
+      }
+
+      .sheet-head p {
+        margin: 0;
+        max-width: 36ch;
+        color: #41506e;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .sheet-grid {
+        display: grid;
+        gap: 16px;
+        margin-top: 18px;
+      }
+
+      .sheet-block {
+        border-radius: 20px;
+        border: 1px solid rgba(10, 17, 31, 0.08);
+        background: rgba(255, 255, 255, 0.8);
+        padding: 16px;
+      }
+
+      .sheet-block .label {
+        margin: 0 0 8px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: #526487;
+      }
+
+      .sheet-block .content {
+        margin: 0;
+        color: #0f1729;
+        font-size: 14px;
+        line-height: 1.7;
+      }
+
+      .sheet-cols {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .role-card {
+        display: grid;
+        gap: 10px;
+      }
+
+      .role-card .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        color: #49608a;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .role-card ul {
+        margin: 0;
+        padding-left: 18px;
+        color: #0f1729;
+        font-size: 13px;
+        line-height: 1.62;
+      }
+
+      .insight {
+        padding: 14px;
+        margin-top: 12px;
+      }
+
+      .insight .label {
+        margin: 0 0 6px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--accent-3);
+      }
+
+      .insight .body {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .field {
+        padding: 14px;
+      }
+
+      .field + .field {
+        margin-top: 10px;
+      }
+
+      .field .kicker {
+        margin-bottom: 6px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .field .main {
+        font-size: 14px;
+        font-weight: 700;
+        line-height: 1.45;
+      }
+
+      .field .sub {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .footer-note {
+        margin: 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      @media (max-width: 1320px) {
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 860px) {
+        .metrics,
+        .sheet-cols {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="chrome">
+        <header class="header">
+          <div class="brand">
+            <p class="eyebrow">Direction 02</p>
+            <h1>AI Command Center</h1>
+            <p>
+              This version uses AI SaaS energy as a control language: signals, metrics, and
+              suggestions feel native to the workspace instead of bolted on.
+            </p>
+          </div>
+          <div class="actions">
+            <button class="button primary">Export PDF</button>
+            <button class="button">Generate suggestions</button>
+            <button class="button">Reset sample</button>
+          </div>
+        </header>
+
+        <section class="metrics" aria-label="resume metrics">
+          <div class="metric">
+            <p class="label">Page fit</p>
+            <p class="value">92%</p>
+            <p class="hint">Near the target without spilling into a noisy second page.</p>
+          </div>
+          <div class="metric">
+            <p class="label">Signal strength</p>
+            <p class="value">High</p>
+            <p class="hint">Most fields already map cleanly to resume output.</p>
+          </div>
+          <div class="metric">
+            <p class="label">Risk</p>
+            <p class="value">Low</p>
+            <p class="hint">Only a few bullets need compression before export.</p>
+          </div>
+          <div class="metric">
+            <p class="label">Confidence</p>
+            <p class="value">8.7</p>
+            <p class="hint">The interface feels competent, not overly theatrical.</p>
+          </div>
+        </section>
+
+        <section class="workspace">
+          <aside class="rail">
+            <h2>Assistant rail</h2>
+            <div class="assistant">
+              <p class="title">Resume coach</p>
+              <p class="body">
+                Keep the tone tight. If you add more content, remove low-value bullets first.
+                Guidance should sound like a trusted operator, not a chatbot.
+              </p>
+              <div class="chips">
+                <span class="chip good">Balanced page</span>
+                <span class="chip info">Three roles</span>
+                <span class="chip warn">2 long bullets</span>
+              </div>
+            </div>
+
+            <div class="stack">
+              <div class="stack-item">
+                <p class="kicker">Next best action</p>
+                <p class="main">Shorten the first role by one bullet.</p>
+                <p class="sub">This preserves the narrative while reducing wrap pressure.</p>
+              </div>
+              <div class="stack-item">
+                <p class="kicker">What changed</p>
+                <p class="main">Summary tightened, skills normalized.</p>
+                <p class="sub">The system should summarize edits like a changelog, not a conversation.</p>
+              </div>
+              <div class="stack-item">
+                <p class="kicker">Tone check</p>
+                <p class="main">Clear, confident, and specific.</p>
+                <p class="sub">No hype, no purple haze, no fake urgency.</p>
+              </div>
+            </div>
+          </aside>
+
+          <section class="canvas">
+            <div class="preview-toolbar">
+              <div class="left">
+                <span class="label">Live preview</span>
+                <span class="chip info">Page 1</span>
+                <span class="chip good">Printable</span>
+              </div>
+              <div class="right">
+                <span class="chip">98% width</span>
+                <span class="chip">1.1s render</span>
+              </div>
+            </div>
+
+            <article class="sheet">
+              <div class="sheet-head">
+                <div>
+                  <h3>Cesar Hernandez Lopez</h3>
+                  <p>IT Support Technician · Beaverton, Oregon · cesarhernandezl@proton.me</p>
+                </div>
+                <p>
+                  Command surface with measured glow<br />
+                  Strong signals, structured guidance, low visual friction
+                </p>
+              </div>
+
+              <div class="sheet-grid">
+                <section class="sheet-block">
+                  <p class="label">Summary</p>
+                  <p class="content">
+                    IT support technician with six-plus years of experience in desktop, mobile,
+                    and end-user support. The interface keeps guidance close to the content so the
+                    user can reason about output quality without leaving the flow.
+                  </p>
+                  <div class="insight">
+                    <p class="label">Assistant note</p>
+                    <p class="body">
+                      This summary is strong enough to anchor the page. If it expands, trim a
+                      bullet elsewhere rather than adding more chrome.
+                    </p>
+                  </div>
+                </section>
+
+                <section class="sheet-block">
+                  <p class="label">Experience</p>
+                  <div class="sheet-cols">
+                    <div class="role-card">
+                      <div class="meta">
+                        <span>Jun 2022 - Present</span>
+                        <span>Independent</span>
+                        <span>Beaverton, OR</span>
+                      </div>
+                      <ul>
+                        <li>Delivered hands-on support across mixed environments.</li>
+                        <li>Managed accounts, devices, and network triage.</li>
+                        <li>Built documentation and repeatable support flows.</li>
+                      </ul>
+                    </div>
+
+                    <div class="role-card">
+                      <div class="meta">
+                        <span>Aug 2021 - Feb 2025</span>
+                        <span>Apple Inc.</span>
+                        <span>Portland, OR</span>
+                      </div>
+                      <ul>
+                        <li>Supported high-volume customer workflows with clarity.</li>
+                        <li>Kept device setup, migration, and follow-up tightly organized.</li>
+                      </ul>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="sheet-block">
+                  <p class="label">Editing surface</p>
+                  <div class="sheet-cols">
+                    <div class="field">
+                      <p class="kicker">Section health</p>
+                      <p class="main">Experience: dense but readable</p>
+                      <p class="sub">This section deserves a targeted edit, not a whole-panel rewrite.</p>
+                    </div>
+                    <div class="field">
+                      <p class="kicker">Why this matters</p>
+                      <p class="main">The page should feel composed, not crammed.</p>
+                      <p class="sub">
+                        AI guidance works best when it references the document impact directly.
+                      </p>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            </article>
+          </section>
+
+          <aside class="inspector">
+            <h2>Context inspector</h2>
+            <div class="field">
+              <p class="kicker">Current selection</p>
+              <p class="main">Experience role 1</p>
+              <p class="sub">Focused on bullets, not on the whole résumé.</p>
+            </div>
+            <div class="field">
+              <p class="kicker">Recommended edit</p>
+              <p class="main">Remove one low-signal bullet.</p>
+              <p class="sub">The goal is to convert density into confidence.</p>
+            </div>
+            <div class="field">
+              <p class="kicker">Guidance integration</p>
+              <p class="main">Inline, contextual, and status-aware.</p>
+              <p class="sub">The design should feel like a control plane, not a support chat.</p>
+            </div>
+            <div class="field">
+              <p class="kicker">Hierarchy strategy</p>
+              <p class="main">Insight first, edit second, preview third.</p>
+              <p class="sub">
+                That order makes the system feel competent and reduces the temptation to sprawl
+                form controls everywhere.
+              </p>
+            </div>
+          </aside>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

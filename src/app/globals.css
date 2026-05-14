@@ -1,8 +1,25 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+  --background: #f3efe7;
+  --foreground: #171411;
+  --rs-shell-bg: #f3efe7;
+  --rs-shell-bg-soft: #f8f4ec;
+  --rs-shell-panel: rgba(255, 252, 246, 0.84);
+  --rs-shell-panel-strong: rgba(255, 253, 249, 0.94);
+  --rs-shell-panel-solid: #fffdf9;
+  --rs-line-soft: rgba(23, 20, 17, 0.08);
+  --rs-line-strong: rgba(23, 20, 17, 0.12);
+  --rs-text-muted: #6b6358;
+  --rs-radius-panel: 22px;
+  --rs-radius-surface: 10px;
+  --rs-shell-pad-x: clamp(20px, 3.4vw, 38px);
+  --rs-shell-pad-y: clamp(20px, 3vw, 34px);
+  --rs-shell-gap: clamp(18px, 2.1vw, 30px);
+  --rs-shell-max-width: 1540px;
+  --rs-shell-shadow: 0 22px 60px rgba(52, 34, 14, 0.08);
+  --rs-shell-shadow-soft: 0 12px 28px rgba(52, 34, 14, 0.05);
 }
 
 @theme inline {
@@ -12,15 +29,181 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  min-height: 100%;
 }
 
 body {
-  background: var(--background);
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.88), transparent 34%),
+    radial-gradient(circle at 84% 14%, rgba(208, 219, 243, 0.2), transparent 22%),
+    linear-gradient(165deg, var(--rs-shell-bg-soft) 0%, var(--rs-shell-bg) 55%, #ebe3d7 100%);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+}
+
+.resume-app-shell {
+  min-height: 100vh;
+  padding: var(--rs-shell-pad-y) var(--rs-shell-pad-x);
+  color: var(--foreground);
+}
+
+.resume-workspace {
+  margin: 0 auto;
+  display: grid;
+  max-width: var(--rs-shell-max-width);
+  gap: var(--rs-shell-gap);
+  align-items: start;
+}
+
+.resume-editor-panel,
+.resume-preview-shell {
+  min-width: 0;
+  border: 1px solid var(--rs-line-strong);
+  background: linear-gradient(
+    180deg,
+    var(--rs-shell-panel-strong) 0%,
+    var(--rs-shell-panel) 100%
+  );
+  box-shadow: var(--rs-shell-shadow);
+  backdrop-filter: blur(12px);
+}
+
+.resume-editor-panel {
+  border-radius: var(--rs-radius-panel);
+  padding: clamp(20px, 2vw, 28px);
+}
+
+.resume-preview-shell {
+  border-radius: calc(var(--rs-radius-panel) + 2px);
+  padding: clamp(18px, 2vw, 30px);
+}
+
+@media (min-width: 1024px) {
+  .resume-workspace {
+    grid-template-columns: minmax(420px, 0.9fr) minmax(0, 1.18fr);
+  }
+
+  .resume-editor-panel {
+    max-height: calc(100vh - (var(--rs-shell-pad-y) * 2));
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 1023px) {
+  .resume-workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
+.resume-document,
+.resume-document * {
+  box-sizing: border-box;
+}
+
+.resume-document {
+  overflow: visible;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.resume-skills-content {
+  display: block;
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  overflow: visible;
+}
+
+.resume-skill-line {
+  display: block;
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+.resume-row-bullets li::marker {
+  font-size: 0.92em;
+  color: #1f1f1f;
+}
+
+@page {
+  size: Letter;
+  margin: 0;
+}
+
+@media print {
+  :root {
+    --background: #ffffff;
+    --foreground: #000000;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    min-height: 0 !important;
+  }
+
+  .resume-app-shell {
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+
+  .resume-editor-panel {
+    display: none !important;
+  }
+
+  .resume-workspace {
+    display: block !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 0 !important;
+  }
+
+  .resume-preview-shell {
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+
+  .resume-preview-shell article {
+    margin: 0 auto !important;
+    width: 612pt !important;
+    max-width: 612pt !important;
+    min-height: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .resume-preview-shell .resume-skills-content,
+  .resume-preview-shell .resume-skill-line {
+    display: block !important;
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+  }
+
+  .resume-preview-shell h3 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  .resume-preview-shell li {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .resume-page-break-guide {
+    display: none !important;
+  }
 }

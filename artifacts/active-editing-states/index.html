@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Active Editing State Studies</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4f1ea;
+        --paper: #fffdf8;
+        --ink: #181512;
+        --muted: #686158;
+        --soft: rgba(24, 21, 18, 0.06);
+        --line: rgba(24, 21, 18, 0.1);
+        --accent: #2950a0;
+        --accent-2: #8a5b25;
+        --active: #0f6f60;
+        --shadow: 0 10px 28px rgba(49, 34, 14, 0.06);
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background:
+          radial-gradient(circle at top left, rgba(255,255,255,0.88), transparent 36%),
+          linear-gradient(165deg, #f8f4ec 0%, #f1ebdf 55%, #ece4d7 100%);
+      }
+
+      .page {
+        max-width: 1760px;
+        margin: 0 auto;
+        padding: 30px 26px 44px;
+      }
+
+      .intro {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.95fr);
+        align-items: end;
+        margin-bottom: 22px;
+      }
+
+      .eyebrow {
+        margin: 0 0 10px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: var(--accent-2);
+      }
+
+      h1 {
+        margin: 0;
+        max-width: 15ch;
+        font-family: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, serif;
+        font-size: clamp(2.2rem, 4.2vw, 4.8rem);
+        line-height: 0.94;
+        letter-spacing: -0.06em;
+      }
+
+      .lede {
+        margin: 14px 0 0;
+        max-width: 74ch;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.7;
+      }
+
+      .panel {
+        padding: 18px 20px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: rgba(255,255,255,0.8);
+        box-shadow: var(--shadow);
+      }
+
+      .panel h2 {
+        margin: 0 0 8px;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .panel p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .grid {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        margin-top: 20px;
+      }
+
+      .card {
+        display: block;
+        padding: 18px 18px 16px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: rgba(255, 253, 248, 0.88);
+        box-shadow: var(--shadow);
+        color: var(--ink);
+        text-decoration: none;
+      }
+
+      .card .kicker {
+        margin: 0 0 8px;
+        font: 800 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      .card h2 {
+        margin: 0;
+        font-family: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, serif;
+        font-size: 1.8rem;
+        line-height: 1.02;
+        letter-spacing: -0.05em;
+      }
+
+      .card p {
+        margin: 10px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.65;
+      }
+
+      .footer {
+        margin-top: 18px;
+        padding-top: 16px;
+        border-top: 1px solid rgba(24, 21, 18, 0.08);
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      @media (max-width: 1200px) {
+        .intro,
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="intro">
+        <div>
+          <p class="eyebrow">Active editing state study</p>
+          <h1>Four ways the workspace can behave while typing in Work Experience.</h1>
+          <p class="lede">
+            The layout stays fixed. These variations only change how much emphasis the active entry
+            gets, how much the rest of the editor quiets down, and how much control chrome stays
+            visible while the user is in a long editing session.
+          </p>
+        </div>
+        <div class="panel">
+          <h2>What changes</h2>
+          <p>
+            Active focus, secondary control reduction, surrounding context, and preview quieting are
+            the only variables being explored here.
+          </p>
+        </div>
+      </section>
+
+      <section class="grid">
+        <a class="card" href="./subtle-focus-elevation.html">
+          <p class="kicker">Study 01</p>
+          <h2>Subtle Focus Elevation</h2>
+          <p>Very restrained active state; inactive entries remain highly visible.</p>
+        </a>
+        <a class="card" href="./quiet-workspace-mode.html">
+          <p class="kicker">Study 02</p>
+          <h2>Quiet Workspace Mode</h2>
+          <p>Controls reduce while typing and the workspace becomes calmer.</p>
+        </a>
+        <a class="card" href="./structural-focus-mode.html">
+          <p class="kicker">Study 03</p>
+          <h2>Structural Focus Mode</h2>
+          <p>Stronger hierarchy, more compression, and clearer active emphasis.</p>
+        </a>
+        <a class="card" href="./immersive-editing-state.html">
+          <p class="kicker">Study 04</p>
+          <h2>Immersive Editing State</h2>
+          <p>The strongest focus mode, with the surrounding UI receding significantly.</p>
+        </a>
+      </section>
+
+      <p class="footer">All four keep the same left editor / right live preview architecture and the same Work Experience editing context.</p>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Quiet Disclosure + Hidden Handles</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4efe7;
+        --paper: #fffdf9;
+        --ink: #181512;
+        --muted: #686158;
+        --line: rgba(24, 21, 18, 0.1);
+        --accent: #2950a0;
+        --accent-2: #8a5b25;
+        --shadow: 0 12px 24px rgba(49, 34, 14, 0.04);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+        background:
+          radial-gradient(circle at top left, rgba(255, 255, 255, 0.84), transparent 34%),
+          linear-gradient(165deg, #f8f2e8 0%, #f0e9dd 52%, #ece4d7 100%);
+      }
+      .shell { max-width: 1580px; margin: 0 auto; padding: 28px; }
+      .chrome {
+        padding: 16px 18px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: rgba(255, 252, 246, 0.9);
+      }
+      .eyebrow {
+        margin: 0;
+        font: 800 10.5px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--accent-2);
+      }
+      h1 {
+        margin: 6px 0 0;
+        font-size: clamp(1.8rem, 2.8vw, 3.2rem);
+        line-height: 0.98;
+        letter-spacing: -0.05em;
+      }
+      .chrome p {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font: 400 13px/1.7 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: minmax(470px, 46%) minmax(0, 1fr);
+        gap: 18px;
+        margin-top: 18px;
+        align-items: start;
+      }
+      .editor,
+      .preview {
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: rgba(255, 253, 248, 0.86);
+      }
+      .editor { padding: 14px 14px 16px; }
+      .preview { padding: 18px; box-shadow: var(--shadow); }
+
+      .status {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: baseline;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--line);
+      }
+      .status h2 {
+        margin: 0;
+        font: 800 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+      .status p {
+        margin: 0;
+        color: var(--muted);
+        font: 400 12px/1.6 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .section { border-top: 1px solid var(--line); }
+      .section-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        padding: 11px 0;
+      }
+      .section-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .chevron {
+        width: 10px;
+        color: #776f66;
+        font: 700 12px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      .section-name {
+        margin: 0;
+        font: 800 13px/1.3 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      .section-meta {
+        margin: 1px 0 0;
+        color: var(--muted);
+        font: 400 12px/1.4 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      .controls {
+        color: var(--muted);
+        font: 700 11px/1.2 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        white-space: nowrap;
+      }
+      .helper {
+        margin: 0 0 10px;
+        color: var(--muted);
+        font: 400 12px/1.6 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .role {
+        border-top: 1px solid var(--line);
+        padding: 10px 0;
+      }
+      .role.active {
+        padding: 12px 12px 12px 12px;
+        border: 1px solid rgba(41, 80, 160, 0.1);
+        border-radius: 12px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(246,241,232,0.98));
+      }
+      .role.head-hover {
+        background: linear-gradient(90deg, rgba(41, 80, 160, 0.035), transparent 28%);
+      }
+      .role-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: start;
+      }
+      .role-title { margin: 0; font: 800 13px/1.35 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .role-sub { margin: 2px 0 0; color: var(--muted); font: 400 12px/1.5 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .role.inactive .fields, .role.inactive .bullets, .role.inactive .helper { display: none; }
+      .handle {
+        opacity: 0;
+        transition: opacity .15s ease;
+        color: #92877c;
+        font: 700 12px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.08em;
+      }
+      .role.head-hover .handle,
+      .bullet.hover .handle { opacity: 1; }
+
+      .fields {
+        display: grid;
+        gap: 8px;
+        margin-top: 10px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+      .field { display: grid; gap: 3px; }
+      .field label {
+        margin: 0;
+        font: 800 10.5px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .value {
+        min-height: 32px;
+        padding: 7px 0;
+        border-bottom: 1px solid rgba(24, 21, 18, 0.08);
+        font: 400 12.5px/1.4 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      .bullets { margin-top: 10px; }
+      .bullets h4 {
+        margin: 0 0 8px;
+        font: 800 10.5px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .bullet {
+        display: grid;
+        grid-template-columns: 18px minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: center;
+        margin-top: 8px;
+      }
+      .bullet .text {
+        min-height: 30px;
+        padding: 7px 0;
+        border-bottom: 1px solid rgba(24, 21, 18, 0.08);
+        font: 400 12.5px/1.4 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      .bullet .actions { color: var(--muted); font: 700 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .bullet.hover {
+        background: linear-gradient(90deg, rgba(41, 80, 160, 0.03), transparent 42%);
+        padding: 2px 6px;
+        border-radius: 8px;
+      }
+      .hover-sample {
+        margin-top: 8px;
+        color: var(--muted);
+        font: 400 11px/1.4 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .preview h3 {
+        margin: 0;
+        font-size: clamp(2rem, 3vw, 3.4rem);
+        line-height: 0.95;
+        letter-spacing: -0.06em;
+      }
+      .preview p {
+        margin: 10px 0 0;
+        color: var(--muted);
+        font: 400 13px/1.7 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      @media (max-width: 1100px) {
+        .workspace { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="chrome">
+        <p class="eyebrow">Variation 01</p>
+        <h1>Quiet Disclosure + Hidden Handles</h1>
+        <p>Structural chevrons stay small. Handles only appear when a row is hovered or focused.</p>
+      </header>
+
+      <section class="workspace">
+        <aside class="editor">
+          <div class="status">
+            <h2>Resume structure</h2>
+            <p>Hover state is shown on the second bullet row.</p>
+          </div>
+
+          <section class="section">
+            <div class="section-head">
+              <div class="section-title">
+                <div class="chevron">▸</div>
+                <div>
+                  <p class="section-name">Header</p>
+                  <p class="section-meta">Collapsed · 5 fields</p>
+                </div>
+              </div>
+              <div class="controls">Edit · Reorder</div>
+            </div>
+          </section>
+
+          <section class="section">
+            <div class="section-head">
+              <div class="section-title">
+                <div class="chevron">▸</div>
+                <div>
+                  <p class="section-name">Summary</p>
+                  <p class="section-meta">Collapsed · 2 lines</p>
+                </div>
+              </div>
+              <div class="controls">Edit · Reorder</div>
+            </div>
+          </section>
+
+          <section class="section">
+            <div class="section-head">
+              <div class="section-title">
+                <div class="chevron">▾</div>
+                <div>
+                  <p class="section-name">Work Experience</p>
+                  <p class="section-meta">Expanded · 3 roles</p>
+                </div>
+              </div>
+              <div class="controls">Add role · Collapse</div>
+            </div>
+            <p class="helper">A quiet status line: edit the active role, keep the rest compact.</p>
+
+            <article class="role active">
+              <div class="role-head">
+                <div>
+                  <p class="role-title">IT Support Technician</p>
+                  <p class="role-sub">Independent · Jun 2022 - Present</p>
+                </div>
+                <div class="controls">Remove</div>
+              </div>
+              <div class="fields">
+                <div class="field"><label>Title</label><div class="value">IT Support Technician</div></div>
+                <div class="field"><label>Company</label><div class="value">Independent</div></div>
+                <div class="field"><label>Location</label><div class="value">San Francisco, CA</div></div>
+                <div class="field"><label>Dates</label><div class="value">Jun 2022 - Present</div></div>
+              </div>
+              <div class="bullets">
+                <h4>Bullets</h4>
+                <div class="bullet">
+                  <div class="handle">⋮⋮</div>
+                  <div class="text">Resolved endpoint, access, and onboarding issues for a 180-person mixed-device team.</div>
+                  <div class="actions">Remove</div>
+                </div>
+                <div class="bullet hover">
+                  <div class="handle">⋮⋮</div>
+                  <div class="text">Documented repeat fixes and reduced handoff time for common support requests.</div>
+                  <div class="actions">Remove</div>
+                </div>
+                <div class="bullet">
+                  <div class="handle">⋮⋮</div>
+                  <div class="text">Maintained device inventory, ticket triage, and routine workstation setup.</div>
+                  <div class="actions">Remove</div>
+                </div>
+              </div>
+              <p class="hover-sample">Hover sample: the handle appears without turning into a draggable UI kit control.</p>
+            </article>
+
+            <article class="role inactive">
+              <div class="role-head">
+                <div>
+                  <p class="role-title">Desktop Support Specialist</p>
+                  <p class="role-sub">Northwind Labs · Mar 2020 - May 2022</p>
+                </div>
+                <div class="controls">Expand</div>
+              </div>
+            </article>
+
+            <article class="role inactive">
+              <div class="role-head">
+                <div>
+                  <p class="role-title">Help Desk Associate</p>
+                  <p class="role-sub">Summit Support · Jul 2018 - Feb 2020</p>
+                </div>
+                <div class="controls">Expand</div>
+              </div>
+            </article>
+          </section>
+
+          <section class="section">
+            <div class="section-head">
+              <div class="section-title">
+                <div class="chevron">▸</div>
+                <div>
+                  <p class="section-name">Skills</p>
+                  <p class="section-meta">Collapsed · 18 skills</p>
+                </div>
+              </div>
+              <div class="controls">Edit · Reorder</div>
+            </div>
+          </section>
+
+          <section class="section">
+            <div class="section-head">
+              <div class="section-title">
+                <div class="chevron">▸</div>
+                <div>
+                  <p class="section-name">Education</p>
+                  <p class="section-meta">Collapsed · 1 entry</p>
+                </div>
+              </div>
+              <div class="controls">Edit · Reorder</div>
+            </div>
+          </section>
+        </aside>
+
+        <section class="preview">
+          <h3>Cesar Hernandez Lopez</h3>
+          <p>IT Support Technician · Desktop support, device lifecycle, and technical operations</p>
+          <p style="margin-top: 14px;">Small disclosure marks and hover-only handles keep the stack readable without looking like a list widget.</p>
+          <div style="margin-top: 30px; border-top: 1px solid rgba(24,21,18,0.08); padding-top: 14px;">
+            <p style="margin: 0; font: 800 12px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: .16em; text-transform: uppercase; color: var(--accent);">Work Experience</p>
+            <p style="margin-top: 12px;">IT Support Technician | Independent | Jun 2022 - Present</p>
+            <p>• Resolved endpoint, access, and onboarding issues for a 180-person mixed-device team.</p>
+            <p>• Documented repeat fixes and reduced handoff time for common support requests.</p>
+            <p>• Maintained device inventory, ticket triage, and routine workstation setup.</p>
+          </div>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

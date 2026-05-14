@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Editorial Breathing Rhythm</title>
+    <link rel="stylesheet" href="base.css" />
+    <style>
+      :root {
+        --shell-pad: 30px;
+        --workspace-gap: 22px;
+        --editor-pad: 16px 18px 20px;
+        --preview-pad: 20px;
+        --section-gap: 18px;
+        --section-pad-top: 16px;
+        --role-gap: 14px;
+        --role-pad: 14px;
+        --field-gap: 12px;
+        --fields-mt: 14px;
+        --bullet-gap: 8px;
+        --bullet-mt: 10px;
+        --body-top: 12px;
+        --helper-mt: 10px;
+        --surface-min: 36px;
+      }
+      .editor, .preview { border-radius: 18px; }
+      .role.active { padding: 14px; }
+      .helper { max-width: 52ch; }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="chrome">
+        <p class="eyebrow">Study 02</p>
+        <h1>Editorial Breathing Rhythm</h1>
+        <p>More whitespace and clearer pauses between document groups.</p>
+      </header>
+      <section class="workspace">
+        <aside class="editor">
+          <div class="status"><h2>Work Experience</h2><p>Calmer spacing, clearer pauses.</p></div>
+          <section class="section"><div class="section-head"><div class="section-title"><div class="collapse">+</div><div><p class="section-name">Header</p><p class="section-meta">Collapsed</p></div></div><div class="controls">Edit</div></div></section>
+          <section class="section"><div class="section-head"><div class="section-title"><div class="collapse">+</div><div><p class="section-name">Summary</p><p class="section-meta">Collapsed</p></div></div><div class="controls">Edit</div></div></section>
+          <section class="section">
+            <div class="section-head"><div class="section-title"><div class="collapse">−</div><div><p class="section-name">Work Experience</p><p class="section-meta">Expanded</p></div></div><div class="controls">Add role</div></div>
+            <p class="helper">Page 2 · Dense role · Long bullet</p>
+            <article class="role active">
+              <div class="role-head"><div><p class="role-title">IT Support Technician</p><p class="role-sub">Independent · Jun 2022 - Present</p></div><div class="controls">Remove</div></div>
+              <div class="fields">
+                <div class="field"><label>Title</label><div class="value active">IT Support Technician</div></div>
+                <div class="field"><label>Company</label><div class="value">Independent</div></div>
+                <div class="field"><label>Location</label><div class="value">San Francisco, CA</div></div>
+                <div class="field"><label>Dates</label><div class="value">Add dates</div></div>
+              </div>
+              <div class="guidance-line"><span class="token">Readable</span><span class="token">Dense role</span><span class="token">Page 2</span></div>
+              <div class="bullets">
+                <h4>Bullets</h4>
+                <div class="bullet"><div class="handle">•</div><div class="text active">Resolved endpoint, access, and onboarding issues for a 180-person mixed-device team.</div><div class="actions">Remove</div></div>
+                <div class="bullet"><div class="handle">•</div><div class="text">Documented repeat fixes and reduced handoff time for common support requests.</div><div class="actions">Remove</div></div>
+                <div class="bullet"><div class="handle">•</div><div class="text">Add bullet</div><div class="actions">Remove</div></div>
+              </div>
+              <p class="helper">Long bullet · Readable</p>
+            </article>
+            <article class="role inactive"><div class="role-head"><div><p class="role-title">Desktop Support Specialist</p><p class="role-sub">Northwind Labs · Mar 2020 - May 2022</p></div><div class="controls">Expand</div></div></article>
+            <article class="role inactive"><div class="role-head"><div><p class="role-title">Help Desk Associate</p><p class="role-sub">Summit Support · Jul 2018 - Feb 2020</p></div><div class="controls">Expand</div></div></article>
+          </section>
+          <section class="section"><div class="section-head"><div class="section-title"><div class="collapse">+</div><div><p class="section-name">Skills</p><p class="section-meta">Collapsed</p></div></div><div class="controls">Edit</div></div></section>
+          <section class="section"><div class="section-head"><div class="section-title"><div class="collapse">+</div><div><p class="section-name">Education</p><p class="section-meta">Collapsed</p></div></div><div class="controls">Edit</div></div></section>
+        </aside>
+        <section class="preview">
+          <h3>Cesar Hernandez Lopez</h3>
+          <p>IT Support Technician · Desktop support, device lifecycle, and technical operations</p>
+          <div class="resume-body">
+            <p style="margin-top: 0; font: 800 12px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: .16em; text-transform: uppercase; color: var(--accent);">Work Experience</p>
+            <p style="margin-top: 12px;">IT Support Technician | Independent | Jun 2022 - Present</p>
+            <p>• Resolved endpoint, access, and onboarding issues for a 180-person mixed-device team.</p>
+            <p>• Documented repeat fixes and reduced handoff time for common support requests.</p>
+            <p>• Maintained device inventory, ticket triage, and routine workstation setup.</p>
+          </div>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

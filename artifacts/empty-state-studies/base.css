@@ -1,0 +1,669 @@
+:root {
+  color-scheme: light;
+  --bg: #f4efe7;
+  --paper: #fffdf9;
+  --ink: #181512;
+  --muted: #676056;
+  --line: rgba(24, 21, 18, 0.1);
+  --accent: #2950a0;
+  --accent-2: #8a5b25;
+  --active: #0f6f60;
+  --shadow: 0 14px 34px rgba(49, 34, 14, 0.06);
+
+  --shell-pad: 28px;
+  --toolbar-gap: 14px;
+  --workspace-gap: 18px;
+  --editor-pad: 14px 16px 18px;
+  --preview-pad: 18px;
+  --section-gap: 14px;
+  --section-pad-top: 14px;
+  --role-pad: 12px;
+  --field-gap: 10px;
+  --fields-mt: 12px;
+  --bullet-gap: 8px;
+  --bullet-mt: 8px;
+  --helper-mt: 8px;
+  --surface-min: 34px;
+
+  --toolbar-pad-y: 11px;
+  --toolbar-pad-x: 15px;
+  --toolbar-radius: 15px;
+  --toolbar-surface: rgba(255, 252, 246, 0.95);
+  --toolbar-group-gap: 14px;
+  --toolbar-item-gap: 8px;
+  --toolbar-label-size: 10px;
+  --toolbar-text-size: 12px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  background:
+    radial-gradient(circle at top left, rgba(255,255,255,0.84), transparent 34%),
+    linear-gradient(165deg, #f8f2e8 0%, #f0e9dd 52%, #ece4d7 100%);
+}
+
+.shell {
+  max-width: 1580px;
+  margin: 0 auto;
+  padding: var(--shell-pad);
+}
+
+.chrome {
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255,252,246,0.9);
+}
+
+.eyebrow {
+  margin: 0;
+  font: 800 10.5px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+}
+
+h1 {
+  margin: 6px 0 0;
+  font-size: clamp(1.8rem, 2.8vw, 3.2rem);
+  line-height: 0.98;
+  letter-spacing: -0.05em;
+}
+
+.chrome p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font: 400 13px/1.7 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.toolbar {
+  position: sticky;
+  top: 14px;
+  z-index: 10;
+  margin-top: 16px;
+  padding: var(--toolbar-pad-y) var(--toolbar-pad-x);
+  border: 1px solid var(--line);
+  border-radius: var(--toolbar-radius);
+  background: var(--toolbar-surface);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 24px rgba(49, 34, 14, 0.04);
+}
+
+.toolbar-grid {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--toolbar-group-gap);
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: var(--toolbar-item-gap);
+  min-width: 0;
+}
+
+.toolbar-group.center {
+  flex: 1;
+  justify-content: center;
+}
+
+.toolbar-group.right {
+  justify-content: flex-end;
+}
+
+.toolbar-block {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.toolbar-kicker {
+  font: 800 var(--toolbar-label-size)/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+}
+
+.toolbar-title {
+  margin: 0;
+  font: 800 14px/1.2 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toolbar-meta {
+  margin: 0;
+  color: var(--muted);
+  font: 400 11.5px/1.4 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  white-space: nowrap;
+}
+
+.toolbar-divider {
+  width: 1px;
+  align-self: stretch;
+  background: rgba(24, 21, 18, 0.08);
+}
+
+.toolbar-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 33px;
+  padding: 0 9px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: var(--ink);
+  background: transparent;
+  font: 700 var(--toolbar-text-size)/1.1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  white-space: nowrap;
+}
+
+.toolbar-item.secondary {
+  color: var(--muted);
+}
+
+.toolbar-item.subtle {
+  min-height: 30px;
+  padding: 0 8px;
+  border-radius: 8px;
+}
+
+.toolbar-item.focus {
+  border-color: rgba(41, 80, 160, 0.16);
+  background: rgba(41, 80, 160, 0.04);
+  color: var(--accent);
+}
+
+.toolbar-badge {
+  min-height: 22px;
+  padding: 0 8px;
+  border: 1px solid rgba(24, 21, 18, 0.08);
+  border-radius: 999px;
+  color: var(--muted);
+  background: rgba(249, 246, 240, 0.96);
+  font: 700 10.5px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.toolbar-status {
+  font: 700 10.5px/1.2 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(470px, 46%) minmax(0, 1fr);
+  gap: var(--workspace-gap);
+  margin-top: 18px;
+  align-items: start;
+}
+
+.editor,
+.preview {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255,253,248,0.88);
+}
+
+.editor {
+  padding: var(--editor-pad);
+}
+
+.preview {
+  padding: var(--preview-pad);
+  box-shadow: var(--shadow);
+}
+
+.status {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.status h2 {
+  margin: 0;
+  font: 800 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.status p {
+  margin: 0;
+  color: var(--muted);
+  font: 400 12px/1.6 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.section {
+  margin-top: var(--section-gap);
+  padding-top: var(--section-pad-top);
+  border-top: 1px solid rgba(24,21,18,0.08);
+}
+
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.collapse {
+  width: 12px;
+  color: #756c62;
+  font: 700 12px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.section-name {
+  margin: 0;
+  font: 800 13px/1.3 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.section-meta {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font: 400 12px/1.5 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.controls {
+  color: var(--muted);
+  font: 700 11px/1.2 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  white-space: nowrap;
+}
+
+.helper {
+  margin: var(--helper-mt) 0 0;
+  color: var(--muted);
+  font: 400 12px/1.6 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.role {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(24,21,18,0.08);
+}
+
+.role.active {
+  padding: var(--role-pad);
+  border-left: 2px solid rgba(41,80,160,0.2);
+  background: linear-gradient(90deg, rgba(41,80,160,0.04), transparent 36%);
+}
+
+.role-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+}
+
+.role-title {
+  margin: 0;
+  font: 800 13px/1.35 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.role-sub {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font: 400 12px/1.5 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.role.inactive .role-body,
+.role.inactive .helper,
+.role.inactive .bullets {
+  display: none;
+}
+
+.fields {
+  display: grid;
+  gap: var(--field-gap);
+  margin-top: var(--fields-mt);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.field {
+  display: grid;
+  gap: 4px;
+}
+
+.field label {
+  margin: 0;
+  font: 800 10.5px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.value {
+  min-height: var(--surface-min);
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(24,21,18,0.08);
+  font: 400 12.5px/1.4 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.value.empty,
+.placeholder {
+  color: #8f877b;
+}
+
+.value.active {
+  border-bottom-color: rgba(15,111,96,0.32);
+}
+
+.bullets {
+  margin-top: 10px;
+}
+
+.bullets h4 {
+  margin: 0 0 8px;
+  font: 800 10.5px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.bullet {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  gap: var(--bullet-gap);
+  align-items: center;
+  margin-top: var(--bullet-mt);
+}
+
+.bullet .handle {
+  color: #8d857c;
+  font-size: 14px;
+}
+
+.bullet .text {
+  min-height: 32px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(24,21,18,0.08);
+  font: 400 12.5px/1.4 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.bullet .text.active {
+  border-bottom-color: rgba(15,111,96,0.32);
+}
+
+.bullet .actions {
+  color: var(--muted);
+  font: 700 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.guidance-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  align-items: center;
+  margin-top: 10px;
+  color: var(--muted);
+  font: 700 10.5px/1.4 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.token {
+  padding: 4px 7px;
+  border: 1px solid rgba(24,21,18,0.08);
+  border-radius: 999px;
+  background: rgba(249,246,240,0.96);
+}
+
+.empty-callout {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px dashed rgba(24,21,18,0.12);
+  border-radius: 12px;
+  color: var(--muted);
+  font: 400 12px/1.5 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.insert-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 34px;
+  margin-top: 8px;
+  padding: 0 2px 0 0;
+  border-bottom: 1px solid rgba(24,21,18,0.08);
+  color: var(--muted);
+  font: 700 11px/1.2 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.insert-row .insert-mark {
+  color: #8d857c;
+  font-weight: 800;
+}
+
+.insert-row .insert-meta {
+  color: #8d857c;
+  font-weight: 700;
+}
+
+.preview h3 {
+  margin: 0;
+  font-size: clamp(2rem, 3vw, 3.4rem);
+  line-height: 0.95;
+  letter-spacing: -0.06em;
+}
+
+.preview p {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font: 400 13px/1.7 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.preview .resume-body {
+  margin-top: 30px;
+  border-top: 1px solid rgba(24,21,18,0.08);
+  padding-top: 14px;
+}
+
+.preview .resume-body p {
+  margin: 0 0 6px;
+}
+
+.preview-sheet {
+  min-height: 352px;
+  padding: 16px 16px 18px;
+  border: 1px solid rgba(24,21,18,0.08);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.6);
+}
+
+.preview-empty {
+  margin-top: 22px;
+  display: grid;
+  gap: 8px;
+}
+
+.preview-line {
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(24,21,18,0.04), rgba(24,21,18,0.08), rgba(24,21,18,0.04));
+}
+
+.preview-line.wide { width: 68%; }
+.preview-line.medium { width: 52%; }
+.preview-line.short { width: 34%; }
+
+.preview-note {
+  margin-top: 18px;
+  color: var(--muted);
+  font: 400 12px/1.6 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.add-section-row {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(24,21,18,0.08);
+  color: var(--muted);
+  font: 700 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 1100px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .toolbar-grid {
+    flex-wrap: wrap;
+  }
+
+  .toolbar-group.center {
+    order: 3;
+    justify-content: flex-start;
+    flex-basis: 100%;
+  }
+}
+
+/* Variant tuning */
+.variant-quiet {
+  --shell-pad: 30px;
+  --workspace-gap: 16px;
+  --editor-pad: 12px 14px 16px;
+  --preview-pad: 16px;
+  --section-gap: 12px;
+  --section-pad-top: 12px;
+  --toolbar-pad-y: 8px;
+  --toolbar-pad-x: 12px;
+  --toolbar-radius: 14px;
+  --toolbar-surface: rgba(255,252,246,0.8);
+  --toolbar-group-gap: 10px;
+  --toolbar-item-gap: 6px;
+}
+
+.variant-quiet .toolbar {
+  box-shadow: none;
+  backdrop-filter: blur(6px);
+}
+
+.variant-quiet .toolbar-title {
+  font-size: 13px;
+}
+
+.variant-quiet .toolbar-item {
+  min-height: 28px;
+  padding: 0 6px;
+  border-radius: 8px;
+}
+
+.variant-quiet .toolbar-badge {
+  min-height: 20px;
+}
+
+.variant-quiet .editor,
+.variant-quiet .preview {
+  background: rgba(255,253,248,0.82);
+}
+
+.variant-quiet .preview-sheet {
+  min-height: 340px;
+}
+
+.variant-structured {
+  --shell-pad: 28px;
+  --workspace-gap: 16px;
+  --section-gap: 10px;
+  --section-pad-top: 12px;
+  --toolbar-pad-y: 11px;
+  --toolbar-pad-x: 14px;
+}
+
+.variant-structured .editor {
+  background: linear-gradient(180deg, rgba(255,253,248,0.94), rgba(255,250,244,0.92));
+}
+
+.variant-structured .section {
+  padding: 12px 0 0;
+}
+
+.variant-structured .section-head {
+  padding-bottom: 4px;
+}
+
+.variant-structured .empty-callout {
+  border-style: solid;
+  background: rgba(255,255,255,0.35);
+}
+
+.variant-structured .preview-sheet {
+  padding: 18px 18px 20px;
+  border-radius: 12px;
+}
+
+.variant-editorial {
+  --shell-pad: 30px;
+  --workspace-gap: 20px;
+  --section-gap: 16px;
+  --section-pad-top: 15px;
+  --toolbar-pad-y: 12px;
+  --toolbar-pad-x: 16px;
+}
+
+.variant-editorial .editor {
+  background: rgba(255,252,246,0.92);
+}
+
+.variant-editorial .status {
+  padding-bottom: 12px;
+}
+
+.variant-editorial .role.active {
+  border-left-width: 2px;
+  background: linear-gradient(90deg, rgba(138,91,37,0.05), transparent 38%);
+}
+
+.variant-editorial .preview-sheet {
+  min-height: 376px;
+  padding: 24px 24px 26px;
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.76), rgba(255,253,248,0.58));
+}
+
+.variant-editorial .preview-line {
+  height: 11px;
+}
+
+.variant-balanced {
+  --shell-pad: 28px;
+  --workspace-gap: 18px;
+  --section-gap: 14px;
+  --section-pad-top: 14px;
+  --toolbar-pad-y: 11px;
+  --toolbar-pad-x: 15px;
+}
+
+.variant-balanced .toolbar-item.focus {
+  border-color: rgba(41, 80, 160, 0.16);
+  background: rgba(41, 80, 160, 0.04);
+}
+
+.variant-balanced .preview-sheet {
+  min-height: 356px;
+}
+

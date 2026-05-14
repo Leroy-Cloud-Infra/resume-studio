@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Empty State UX Studies</title>
+    <link rel="stylesheet" href="base.css" />
+    <style>
+      .gallery {
+        margin-top: 18px;
+        display: grid;
+        gap: 14px;
+      }
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: rgba(255,253,248,0.88);
+        padding: 14px 16px;
+      }
+      .card h2 {
+        margin: 0;
+        font: 800 14px/1.2 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      .card p {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font: 400 13px/1.6 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      .card a {
+        display: inline-block;
+        margin-top: 10px;
+        color: var(--accent);
+        font: 700 12px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="chrome">
+        <p class="eyebrow">Empty State UX</p>
+        <h1>Resume Studio blank-content studies</h1>
+        <p>Four first-use treatments using the same workspace structure.</p>
+      </header>
+
+      <section class="gallery">
+        <article class="card">
+          <h2>Quiet Document Start</h2>
+          <p>Minimal invitation, document-first, very restrained.</p>
+          <a href="./quiet-document-start.html">Open study</a>
+        </article>
+        <article class="card">
+          <h2>Structured Authoring Start</h2>
+          <p>Scaffolded sections and clearer first-edit structure.</p>
+          <a href="./structured-authoring-start.html">Open study</a>
+        </article>
+        <article class="card">
+          <h2>Editorial Manuscript Start</h2>
+          <p>More publishing-oriented and document-like.</p>
+          <a href="./editorial-manuscript-start.html">Open study</a>
+        </article>
+        <article class="card">
+          <h2>Balanced Production Empty State</h2>
+          <p>Likely final candidate for first-time use.</p>
+          <a href="./balanced-production-empty-state.html">Open study</a>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

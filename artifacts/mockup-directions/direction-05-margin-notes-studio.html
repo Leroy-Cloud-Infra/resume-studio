@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Direction 05 - Margin Notes Studio</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #eef3ef;
+        --sheet: #fffdf9;
+        --ink: #18211e;
+        --muted: #5f6d67;
+        --line: rgba(24, 33, 30, 0.08);
+        --accent: #116f60;
+        --accent-2: #395fcc;
+        --accent-3: #a8652c;
+        --shadow: 0 28px 90px rgba(18, 36, 32, 0.13);
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 20% 0%, rgba(17, 111, 96, 0.08), transparent 26%),
+          radial-gradient(circle at 80% 12%, rgba(57, 95, 204, 0.08), transparent 24%),
+          linear-gradient(180deg, #f4f7f5 0%, #edf2ee 54%, #e7ede9 100%);
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .shell {
+        max-width: 1560px;
+        margin: 0 auto;
+        padding: 28px;
+      }
+
+      .header {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 18px 20px;
+        border-radius: 24px;
+        border: 1px solid var(--line);
+        background: rgba(255, 253, 249, 0.84);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(12px);
+      }
+
+      .brand {
+        display: grid;
+        gap: 6px;
+      }
+
+      .brand .eyebrow {
+        margin: 0;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      .brand h1 {
+        margin: 0;
+        font-size: clamp(1.8rem, 2.9vw, 3.2rem);
+        line-height: 0.96;
+        letter-spacing: -0.05em;
+      }
+
+      .brand p {
+        margin: 0;
+        max-width: 72ch;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.65;
+      }
+
+      .tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .tab {
+        display: inline-flex;
+        align-items: center;
+        min-height: 38px;
+        padding: 0 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(24, 33, 30, 0.11);
+        background: #fff;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .tab.active {
+        background: linear-gradient(135deg, rgba(17, 111, 96, 0.13), rgba(57, 95, 204, 0.08));
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: 220px minmax(0, 1fr) 250px;
+        gap: 18px;
+        align-items: start;
+        margin-top: 18px;
+      }
+
+      .rail,
+      .notes {
+        border-radius: 28px;
+        border: 1px solid var(--line);
+        background: rgba(255, 253, 249, 0.78);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(10px);
+      }
+
+      .rail,
+      .notes {
+        padding: 18px;
+      }
+
+      .rail h2,
+      .notes h2 {
+        margin: 0 0 14px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent-3);
+      }
+
+      .rail-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .rail-item {
+        padding: 10px 0 14px;
+        border-bottom: 1px solid rgba(24, 33, 30, 0.08);
+      }
+
+      .rail-item:last-child { border-bottom: 0; }
+
+      .rail-item .label {
+        margin: 0 0 6px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .rail-item .main {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.45;
+        font-weight: 700;
+      }
+
+      .rail-item .sub {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .preview {
+        position: relative;
+        padding: 24px 24px 70px;
+        border-radius: 30px;
+        border: 1px solid var(--line);
+        background:
+          radial-gradient(circle at 30% 0%, rgba(17, 111, 96, 0.06), transparent 26%),
+          radial-gradient(circle at 88% 10%, rgba(57, 95, 204, 0.06), transparent 24%),
+          rgba(255, 253, 249, 0.72);
+        box-shadow: var(--shadow);
+      }
+
+      .sheet {
+        min-height: 980px;
+        padding: 32px 36px 44px;
+        border-radius: 22px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(250, 247, 242, 0.99));
+        box-shadow: 0 18px 44px rgba(39, 26, 13, 0.08);
+      }
+
+      .sheet-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: end;
+        padding-bottom: 16px;
+        border-bottom: 1px solid rgba(24, 33, 30, 0.12);
+      }
+
+      .sheet-head h3 {
+        margin: 0;
+        font-size: clamp(2rem, 3vw, 3.7rem);
+        line-height: 0.94;
+        letter-spacing: -0.06em;
+      }
+
+      .sheet-head p {
+        margin: 0;
+        max-width: 26ch;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.6;
+        text-align: right;
+      }
+
+      .sheet-section {
+        margin-top: 18px;
+        padding-top: 18px;
+        border-top: 1px solid rgba(24, 33, 30, 0.08);
+      }
+
+      .sheet-section:first-of-type {
+        margin-top: 0;
+        padding-top: 0;
+        border-top: 0;
+      }
+
+      .sheet-section h4 {
+        margin: 0 0 10px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent-2);
+      }
+
+      .summary {
+        margin: 0;
+        max-width: 71ch;
+        font-size: 15px;
+        line-height: 1.75;
+        color: #24322e;
+      }
+
+      .roles {
+        display: grid;
+        gap: 14px;
+      }
+
+      .role {
+        display: grid;
+        grid-template-columns: 96px minmax(0, 1fr) 120px;
+        gap: 14px;
+        align-items: start;
+      }
+
+      .role time,
+      .role .loc {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--muted);
+      }
+
+      .role .title {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 800;
+        line-height: 1.45;
+      }
+
+      .role ul {
+        margin: 8px 0 0;
+        padding-left: 18px;
+        font-size: 13px;
+        line-height: 1.62;
+        color: #1f2a26;
+      }
+
+      .annotation {
+        position: relative;
+        margin-top: 12px;
+        padding: 14px 16px;
+        border-left: 2px solid rgba(17, 111, 96, 0.3);
+        background: linear-gradient(90deg, rgba(17, 111, 96, 0.06), transparent 70%);
+        color: #31443d;
+        font-size: 12px;
+        line-height: 1.7;
+      }
+
+      .annotation strong {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      .margin-band {
+        display: grid;
+        gap: 12px;
+      }
+
+      .margin-note {
+        padding: 14px;
+        border-radius: 18px;
+        border: 1px solid rgba(24, 33, 30, 0.08);
+        background: #fff;
+      }
+
+      .margin-note .label {
+        margin: 0 0 6px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .margin-note .main {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.45;
+        font-weight: 700;
+      }
+
+      .margin-note .sub {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .dock {
+        position: absolute;
+        left: 24px;
+        right: 24px;
+        bottom: 18px;
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr 0.8fr;
+        gap: 12px;
+        padding: 14px;
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid rgba(24, 33, 30, 0.09);
+        box-shadow: 0 10px 24px rgba(15, 28, 25, 0.06);
+      }
+
+      .dock-item {
+        padding: 12px 14px;
+        border-radius: 16px;
+        background: linear-gradient(180deg, #ffffff, #f6f8f7);
+        border: 1px solid rgba(24, 33, 30, 0.06);
+      }
+
+      .dock-item .label {
+        margin: 0 0 6px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .dock-item .main {
+        margin: 0;
+        font-size: 13px;
+        line-height: 1.5;
+        font-weight: 700;
+      }
+
+      .dock-item .sub {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      @media (max-width: 1320px) {
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+
+        .dock {
+          position: static;
+          grid-template-columns: 1fr;
+          margin-top: 16px;
+        }
+
+        .preview {
+          padding-bottom: 24px;
+        }
+      }
+
+      @media (max-width: 860px) {
+        .role {
+          grid-template-columns: 1fr;
+        }
+
+        .sheet-head p {
+          text-align: left;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="header">
+        <div class="brand">
+          <p class="eyebrow">Direction 05</p>
+          <h1>Margin Notes Studio</h1>
+          <p>
+            A more experimental manuscript-inspired layout where the page is annotated rather
+            than surrounded by permanent controls.
+          </p>
+        </div>
+        <div class="tabs">
+          <span class="tab active">Overview</span>
+          <span class="tab">Focus: Experience</span>
+          <span class="tab">Page notes</span>
+          <span class="tab">Structure</span>
+        </div>
+      </header>
+
+      <section class="workspace">
+        <aside class="rail">
+          <h2>Section spine</h2>
+          <div class="rail-list">
+            <div class="rail-item">
+              <p class="label">Active</p>
+              <p class="main">Experience / role 1</p>
+              <p class="sub">The inspector is now a note field, not a panel.</p>
+            </div>
+            <div class="rail-item">
+              <p class="label">Structure</p>
+              <p class="main">Narrative, not form</p>
+              <p class="sub">The interface is organized like reading marks in a manuscript.</p>
+            </div>
+            <div class="rail-item">
+              <p class="label">Guidance</p>
+              <p class="main">Footnotes over widgets</p>
+              <p class="sub">The advice reads like editorial annotation, not AI assistance.</p>
+            </div>
+          </div>
+        </aside>
+
+        <section class="preview">
+          <article class="sheet">
+            <div class="sheet-head">
+              <div>
+                <h3>Cesar Hernandez Lopez</h3>
+                <p>IT Support Technician · Beaverton, Oregon · A page with annotations instead of panels.</p>
+              </div>
+              <p>
+                Document is the interface<br />
+                Margins carry the context
+              </p>
+            </div>
+
+            <section class="sheet-section">
+              <h4>Summary</h4>
+              <p class="summary">
+                IT support technician with six-plus years of experience across device support,
+                account administration, documentation, and network troubleshooting. Controls are
+                minimized so the sheet can feel editorial and calm even when dense.
+              </p>
+              <div class="annotation">
+                <strong>Margin note</strong>
+                This summary is readable at a glance, so it should not be surrounded by a heavy
+                framework.
+              </div>
+            </section>
+
+            <section class="sheet-section">
+              <h4>Experience</h4>
+              <div class="roles">
+                <div class="role">
+                  <time>Jun 2022 - Present</time>
+                  <div>
+                    <p class="title">IT Support Technician, Independent</p>
+                    <ul>
+                      <li>Provisioned users, devices, and support workflows.</li>
+                      <li>Kept documentation, troubleshooting, and ticketing tightly linked.</li>
+                      <li>Worked in a way that stays dense but not cramped.</li>
+                    </ul>
+                  </div>
+                  <div class="loc">Beaverton, OR</div>
+                </div>
+                <div class="role">
+                  <time>Aug 2021 - Feb 2025</time>
+                  <div>
+                    <p class="title">Specialist, Apple Inc.</p>
+                    <ul>
+                      <li>Supported customer workflows and device setup.</li>
+                      <li>Kept communication steady and clear under volume.</li>
+                    </ul>
+                  </div>
+                  <div class="loc">Portland, OR</div>
+                </div>
+              </div>
+              <div class="annotation">
+                <strong>Editorial guidance</strong>
+                Shorten the first role only if the page starts to breathe too tightly. The advice
+                should remain quiet unless the section needs it.
+              </div>
+            </section>
+          </article>
+
+          <div class="dock">
+            <div class="dock-item">
+              <p class="label">Context</p>
+              <p class="main">Active section focus</p>
+              <p class="sub">Appears only when a section is selected, then collapses back into the margin.</p>
+            </div>
+            <div class="dock-item">
+              <p class="label">Action</p>
+              <p class="main">Trim bullet, keep proof</p>
+              <p class="sub">The control is operational, but it feels like a note in the working draft.</p>
+            </div>
+            <div class="dock-item">
+              <p class="label">Tone</p>
+              <p class="main">Editorial and trustworthy</p>
+              <p class="sub">No dashboards, no assistant bubbles, no form-grid repetition.</p>
+            </div>
+          </div>
+        </section>
+
+        <aside class="notes">
+          <h2>Margin notes</h2>
+          <div class="margin-band">
+            <div class="margin-note">
+              <p class="label">Progressive disclosure</p>
+              <p class="main">Only the active section exposes controls.</p>
+              <p class="sub">Everything else becomes a quiet summary in the margin.</p>
+            </div>
+            <div class="margin-note">
+              <p class="label">Hierarchy</p>
+              <p class="main">Text, space, and alignment do the work.</p>
+              <p class="sub">The system feels deliberately sparse without becoming empty.</p>
+            </div>
+            <div class="margin-note">
+              <p class="label">Why it is experimental</p>
+              <p class="main">It behaves more like an annotated manuscript than an app shell.</p>
+              <p class="sub">That is the move that pushes hardest away from CRUD patterns.</p>
+            </div>
+          </div>
+        </aside>
+      </section>
+    </main>
+  </body>
+</html>

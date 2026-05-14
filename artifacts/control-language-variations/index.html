@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Control Language Variations</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4efe7;
+        --paper: #fffdf9;
+        --ink: #181512;
+        --muted: #6a6258;
+        --line: rgba(24, 21, 18, 0.1);
+        --accent: #2950a0;
+        --accent-2: #8a5b25;
+        --shadow: 0 20px 60px rgba(49, 34, 14, 0.08);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+        background:
+          radial-gradient(circle at top left, rgba(255, 255, 255, 0.86), transparent 34%),
+          linear-gradient(165deg, #f8f2e8 0%, #f0e9dd 52%, #ece4d7 100%);
+      }
+      .wrap { max-width: 1230px; margin: 0 auto; padding: 40px 28px 54px; }
+      .hero {
+        display: grid;
+        gap: 18px;
+        grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.95fr);
+        align-items: end;
+        margin-bottom: 22px;
+      }
+      .eyebrow {
+        margin: 0 0 10px;
+        font: 800 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: var(--accent-2);
+      }
+      h1 {
+        margin: 0;
+        max-width: 13ch;
+        font-size: clamp(2.2rem, 4vw, 4.6rem);
+        line-height: 0.94;
+        letter-spacing: -0.06em;
+      }
+      .lede {
+        margin: 14px 0 0;
+        max-width: 70ch;
+        color: var(--muted);
+        font: 400 15px/1.7 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      .panel {
+        padding: 20px 22px;
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: rgba(255, 252, 246, 0.88);
+        box-shadow: var(--shadow);
+      }
+      .panel h2 {
+        margin: 0 0 10px;
+        font: 800 12px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+      .panel p {
+        margin: 0;
+        color: var(--muted);
+        font: 400 14px/1.7 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      .grid {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-top: 20px;
+      }
+      .card {
+        display: block;
+        padding: 18px 18px 16px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: rgba(255, 253, 248, 0.88);
+        box-shadow: var(--shadow);
+        color: var(--ink);
+        text-decoration: none;
+      }
+      .card .kicker {
+        margin: 0 0 8px;
+        font: 800 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+      .card h2 {
+        margin: 0;
+        font-size: 1.8rem;
+        line-height: 1.02;
+        letter-spacing: -0.05em;
+      }
+      .card p {
+        margin: 10px 0 0;
+        color: var(--muted);
+        font: 400 13px/1.65 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      .footer {
+        margin-top: 18px;
+        padding-top: 16px;
+        border-top: 1px solid rgba(24, 21, 18, 0.08);
+        color: var(--muted);
+        font: 400 13px/1.7 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      @media (max-width: 1100px) {
+        .hero,
+        .grid { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Control language refinements</p>
+          <h1>Three quieter control treatments for the continuous editor.</h1>
+          <p class="lede">
+            The layout stays fixed. These variations only change the disclosure arrows, drag
+            treatment, and visible action language so the editor feels more mature and production-ready.
+          </p>
+        </div>
+        <div class="panel">
+          <h2>Scope</h2>
+          <p>
+            No new flow. No new navigation model. Only the small control language that sits inside
+            the stacked resume editor.
+          </p>
+        </div>
+      </section>
+
+      <section class="grid">
+        <a class="card" href="./quiet-disclosure-hidden-handles.html">
+          <p class="kicker">Variation 01</p>
+          <h2>Quiet Disclosure + Hidden Handles</h2>
+          <p>Plain structural chevrons, hidden handles, and hover-only affordance.</p>
+        </a>
+        <a class="card" href="./whole-row-draggable.html">
+          <p class="kicker">Variation 02</p>
+          <h2>Whole Row Draggable</h2>
+          <p>Rows do the dragging work; the handle disappears into the row itself.</p>
+        </a>
+        <a class="card" href="./professional-action-reduction.html">
+          <p class="kicker">Variation 03</p>
+          <h2>Professional Action Reduction</h2>
+          <p>Visible actions are condensed into quieter overflow and hover-only controls.</p>
+        </a>
+      </section>
+
+      <p class="footer">Each page keeps the same collapsed Header, Summary, Skills, and Education sections, with Work Experience expanded and live preview on the right.</p>
+    </main>
+  </body>
+</html>

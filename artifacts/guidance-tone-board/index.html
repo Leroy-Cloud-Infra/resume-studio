@@ -1,0 +1,544 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Guidance Tone Board</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4f1ea;
+        --paper: #fffdf8;
+        --ink: #181512;
+        --muted: #686158;
+        --soft: rgba(24, 21, 18, 0.06);
+        --line: rgba(24, 21, 18, 0.1);
+        --accent: #2950a0;
+        --accent-2: #8a5b25;
+        --active: #0f6f60;
+        --shadow: 0 10px 28px rgba(49, 34, 14, 0.06);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background:
+          radial-gradient(circle at top left, rgba(255,255,255,0.88), transparent 36%),
+          linear-gradient(165deg, #f8f4ec 0%, #f1ebdf 55%, #ece4d7 100%);
+      }
+      .page {
+        max-width: 1900px;
+        margin: 0 auto;
+        padding: 30px 26px 44px;
+      }
+      .intro {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.95fr);
+        align-items: end;
+        margin-bottom: 22px;
+      }
+      .eyebrow {
+        margin: 0 0 10px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: var(--accent-2);
+      }
+      h1 {
+        margin: 0;
+        max-width: 14ch;
+        font-family: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, serif;
+        font-size: clamp(2.2rem, 4.2vw, 4.8rem);
+        line-height: 0.94;
+        letter-spacing: -0.06em;
+      }
+      .lede {
+        margin: 14px 0 0;
+        max-width: 74ch;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.7;
+      }
+      .panel {
+        padding: 18px 20px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: rgba(255,255,255,0.8);
+        box-shadow: var(--shadow);
+      }
+      .panel h2 {
+        margin: 0 0 8px;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+      .panel p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+      .board {
+        margin-top: 20px;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        background: rgba(255,255,255,0.52);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+      .board-inner {
+        overflow-x: auto;
+      }
+      .matrix {
+        min-width: 1660px;
+      }
+      .head,
+      .row {
+        display: grid;
+        grid-template-columns: 280px repeat(5, minmax(270px, 1fr));
+        gap: 10px;
+        padding: 10px;
+      }
+      .head {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: linear-gradient(180deg, rgba(248,244,236,0.98), rgba(248,244,236,0.92));
+        border-bottom: 1px solid var(--line);
+      }
+      .head .cell {
+        padding: 14px 14px 12px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: rgba(255,255,255,0.82);
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+      .head .row-label {
+        line-height: 1.4;
+      }
+      .scenario {
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: rgba(255,255,255,0.82);
+      }
+      .scenario h3 {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 800;
+        line-height: 1.35;
+      }
+      .scenario p {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+      .tone {
+        display: flex;
+        flex-direction: column;
+        min-height: 176px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: rgba(255,255,255,0.76);
+        overflow: hidden;
+      }
+      .tone-head {
+        padding: 11px 12px 9px;
+        border-bottom: 1px solid rgba(24,21,18,0.07);
+        background: rgba(255,255,255,0.82);
+      }
+      .tone-kicker {
+        margin: 0;
+        color: var(--active);
+        font-size: 10.5px;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+      .tone-title {
+        margin: 4px 0 0;
+        font-size: 14px;
+        font-weight: 800;
+        line-height: 1.25;
+      }
+      .tone-body {
+        display: grid;
+        gap: 8px;
+        padding: 12px;
+      }
+      .chipline {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .chip {
+        padding: 4px 7px;
+        border: 1px solid rgba(24,21,18,0.08);
+        border-radius: 999px;
+        background: rgba(249,246,240,0.96);
+      }
+      .message {
+        margin: 0;
+        color: rgba(24,21,18,0.9);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+      .secondary {
+        margin: 0;
+        color: var(--muted);
+        font-size: 11.5px;
+        line-height: 1.5;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .tone-anti .tone-head {
+        background: linear-gradient(180deg, rgba(145,108,34,0.08), rgba(255,255,255,0.82));
+      }
+      .tone-anti .tone-kicker {
+        color: #8a5b25;
+      }
+      .tone-anti .chip {
+        border-color: rgba(138,91,37,0.16);
+        background: rgba(255,245,228,0.92);
+      }
+      .tone-anti .message,
+      .tone-anti .secondary {
+        color: #5d4a31;
+      }
+      .tone-anti .secondary {
+        font-style: italic;
+      }
+      @media (max-width: 900px) {
+        .intro { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header class="intro">
+        <div>
+          <p class="eyebrow">Guidance Tone Board</p>
+          <h1>Editorial language for resume guidance</h1>
+          <p class="lede">The same guidance scenarios are shown across five tone systems so the wording itself can be judged without layout noise.</p>
+        </div>
+        <aside class="panel">
+          <h2>What to compare</h2>
+          <p>Long bullet, approaching page break, dense section, bullet count pressure, overflow risk, and weak scanability all appear in the same visual frame.</p>
+        </aside>
+      </header>
+
+      <section class="board">
+        <div class="board-inner">
+          <div class="matrix">
+            <div class="head">
+              <div class="cell row-label">Scenario</div>
+              <div class="cell">Editorial Markup</div>
+              <div class="cell">Operational System Language</div>
+              <div class="cell">Publishing Tool Tone</div>
+              <div class="cell">Minimal Structural Signals</div>
+              <div class="cell">Overly AI / Productivity Tone</div>
+            </div>
+
+            <div class="row">
+              <div class="scenario">
+                <h3>Long bullet</h3>
+                <p>One bullet is getting too wide for the current rhythm.</p>
+              </div>
+              <div class="tone">
+                <div class="tone-head"><p class="tone-kicker">Editorial note</p><p class="tone-title">Long bullet</p></div>
+                <div class="tone-body">
+                  <p class="message">This bullet is readable, but it is starting to carry more than one point.</p>
+                  <p class="secondary">Split only if the second idea should stand on its own.</p>
+                  <div class="chipline"><span class="chip">Single point</span><span class="chip">Keep trim</span></div>
+                </div>
+              </div>
+              <div class="tone">
+                <div class="tone-head"><p class="tone-kicker">System state</p><p class="tone-title">Bullet span high</p></div>
+                <div class="tone-body">
+                  <p class="message">Row exceeds preferred span.</p>
+                  <p class="secondary">Split candidate flagged for the current role.</p>
+                  <div class="chipline"><span class="chip">span: high</span><span class="chip">row: 1</span></div>
+                </div>
+              </div>
+              <div class="tone">
+                <div class="tone-head"><p class="tone-kicker">Document note</p><p class="tone-title">Long bullet</p></div>
+                <div class="tone-body">
+                  <p class="message">This line is carrying more than a clean publishing row should carry.</p>
+                  <p class="secondary">A split would keep the role easier to scan in print and preview.</p>
+                  <div class="chipline"><span class="chip">scanability</span><span class="chip">split</span></div>
+                </div>
+              </div>
+              <div class="tone">
+                <div class="tone-head"><p class="tone-kicker">Signal</p><p class="tone-title">Long bullet</p></div>
+                <div class="tone-body">
+                  <p class="message">Long.</p>
+                  <p class="secondary">Line is crowded.</p>
+                  <div class="chipline"><span class="chip">trim</span><span class="chip">split</span></div>
+                </div>
+              </div>
+              <div class="tone tone-anti">
+                <div class="tone-head"><p class="tone-kicker">AI suggestion</p><p class="tone-title">Try making this bullet more impactful</p></div>
+                <div class="tone-body">
+                  <p class="message">This sentence may be too long, but it could be a great opportunity to make your achievement sound stronger and more polished.</p>
+                  <p class="secondary">Consider breaking it up so it feels easier to read and more optimized for recruiters.</p>
+                  <div class="chipline"><span class="chip">boost clarity</span><span class="chip">optimize</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="scenario">
+                <h3>Approaching page break</h3>
+                <p>The section is getting close to the page boundary.</p>
+              </div>
+              <div class="tone">
+                <div class="tone-head"><p class="tone-kicker">Editorial note</p><p class="tone-title">Page break near</p></div>
+                <div class="tone-body">
+                  <p class="message">The role is nearing a break.</p>
+                  <p class="secondary">Keep the next addition compact if you want the role to stay together.</p>
+                  <div class="chipline"><span class="chip">near break</span><span class="chip">keep together</span></div>
+                </div>
+              </div>
+              <div class="tone">
+                <div class="tone-head"><p class="tone-kicker">System state</p><p class="tone-title">Break threshold approaching</p></div>
+                <div class="tone-body">
+                  <p class="message">Threshold approaching.</p>
+                  <p class="secondary">Role continuation may move to the next page.</p>
+                  <div class="chipline"><span class="chip">page: near</span><span class="chip">risk: medium</span></div>
+                </div>
+              </div>
+              <div class="tone">
+                <div class="tone-head"><p class="tone-kicker">Document note</p><p class="tone-title">Page break</p></div>
+                <div class="tone-body">
+                  <p class="message">The current role is close to the page boundary.</p>
+                  <p class="secondary">A shorter next bullet would help preserve the section rhythm.</p>
+                  <div class="chipline"><span class="chip">section rhythm</span><span class="chip">keep together</span></div>
+                </div>
+              </div>
+              <div class="tone">
+                <div class="tone-head"><p class="tone-kicker">Signal</p><p class="tone-title">Break nearing</p></div>
+                <div class="tone-body">
+                  <p class="message">Near break.</p>
+                  <p class="secondary">Next content may overflow.</p>
+                  <div class="chipline"><span class="chip">break</span><span class="chip">next row</span></div>
+                </div>
+              </div>
+              <div class="tone tone-anti">
+                <div class="tone-head"><p class="tone-kicker">AI coaching</p><p class="tone-title">You’re getting close to the page limit</p></div>
+                <div class="tone-body">
+                  <p class="message">This is a good moment to rethink the spacing so your resume looks cleaner and more balanced overall.</p>
+                  <p class="secondary">Try shortening a bullet or moving content to the next section to improve the visual flow.</p>
+                  <div class="chipline"><span class="chip">balance</span><span class="chip">improve flow</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="scenario">
+                <h3>Dense section</h3>
+                <p>The section is structurally heavy even before another edit.</p>
+              </div>
+              <div class="tone">
+                <div class="tone-head"><p class="tone-kicker">Editorial note</p><p class="tone-title">Dense section</p></div>
+                <div class="tone-body">
+                  <p class="message">This section is carrying a full load.</p>
+                  <p class="secondary">It still scans, but only if the next entry stays disciplined.</p>
+                  <div class="chipline"><span class="chip">full load</span><span class="chip">disciplined</span></div>
+                </div>
+              </div>
+              <div class="tone">
+                <div class="tone-head"><p class="tone-kicker">System state</p><p class="tone-title">Section density high</p></div>
+                <div class="tone-body">
+                  <p class="message">Density high.</p>
+                  <p class="secondary">Additional rows increase compression risk.</p>
+                  <div class="chipline"><span class="chip">density: high</span><span class="chip">compression</span></div>
+                </div>
+              </div>
+              <div class="tone">
+                <div class="tone-head"><p class="tone-kicker">Document note</p><p class="tone-title">Dense section</p></div>
+                <div class="tone-body">
+                  <p class="message">This part of the resume is carrying more text than the surrounding sections.</p>
+                  <p class="secondary">Keep the next item concise so the page remains readable.</p>
+                  <div class="chipline"><span class="chip">text load</span><span class="chip">readability</span></div>
+                </div>
+              </div>
+              <div class="tone">
+                <div class="tone-head"><p class="tone-kicker">Signal</p><p class="tone-title">Dense</p></div>
+                <div class="tone-body">
+                  <p class="message">Dense section.</p>
+                  <p class="secondary">Keep additions short.</p>
+                  <div class="chipline"><span class="chip">dense</span><span class="chip">short</span></div>
+                </div>
+              </div>
+              <div class="tone tone-anti">
+                <div class="tone-head"><p class="tone-kicker">AI feedback</p><p class="tone-title">Your section is a bit crowded</p></div>
+                <div class="tone-body">
+                  <p class="message">You have a lot of strong content here, but it may help to simplify the section so it feels more focused and polished.</p>
+                  <p class="secondary">Try trimming or reorganizing a few bullets to make the overall story easier for hiring managers to absorb.</p>
+                  <div class="chipline"><span class="chip">focused story</span><span class="chip">hiring managers</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="scenario">
+                <h3>Bullet count pressure</h3>
+                <p>The role already has many bullets.</p>
+              </div>
+              <div class="tone">
+                <div class="tone-head"><p class="tone-kicker">Editorial note</p><p class="tone-title">Bullet count pressure</p></div>
+                <div class="tone-body">
+                  <p class="message">This role already has enough bullets to feel complete.</p>
+                  <p class="secondary">Another one would likely weaken the rhythm unless it adds something distinct.</p>
+                  <div class="chipline"><span class="chip">enough</span><span class="chip">distinct only</span></div>
+                </div>
+              </div>
+              <div class="tone">
+                <div class="tone-head"><p class="tone-kicker">System state</p><p class="tone-title">Bullet count high</p></div>
+                <div class="tone-body">
+                  <p class="message">Count high.</p>
+                  <p class="secondary">New bullet should be justified by unique content.</p>
+                  <div class="chipline"><span class="chip">count: high</span><span class="chip">unique</span></div>
+                </div>
+              </div>
+              <div class="tone">
+                <div class="tone-head"><p class="tone-kicker">Document note</p><p class="tone-title">Bullet count pressure</p></div>
+                <div class="tone-body">
+                  <p class="message">The role is already carrying a full list.</p>
+                  <p class="secondary">Add only if the point materially changes the section.</p>
+                  <div class="chipline"><span class="chip">full list</span><span class="chip">material change</span></div>
+                </div>
+              </div>
+              <div class="tone">
+                <div class="tone-head"><p class="tone-kicker">Signal</p><p class="tone-title">Count pressure</p></div>
+                <div class="tone-body">
+                  <p class="message">Too many bullets.</p>
+                  <p class="secondary">Add sparingly.</p>
+                  <div class="chipline"><span class="chip">too many</span><span class="chip">sparingly</span></div>
+                </div>
+              </div>
+              <div class="tone tone-anti">
+                <div class="tone-head"><p class="tone-kicker">AI coaching</p><p class="tone-title">You may want to reduce the bullet count</p></div>
+                <div class="tone-body">
+                  <p class="message">Your section might perform better if you limit the number of bullets so it reads more like a focused achievement summary.</p>
+                  <p class="secondary">Consider removing less important items to improve readability and keep the recruiter engaged.</p>
+                  <div class="chipline"><span class="chip">perform better</span><span class="chip">engaged</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="scenario">
+                <h3>Overflow risk</h3>
+                <p>The current content may spill into an awkward break.</p>
+              </div>
+              <div class="tone">
+                <div class="tone-head"><p class="tone-kicker">Editorial note</p><p class="tone-title">Overflow risk</p></div>
+                <div class="tone-body">
+                  <p class="message">The current sequence is at risk of pushing awkwardly.</p>
+                  <p class="secondary">A smaller next move would keep the page clean.</p>
+                  <div class="chipline"><span class="chip">awkward push</span><span class="chip">smaller next move</span></div>
+                </div>
+              </div>
+              <div class="tone">
+                <div class="tone-head"><p class="tone-kicker">System state</p><p class="tone-title">Overflow risk</p></div>
+                <div class="tone-body">
+                  <p class="message">Overflow risk active.</p>
+                  <p class="secondary">Continuation may interrupt the current page flow.</p>
+                  <div class="chipline"><span class="chip">overflow: on</span><span class="chip">flow interrupt</span></div>
+                </div>
+              </div>
+              <div class="tone">
+                <div class="tone-head"><p class="tone-kicker">Document note</p><p class="tone-title">Overflow risk</p></div>
+                <div class="tone-body">
+                  <p class="message">The next addition may move the role into a less graceful break.</p>
+                  <p class="secondary">Preserve the page rhythm if possible.</p>
+                  <div class="chipline"><span class="chip">page rhythm</span><span class="chip">preserve</span></div>
+                </div>
+              </div>
+              <div class="tone">
+                <div class="tone-head"><p class="tone-kicker">Signal</p><p class="tone-title">Overflow</p></div>
+                <div class="tone-body">
+                  <p class="message">Overflow risk.</p>
+                  <p class="secondary">Keep this brief.</p>
+                  <div class="chipline"><span class="chip">overflow</span><span class="chip">brief</span></div>
+                </div>
+              </div>
+              <div class="tone tone-anti">
+                <div class="tone-head"><p class="tone-kicker">AI guidance</p><p class="tone-title">This section might overflow, so it would be smart to simplify the content a bit</p></div>
+                <div class="tone-body">
+                  <p class="message">You may want to adjust this section so the page feels more balanced and less crowded overall.</p>
+                  <p class="secondary">A small edit here can help the resume look cleaner and improve the reading experience.</p>
+                  <div class="chipline"><span class="chip">balanced</span><span class="chip">reading experience</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="scenario">
+                <h3>Weak scanability</h3>
+                <p>The structure is still legible, but it is getting harder to skim.</p>
+              </div>
+              <div class="tone">
+                <div class="tone-head"><p class="tone-kicker">Editorial note</p><p class="tone-title">Scanability weak</p></div>
+                <div class="tone-body">
+                  <p class="message">The section still reads, but the scan is getting slower.</p>
+                  <p class="secondary">Bring the next line back to a cleaner rhythm.</p>
+                  <div class="chipline"><span class="chip">scan slows</span><span class="chip">cleaner rhythm</span></div>
+                </div>
+              </div>
+              <div class="tone">
+                <div class="tone-head"><p class="tone-kicker">System state</p><p class="tone-title">Scanability degraded</p></div>
+                <div class="tone-body">
+                  <p class="message">Scanability degraded.</p>
+                  <p class="secondary">Read path is less efficient than preferred.</p>
+                  <div class="chipline"><span class="chip">degraded</span><span class="chip">read path</span></div>
+                </div>
+              </div>
+              <div class="tone">
+                <div class="tone-head"><p class="tone-kicker">Document note</p><p class="tone-title">Scanability weak</p></div>
+                <div class="tone-body">
+                  <p class="message">This section takes a moment longer to skim than it should.</p>
+                  <p class="secondary">The next edit should restore a simpler reading line.</p>
+                  <div class="chipline"><span class="chip">skim</span><span class="chip">reading line</span></div>
+                </div>
+              </div>
+              <div class="tone">
+                <div class="tone-head"><p class="tone-kicker">Signal</p><p class="tone-title">Weak scanability</p></div>
+                <div class="tone-body">
+                  <p class="message">Scan is weak.</p>
+                  <p class="secondary">Simplify.</p>
+                  <div class="chipline"><span class="chip">weak</span><span class="chip">simplify</span></div>
+                </div>
+              </div>
+              <div class="tone tone-anti">
+                <div class="tone-head"><p class="tone-kicker">AI coaching</p><p class="tone-title">This section could be much easier to scan if you rework the structure for readability</p></div>
+                <div class="tone-body">
+                  <p class="message">The layout of this content may be making it harder for people to quickly understand the value of the role.</p>
+                  <p class="secondary">Try simplifying the wording and tightening the structure so it feels more polished and recruiter-friendly.</p>
+                  <div class="chipline"><span class="chip">recruiter-friendly</span><span class="chip">polished</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

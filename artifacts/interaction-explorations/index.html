@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Resume Studio Interaction Explorations</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4f1ea;
+        --sheet: #fffdf8;
+        --ink: #181511;
+        --muted: #675f54;
+        --line: rgba(24, 21, 17, 0.1);
+        --accent: #27468e;
+        --accent-2: #8b5b25;
+        --accent-3: #0f6f60;
+        --shadow: 0 24px 70px rgba(50, 34, 15, 0.11);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(255, 255, 255, 0.85), transparent 34%),
+          linear-gradient(165deg, #f8f4ed 0%, #f0eade 54%, #ebe2d7 100%);
+      }
+
+      .wrap {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 40px 28px 54px;
+      }
+
+      .hero {
+        display: grid;
+        gap: 18px;
+        grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.95fr);
+        align-items: end;
+        margin-bottom: 22px;
+      }
+
+      .eyebrow {
+        margin: 0 0 10px;
+        font: 800 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: var(--accent-3);
+      }
+
+      h1 {
+        margin: 0;
+        max-width: 11ch;
+        font-size: clamp(2.2rem, 4vw, 4.7rem);
+        line-height: 0.95;
+        letter-spacing: -0.06em;
+      }
+
+      .lede,
+      .note,
+      .summary {
+        font: 400 15px/1.7 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--muted);
+      }
+
+      .lede {
+        max-width: 68ch;
+        margin: 14px 0 0;
+      }
+
+      .summary {
+        margin: 0;
+      }
+
+      .panel {
+        padding: 20px 22px;
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        background: rgba(255, 252, 246, 0.84);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(12px);
+      }
+
+      .panel h2 {
+        margin: 0 0 10px;
+        font: 800 12px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .panel ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 10px;
+      }
+
+      .panel li {
+        display: flex;
+        gap: 10px;
+        align-items: start;
+        font: 400 14px/1.6 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--muted);
+      }
+
+      .panel li::before {
+        content: "";
+        flex: 0 0 auto;
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        margin-top: 8px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-top: 20px;
+      }
+
+      .card {
+        border-radius: 28px;
+        border: 1px solid var(--line);
+        background: rgba(255, 252, 247, 0.86);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .card-head {
+        padding: 20px 20px 16px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .card-head .label {
+        margin: 0 0 8px;
+        font: 800 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      .card h3 {
+        margin: 0;
+        font-size: 1.85rem;
+        line-height: 1.02;
+        letter-spacing: -0.05em;
+      }
+
+      .card-body {
+        display: grid;
+        gap: 12px;
+        padding: 20px;
+      }
+
+      .mini {
+        padding: 14px 15px;
+        border-radius: 18px;
+        border: 1px solid rgba(24, 21, 17, 0.08);
+        background: linear-gradient(180deg, #fffefb, #f8f2e9);
+      }
+
+      .mini .kicker {
+        margin: 0 0 6px;
+        font: 800 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .mini .copy {
+        margin: 0;
+        font: 400 13px/1.55 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--ink);
+      }
+
+      .launch {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 46px;
+        padding: 0 16px;
+        border-radius: 999px;
+        border: 1px solid rgba(24, 21, 17, 0.1);
+        background: linear-gradient(135deg, #fefaf3, #ffffff);
+        color: var(--ink);
+        font: 700 12px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        text-decoration: none;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .footer {
+        margin-top: 18px;
+        padding-top: 16px;
+        border-top: 1px solid rgba(24, 21, 17, 0.08);
+        font: 400 13px/1.7 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--muted);
+      }
+
+      @media (max-width: 1100px) {
+        .hero,
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Resume Studio interaction explorations</p>
+          <h1>How should the document behave while it is being written?</h1>
+          <p class="lede">
+            These explorations focus on workflow, navigation, contextual editing, and long-session
+            behavior. They are intentionally text-heavy so the interaction model is easier to study
+            than any one visual style.
+          </p>
+        </div>
+        <div class="panel">
+          <h2>What we are testing</h2>
+          <ul>
+            <li>Whether editing should happen inline, in a dock, or through a manuscript-style annotation flow.</li>
+            <li>How navigation can become structural instead of tab- or pill-based.</li>
+            <li>How guidance can feel ambient, editorial, and present without occupying a permanent panel.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="grid">
+        <article class="card">
+          <div class="card-head">
+            <p class="label">Direction 01</p>
+            <h3>Inline Editing + Contextual Dock</h3>
+          </div>
+          <div class="card-body">
+            <div class="mini">
+              <p class="kicker">Editing philosophy</p>
+              <p class="copy">The resume is edited where it lives. The dock appears only beside the active section or paragraph, so the page still feels like the app.</p>
+            </div>
+            <div class="mini">
+              <p class="kicker">Navigation and guidance</p>
+              <p class="copy">Navigation is structural and section-based. Guidance arrives as calm nudges in the dock and faint inline annotations on the page.</p>
+            </div>
+            <a class="launch" href="./direction-01-inline-contextual-dock.html">Open exploration</a>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-head">
+            <p class="label">Direction 02</p>
+            <h3>Manuscript / Annotation Workflow</h3>
+          </div>
+          <div class="card-body">
+            <div class="mini">
+              <p class="kicker">Editing philosophy</p>
+              <p class="copy">The interface behaves like a draft manuscript with margins, notes, and revisions. Controls become annotations, not panels.</p>
+            </div>
+            <div class="mini">
+              <p class="kicker">Navigation and guidance</p>
+              <p class="copy">The user moves through highlighted passages and note markers. Guidance reads like editorial commentary tied to specific sections.</p>
+            </div>
+            <a class="launch" href="./direction-02-manuscript-annotation-workflow.html">Open exploration</a>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-head">
+            <p class="label">Direction 03</p>
+            <h3>Structural Document Map + Focus Follow</h3>
+          </div>
+          <div class="card-body">
+            <div class="mini">
+              <p class="kicker">Editing philosophy</p>
+              <p class="copy">The document map is the lightweight spine of the app. It tracks structure, current focus, and page position without becoming a permanent sidebar.</p>
+            </div>
+            <div class="mini">
+              <p class="kicker">Navigation and guidance</p>
+              <p class="copy">Keyboard and scroll behavior drive focus. The map follows the current section while a docked inspector appears only when a section needs attention.</p>
+            </div>
+            <a class="launch" href="./direction-03-structural-document-map.html">Open exploration</a>
+          </div>
+        </article>
+      </section>
+
+      <p class="footer">
+        Each page is static HTML/CSS only and is meant to help us decide how Resume Studio should
+        fundamentally behave, not how it should be styled.
+      </p>
+    </main>
+  </body>
+</html>

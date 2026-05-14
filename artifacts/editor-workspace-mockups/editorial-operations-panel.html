@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Refined Editorial Operations Panel</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f3efe8;
+        --paper: #fffdf9;
+        --ink: #171411;
+        --muted: #69625b;
+        --line: rgba(23, 20, 17, 0.1);
+        --accent: #2950a0;
+        --accent-2: #8a5b25;
+        --shadow: 0 24px 82px rgba(49, 34, 14, 0.11);
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+        background:
+          radial-gradient(circle at top left, rgba(255, 255, 255, 0.84), transparent 34%),
+          linear-gradient(165deg, #f8f2e8 0%, #f0e9dd 52%, #ece4d7 100%);
+      }
+
+      .shell {
+        max-width: 1550px;
+        margin: 0 auto;
+        padding: 28px;
+      }
+
+      .chrome {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 16px 18px;
+        border-radius: 22px;
+        border: 1px solid var(--line);
+        background: rgba(255, 252, 246, 0.85);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(12px);
+      }
+
+      .brand {
+        display: grid;
+        gap: 4px;
+      }
+
+      .eyebrow {
+        margin: 0;
+        font: 800 10.5px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      .chrome h1 {
+        margin: 0;
+        font-size: clamp(1.6rem, 2.6vw, 3rem);
+        line-height: 0.98;
+        letter-spacing: -0.05em;
+      }
+
+      .chrome p {
+        margin: 0;
+        color: var(--muted);
+        font: 400 13px/1.7 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .status {
+        align-self: center;
+        color: var(--muted);
+        font: 700 12px/1.4 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: minmax(420px, 44%) minmax(0, 1fr);
+        gap: 18px;
+        margin-top: 18px;
+        align-items: start;
+      }
+
+      .editor,
+      .preview {
+        border-radius: 28px;
+        border: 1px solid var(--line);
+        background: rgba(255, 253, 248, 0.82);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(10px);
+      }
+
+      .editor {
+        padding: 18px;
+      }
+
+      .editor-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: end;
+        padding-bottom: 14px;
+        border-bottom: 1px solid rgba(23, 20, 17, 0.08);
+      }
+
+      .editor-head h2 {
+        margin: 0;
+        font: 800 10.5px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent-2);
+      }
+
+      .editor-head p {
+        margin: 5px 0 0;
+        color: var(--muted);
+        font: 400 13px/1.6 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .section-shell {
+        display: grid;
+        gap: 14px;
+        margin-top: 14px;
+      }
+
+      .section-bar {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        padding: 12px 0;
+        border-top: 1px solid rgba(23, 20, 17, 0.08);
+      }
+
+      .section-bar .label {
+        font: 800 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      .section-bar .meta {
+        color: var(--muted);
+        font: 400 12px/1.5 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .section-bar .actions {
+        color: var(--muted);
+        font: 700 12px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        white-space: nowrap;
+      }
+
+      .sequence {
+        display: grid;
+        gap: 8px;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 20px minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: start;
+        padding: 10px 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(23, 20, 17, 0.08);
+        background: #fff;
+      }
+
+      .row.active {
+        border-color: rgba(41, 80, 160, 0.18);
+        box-shadow: inset 0 0 0 1px rgba(41, 80, 160, 0.03);
+      }
+
+      .row .handle {
+        color: #8d857c;
+        font-size: 14px;
+        line-height: 1;
+        padding-top: 2px;
+      }
+
+      .row .text {
+        min-width: 0;
+      }
+
+      .row .title {
+        margin: 0;
+        font: 800 13px/1.4 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .row .sub {
+        margin: 3px 0 0;
+        color: var(--muted);
+        font: 400 12px/1.55 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .row .actions {
+        color: var(--muted);
+        font: 700 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        white-space: nowrap;
+      }
+
+      .active-block {
+        padding: 14px;
+        border-radius: 18px;
+        border: 1px solid rgba(23, 20, 17, 0.08);
+        background: linear-gradient(180deg, #fffefb, #f8f3ea);
+      }
+
+      .active-block .lead {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: baseline;
+      }
+
+      .active-block .lead .title {
+        margin: 0;
+        font: 800 14px/1.4 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .active-block .lead .sub {
+        margin: 0;
+        color: var(--muted);
+        font: 400 12px/1.5 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .fields {
+        display: grid;
+        gap: 10px;
+        margin-top: 12px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .field {
+        display: grid;
+        gap: 4px;
+      }
+
+      .field label {
+        margin: 0;
+        font: 800 10.5px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .value {
+        min-height: 36px;
+        padding: 9px 10px;
+        border-radius: 12px;
+        border: 1px solid rgba(23, 20, 17, 0.09);
+        background: #fff;
+        font: 400 13px/1.4 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .subhead {
+        margin-top: 12px;
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: baseline;
+      }
+
+      .subhead h4 {
+        margin: 0;
+        font: 800 10.5px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .subhead p {
+        margin: 0;
+        color: var(--muted);
+        font: 400 12px/1.5 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .bullet {
+        display: grid;
+        grid-template-columns: 18px minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: center;
+        margin-top: 8px;
+      }
+
+      .bullet .handle {
+        color: #8d857c;
+        font-size: 14px;
+      }
+
+      .bullet .text {
+        min-height: 34px;
+        padding: 8px 10px;
+        border-radius: 12px;
+        border: 1px solid rgba(23, 20, 17, 0.09);
+        background: #fff;
+        font: 400 13px/1.45 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .bullet .actions {
+        color: var(--muted);
+        font: 700 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px solid rgba(23, 20, 17, 0.08);
+        color: var(--muted);
+        font: 400 12px/1.7 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .preview {
+        padding: 20px;
+      }
+
+      .sheet {
+        min-height: 1040px;
+        padding: 34px 36px 44px;
+        border-radius: 22px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(250, 246, 240, 0.99));
+        box-shadow: 0 18px 44px rgba(36, 24, 12, 0.08);
+      }
+
+      @media (max-width: 1260px) {
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .fields,
+        .active-block .lead,
+        .footer {
+          grid-template-columns: 1fr;
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="chrome">
+        <div class="brand">
+          <p class="eyebrow">Direction 02</p>
+          <h1>Refined editorial operations panel</h1>
+          <p>
+            A tighter editing surface with sequence-first behavior, calmer repeated structures, and
+            controls that feel attached to the active entry instead of sitting on top of the app.
+          </p>
+        </div>
+        <div class="status">Keyboard-friendly · preview live</div>
+      </header>
+
+      <section class="workspace">
+        <aside class="editor">
+          <div class="editor-head">
+            <div>
+              <h2>Operations</h2>
+              <p>Working on Experience. Inactive entries stay compact until selected.</p>
+            </div>
+            <div class="outline">
+              <span class="active">Experience</span>
+              <span>Summary</span>
+              <span>Skills</span>
+              <span>Education</span>
+            </div>
+          </div>
+
+          <section class="section-shell">
+            <div class="section-bar">
+              <div>
+                <div class="label">Work Experience</div>
+                <div class="meta">One active entry. Others collapse into a readable sequence.</div>
+              </div>
+              <div class="actions">Add role · Reorder · Collapse all</div>
+            </div>
+
+            <div class="sequence">
+              <div class="active-block">
+                <div class="lead">
+                  <div>
+                    <p class="title">IT Support Technician</p>
+                    <p class="sub">Independent · Jun 2022 - Present · 3 bullets</p>
+                  </div>
+                  <p class="sub">Entry 1 of 3</p>
+                </div>
+
+                <div class="fields">
+                  <div class="field">
+                    <label>Title</label>
+                    <div class="value">IT Support Technician</div>
+                  </div>
+                  <div class="field">
+                    <label>Company</label>
+                    <div class="value">Independent</div>
+                  </div>
+                  <div class="field">
+                    <label>Location</label>
+                    <div class="value">Beaverton, OR</div>
+                  </div>
+                </div>
+
+                <div class="subhead">
+                  <h4>Bullets</h4>
+                  <p>Add bullet · Insert below · Remove entry</p>
+                </div>
+
+                <div class="bullet">
+                  <div class="handle">⋮⋮</div>
+                  <div class="text">Delivered hands-on support across mixed environments.</div>
+                  <div class="actions">Move · Split</div>
+                </div>
+                <div class="bullet">
+                  <div class="handle">⋮⋮</div>
+                  <div class="text">Provisioned devices and users with a consistent setup flow.</div>
+                  <div class="actions">Move · Split</div>
+                </div>
+                <div class="bullet">
+                  <div class="handle">⋮⋮</div>
+                  <div class="text">Documented repeat fixes for faster follow-up during busy periods.</div>
+                  <div class="actions">Move · Split</div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="handle">⋮⋮</div>
+                <div class="text">
+                  <p class="title">Specialist, Apple Inc.</p>
+                  <p class="sub">Portland, OR · Aug 2021 - Feb 2025 · 4 bullets</p>
+                </div>
+                <div class="actions">Edit · Reorder</div>
+              </div>
+
+              <div class="row">
+                <div class="handle">⋮⋮</div>
+                <div class="text">
+                  <p class="title">AppleCare Advisor, Xerox</p>
+                  <p class="sub">Tigard, OR · Jul 2016 - Jun 2017 · 2 bullets</p>
+                </div>
+                <div class="actions">Edit · Reorder</div>
+              </div>
+            </div>
+
+            <div class="footer">
+              <span>Add another role</span>
+              <span>Duplicate selected entry</span>
+              <span>Auto-collapse inactive entries</span>
+            </div>
+          </section>
+        </aside>
+
+        <section class="preview">
+          <div class="sheet">
+            <h2>Cesar Hernandez Lopez</h2>
+            <p>Work Experience preview stays aligned with the currently active entry.</p>
+            <div style="margin-top:18px;border-top:1px solid rgba(23,20,17,.08);padding-top:18px;">
+              <div style="display:grid;gap:14px;">
+                <div style="display:grid;grid-template-columns:92px minmax(0,1fr) 110px;gap:14px;align-items:start;padding-top:12px;border-top:1px solid rgba(23,20,17,.07);">
+                  <div style="font:700 12px/1.5 ui-sans-serif,system-ui;color:var(--muted);">Jun 2022</div>
+                  <div>
+                    <div style="font:800 14px/1.45 ui-sans-serif,system-ui;">IT Support Technician, Independent</div>
+                    <div style="margin-top:6px;font:400 13px/1.65 ui-sans-serif,system-ui;color:#26201a;">The active entry in the editor should map directly to the preview without extra ceremony.</div>
+                  </div>
+                  <div style="font:700 12px/1.5 ui-sans-serif,system-ui;color:var(--muted);text-align:right;">Present</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

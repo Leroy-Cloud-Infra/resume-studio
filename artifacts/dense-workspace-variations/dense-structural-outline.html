@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dense Workspace with Structural Outline</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4efe7;
+        --paper: #fffdf9;
+        --ink: #171411;
+        --muted: #685f55;
+        --line: rgba(23, 20, 17, 0.09);
+        --accent: #2950a0;
+        --accent-2: #8a5b26;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+        background:
+          radial-gradient(circle at top left, rgba(255, 255, 255, 0.84), transparent 34%),
+          linear-gradient(165deg, #f8f2e8 0%, #f0e9dd 52%, #ece4d7 100%);
+      }
+
+      .shell { max-width: 1560px; margin: 0 auto; padding: 28px; }
+
+      .chrome {
+        padding: 16px 18px;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        background: rgba(255, 252, 246, 0.88);
+      }
+
+      .eyebrow {
+        margin: 0;
+        font: 800 10.5px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--accent-2);
+      }
+
+      h1 {
+        margin: 6px 0 0;
+        font-size: clamp(1.8rem, 2.8vw, 3.2rem);
+        line-height: 0.98;
+        letter-spacing: -0.05em;
+      }
+
+      .chrome p {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font: 400 13px/1.7 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: minmax(420px, 44%) minmax(0, 1fr);
+        gap: 18px;
+        margin-top: 18px;
+        align-items: start;
+        border-top: 1px solid var(--line);
+      }
+
+      .editor,
+      .preview {
+        background: transparent;
+        border: 0;
+      }
+
+      .editor {
+        padding: 0;
+        border-right: 1px solid var(--line);
+        padding-right: 18px;
+      }
+
+      .nav {
+        margin-top: 8px;
+        padding: 0;
+      }
+
+      .nav h2 {
+        margin: 0 0 10px;
+        font: 800 10.5px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      .nav-row {
+        display: grid;
+        grid-template-columns: 14px minmax(0, 1fr) auto;
+        gap: 10px;
+        align-items: start;
+        padding: 10px 0 12px;
+        border-top: 1px solid rgba(23, 20, 17, 0.08);
+      }
+
+      .nav-row.active { border-left: 2px solid var(--accent); padding-left: 10px; }
+
+      .marker {
+        width: 3px;
+        height: 26px;
+        border-radius: 999px;
+        background: rgba(23, 20, 17, 0.12);
+        margin-top: 2px;
+      }
+      .nav-row.active .marker { background: var(--accent); }
+
+      .main {
+        margin: 0;
+        font: 800 13px/1.4 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .sub {
+        margin: 2px 0 0;
+        color: var(--muted);
+        font: 400 12px/1.5 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .meta {
+        color: var(--muted);
+        font: 700 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .editor-note {
+        margin-top: 10px;
+        color: var(--muted);
+        font: 400 12px/1.6 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .section {
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid rgba(23, 20, 17, 0.08);
+      }
+
+      .section-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: baseline;
+      }
+
+      .section-head h3 {
+        margin: 0;
+        font-size: 1.05rem;
+      }
+
+      .section-head p {
+        margin: 0;
+        color: var(--muted);
+        font: 400 12px/1.6 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .guidance {
+        margin: 8px 0 10px;
+        color: var(--muted);
+        font: 400 12.5px/1.6 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .entry {
+        margin-top: 10px;
+        padding: 0;
+        border-top: 1px solid rgba(23, 20, 17, 0.08);
+      }
+
+      .entry.active {
+        padding: 12px 0 10px 10px;
+        background: linear-gradient(90deg, rgba(41, 80, 160, 0.04), transparent 38%);
+      }
+
+      .entry-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: start;
+      }
+
+      .title { margin: 0; font: 800 13px/1.4 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .entry .sub { margin-top: 3px; }
+
+      .actions { color: var(--muted); font: 700 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+
+      .fields {
+        display: grid;
+        gap: 10px;
+        margin-top: 12px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .field { display: grid; gap: 4px; }
+      .field label {
+        margin: 0;
+        font: 800 10.5px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .value {
+        min-height: 34px;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(23, 20, 17, 0.08);
+        font: 400 12.5px/1.4 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .bullets { margin-top: 10px; }
+      .bullets h4 {
+        margin: 0 0 8px;
+        font: 800 10.5px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .bullet {
+        display: grid;
+        grid-template-columns: 18px minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: center;
+        margin-top: 8px;
+      }
+
+      .bullet .handle {
+        color: #8d857c;
+        font-size: 14px;
+      }
+
+      .bullet .text {
+        min-height: 32px;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(23, 20, 17, 0.08);
+        font: 400 12.5px/1.4 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .bullet .actions { color: var(--muted); font: 700 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+
+      .collapsed {
+        margin-top: 10px;
+        padding: 10px 0;
+        border-top: 1px solid rgba(23, 20, 17, 0.06);
+      }
+
+      .collapsed .entry-head {
+        align-items: center;
+      }
+
+      .preview {
+        padding-left: 0;
+      }
+
+      .preview .sheet {
+        min-height: 1030px;
+        padding: 34px 36px 44px 20px;
+      }
+
+      .sheet {
+        border-left: 1px solid rgba(23, 20, 17, 0.06);
+      }
+
+      .sheet h3 {
+        margin: 0;
+        font-size: clamp(2rem, 3vw, 3.6rem);
+        line-height: 0.95;
+        letter-spacing: -0.06em;
+      }
+
+      .sheet p {
+        margin: 10px 0 0;
+        color: var(--muted);
+        font: 400 13px/1.7 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .status {
+        margin-top: 12px;
+        color: var(--muted);
+        font: 400 12px/1.6 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      @media (max-width: 1100px) {
+        .workspace { grid-template-columns: 1fr; }
+        .editor { border-right: 0; padding-right: 0; }
+        .preview .sheet { padding-left: 0; }
+        .sheet { border-left: 0; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="chrome">
+        <p class="eyebrow">Variation 01</p>
+        <h1>Dense Workspace with Structural Outline</h1>
+        <p>The pills become a quiet outline rail and the shell becomes flatter and more continuous.</p>
+      </header>
+
+      <section class="workspace">
+        <aside class="editor">
+          <div class="nav">
+            <h2>Section outline</h2>
+            <div class="nav-row">
+              <div class="marker"></div>
+              <div>
+                <p class="main">Header</p>
+                <p class="sub">Identity and contact details</p>
+              </div>
+              <div class="meta">1</div>
+            </div>
+            <div class="nav-row">
+              <div class="marker"></div>
+              <div>
+                <p class="main">Summary</p>
+                <p class="sub">Short opening statement</p>
+              </div>
+              <div class="meta">1</div>
+            </div>
+            <div class="nav-row active">
+              <div class="marker"></div>
+              <div>
+                <p class="main">Work Experience</p>
+                <p class="sub">3 entries, 12 bullets</p>
+              </div>
+              <div class="meta">Active</div>
+            </div>
+            <div class="nav-row">
+              <div class="marker"></div>
+              <div>
+                <p class="main">Skills</p>
+                <p class="sub">Technical categories</p>
+              </div>
+              <div class="meta">6</div>
+            </div>
+            <div class="nav-row">
+              <div class="marker"></div>
+              <div>
+                <p class="main">Education</p>
+                <p class="sub">Degree and coursework</p>
+              </div>
+              <div class="meta">1</div>
+            </div>
+            <div class="editor-note">The outline is still immediate, but it reads more like structure than navigation chrome.</div>
+          </div>
+
+          <div class="section">
+            <div class="section-head">
+              <h3>Work Experience</h3>
+              <p>Active entry expanded</p>
+            </div>
+            <p class="guidance">A small status line replaces explanatory helper copy.</p>
+
+            <article class="entry active">
+              <div class="entry-head">
+                <div>
+                  <p class="title">IT Support Technician</p>
+                  <p class="sub">Independent · Beaverton, OR · Jun 2022 - Present</p>
+                </div>
+                <div class="actions">Move up · Move down · Collapse · Remove</div>
+              </div>
+
+              <div class="fields">
+                <div class="field"><label>Title</label><div class="value">IT Support Technician</div></div>
+                <div class="field"><label>Company</label><div class="value">Independent</div></div>
+                <div class="field"><label>Location</label><div class="value">Beaverton, OR</div></div>
+                <div class="field"><label>Date range</label><div class="value">Jun 2022 - Present</div></div>
+              </div>
+
+              <div class="bullets">
+                <h4>Bullets</h4>
+                <div class="bullet">
+                  <div class="handle">⋮⋮</div>
+                  <div class="text">Delivered hands-on support across Windows, macOS, and Linux.</div>
+                  <div class="actions">Add below · Delete</div>
+                </div>
+                <div class="bullet">
+                  <div class="handle">⋮⋮</div>
+                  <div class="text">Provisioned devices, users, and support workflows.</div>
+                  <div class="actions">Add below · Delete</div>
+                </div>
+                <div class="bullet">
+                  <div class="handle">⋮⋮</div>
+                  <div class="text">Maintained documentation and troubleshooting steps for repeat use.</div>
+                  <div class="actions">Add below · Delete</div>
+                </div>
+              </div>
+            </article>
+
+            <article class="collapsed">
+              <div class="entry-head">
+                <div>
+                  <p class="title">Specialist, Apple Inc.</p>
+                  <p class="sub">Portland, OR · Aug 2021 - Feb 2025 · 4 bullets</p>
+                </div>
+                <div class="actions">Edit · Reorder</div>
+              </div>
+            </article>
+            <article class="collapsed">
+              <div class="entry-head">
+                <div>
+                  <p class="title">AppleCare Advisor, Xerox</p>
+                  <p class="sub">Tigard, OR · Jul 2016 - Jun 2017 · 2 bullets</p>
+                </div>
+                <div class="actions">Edit · Reorder</div>
+              </div>
+            </article>
+
+            <div class="status">Add experience · Duplicate selected entry · Expanded entry only</div>
+          </div>
+        </aside>
+
+        <section class="preview">
+          <div class="sheet">
+            <h3>Cesar Hernandez Lopez</h3>
+            <p>The preview remains mounted in the same workspace surface.</p>
+          </div>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

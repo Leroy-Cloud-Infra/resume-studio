@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Direction 03 - Section Focus Studio</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #edf1ee;
+        --surface: rgba(255, 255, 255, 0.88);
+        --surface-2: #f6f8f7;
+        --ink: #17201d;
+        --muted: #60706a;
+        --line: rgba(23, 32, 29, 0.1);
+        --accent: #0e7362;
+        --accent-2: #3466cb;
+        --accent-3: #b96a2b;
+        --shadow: 0 28px 90px rgba(16, 35, 31, 0.14);
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background:
+          radial-gradient(circle at 15% 0%, rgba(14, 115, 98, 0.11), transparent 26%),
+          radial-gradient(circle at 85% 14%, rgba(52, 102, 203, 0.1), transparent 22%),
+          linear-gradient(180deg, #f4f7f5 0%, #edf1ee 54%, #e8eeea 100%);
+      }
+
+      .shell {
+        max-width: 1480px;
+        margin: 0 auto;
+        padding: 28px;
+      }
+
+      .header {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 18px 20px;
+        border-radius: 24px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(14px);
+      }
+
+      .header .brand {
+        display: grid;
+        gap: 6px;
+      }
+
+      .header .eyebrow {
+        margin: 0;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      .header h1 {
+        margin: 0;
+        font-size: clamp(1.8rem, 3vw, 3.3rem);
+        line-height: 0.98;
+        letter-spacing: -0.05em;
+      }
+
+      .header p {
+        margin: 0;
+        max-width: 70ch;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.65;
+      }
+
+      .navigator {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .nav-chip {
+        display: inline-flex;
+        align-items: center;
+        min-height: 38px;
+        padding: 0 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(23, 32, 29, 0.1);
+        background: #fff;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--ink);
+      }
+
+      .nav-chip.active {
+        background: linear-gradient(135deg, rgba(14, 115, 98, 0.12), rgba(52, 102, 203, 0.12));
+        border-color: rgba(14, 115, 98, 0.2);
+      }
+
+      .workspace {
+        display: grid;
+        gap: 18px;
+        grid-template-columns: 250px minmax(0, 1.25fr) 390px;
+        align-items: start;
+        margin-top: 18px;
+      }
+
+      .nav,
+      .preview,
+      .drawer {
+        border-radius: 28px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(14px);
+      }
+
+      .nav,
+      .drawer {
+        padding: 18px;
+      }
+
+      .preview {
+        padding: 20px;
+        background:
+          radial-gradient(circle at 30% 0%, rgba(14, 115, 98, 0.08), transparent 30%),
+          radial-gradient(circle at 80% 12%, rgba(52, 102, 203, 0.08), transparent 24%),
+          var(--surface);
+      }
+
+      .panel-title {
+        margin: 0 0 12px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      .nav-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .nav-card {
+        padding: 14px;
+        border-radius: 18px;
+        border: 1px solid rgba(23, 32, 29, 0.08);
+        background: linear-gradient(180deg, #fff, #f7f9f8);
+      }
+
+      .nav-card .kicker {
+        margin: 0 0 6px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .nav-card .main {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 700;
+        line-height: 1.45;
+      }
+
+      .nav-card .sub {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .sheet {
+        min-height: 880px;
+        padding: 30px;
+        border-radius: 24px;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(249, 251, 250, 0.98)),
+          #fff;
+        box-shadow: 0 24px 60px rgba(17, 31, 28, 0.09);
+      }
+
+      .sheet-head {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 14px;
+        align-items: end;
+        padding-bottom: 14px;
+        border-bottom: 1px solid rgba(23, 32, 29, 0.12);
+      }
+
+      .sheet-head h2 {
+        margin: 0;
+        font-size: clamp(1.8rem, 2.6vw, 3.4rem);
+        line-height: 0.96;
+        letter-spacing: -0.05em;
+      }
+
+      .sheet-head p {
+        margin: 0;
+        max-width: 34ch;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.6;
+        text-align: right;
+      }
+
+      .sheet-section {
+        display: grid;
+        gap: 8px;
+        margin-top: 18px;
+        padding-top: 16px;
+        border-top: 1px solid rgba(23, 32, 29, 0.08);
+      }
+
+      .sheet-section:first-of-type {
+        border-top: 0;
+        padding-top: 0;
+      }
+
+      .sheet-section h3 {
+        margin: 0;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent-2);
+      }
+
+      .summary {
+        margin: 0;
+        max-width: 70ch;
+        color: #24312d;
+        font-size: 15px;
+        line-height: 1.75;
+      }
+
+      .timeline {
+        display: grid;
+        gap: 12px;
+      }
+
+      .timeline-item {
+        display: grid;
+        grid-template-columns: 96px minmax(0, 1fr) 120px;
+        gap: 14px;
+        align-items: start;
+        padding-top: 12px;
+        border-top: 1px solid rgba(23, 32, 29, 0.08);
+      }
+
+      .timeline-item:first-child {
+        border-top: 0;
+        padding-top: 0;
+      }
+
+      .timeline-item time,
+      .timeline-item .loc {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--muted);
+      }
+
+      .timeline-item .role {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 800;
+      }
+
+      .timeline-item ul {
+        margin: 8px 0 0;
+        padding-left: 18px;
+        color: #20302b;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .fit-note {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .note {
+        padding: 14px;
+        border-radius: 18px;
+        border: 1px solid rgba(23, 32, 29, 0.08);
+        background: #fff;
+      }
+
+      .note .kicker {
+        margin: 0 0 6px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .note .main {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 700;
+        line-height: 1.45;
+      }
+
+      .note .sub {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .drawer .stack {
+        display: grid;
+        gap: 12px;
+      }
+
+      .drawer-card {
+        padding: 14px;
+        border-radius: 18px;
+        border: 1px solid rgba(23, 32, 29, 0.08);
+        background: linear-gradient(180deg, #fff, #f4f7f5);
+      }
+
+      .drawer-card .kicker {
+        margin: 0 0 6px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .drawer-card .main {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 700;
+        line-height: 1.45;
+      }
+
+      .drawer-card .sub {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .drawer-segment {
+        margin-top: 12px;
+        padding: 12px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, rgba(14, 115, 98, 0.08), rgba(52, 102, 203, 0.06));
+        color: var(--ink);
+        font-size: 12px;
+        line-height: 1.65;
+      }
+
+      .footer {
+        margin-top: 14px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      @media (max-width: 1320px) {
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 860px) {
+        .fit-note,
+        .timeline-item {
+          grid-template-columns: 1fr;
+        }
+
+        .sheet-head p {
+          text-align: left;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="header">
+        <div class="brand">
+          <p class="eyebrow">Direction 03</p>
+          <h1>Section Focus Studio</h1>
+          <p>
+            This direction avoids the repetitive sidebar pattern by making the document the
+            primary focus and turning controls into a docked, section-aware inspector.
+          </p>
+        </div>
+        <div class="navigator" aria-label="section navigator">
+          <span class="nav-chip active">Header</span>
+          <span class="nav-chip">Summary</span>
+          <span class="nav-chip">Experience</span>
+          <span class="nav-chip">Skills</span>
+          <span class="nav-chip">Education</span>
+        </div>
+      </header>
+
+      <section class="workspace">
+        <aside class="nav">
+          <p class="panel-title">Section map</p>
+          <div class="nav-list">
+            <div class="nav-card">
+              <p class="kicker">Focused section</p>
+              <p class="main">Experience, role 1</p>
+              <p class="sub">The editor should feel like a zoom lens, not a form graveyard.</p>
+            </div>
+            <div class="nav-card">
+              <p class="kicker">Page fit</p>
+              <p class="main">Near limit but still clean</p>
+              <p class="sub">Great for precise edits because the preview stays central.</p>
+            </div>
+            <div class="nav-card">
+              <p class="kicker">Guidance style</p>
+              <p class="main">Embedded, calm, non-chatty</p>
+              <p class="sub">No separate AI panel needed when the section itself can carry the signal.</p>
+            </div>
+          </div>
+        </aside>
+
+        <section class="preview">
+          <article class="sheet">
+            <div class="sheet-head">
+              <div>
+                <h2>Cesar Hernandez Lopez</h2>
+                <p>IT Support Technician · Beaverton, Oregon · Resume preview first, controls second.</p>
+              </div>
+              <p>
+                Calm, trustworthy tooling<br />
+                Strong document hierarchy with section-level focus
+              </p>
+            </div>
+
+            <section class="sheet-section">
+              <h3>Summary</h3>
+              <p class="summary">
+                IT support technician with six-plus years of experience across end-user support,
+                device provisioning, account administration, and network troubleshooting. The
+                document remains the center of gravity while the editor responds to the section
+                currently in focus.
+              </p>
+            </section>
+
+            <section class="sheet-section">
+              <h3>Experience</h3>
+              <div class="timeline">
+                <div class="timeline-item">
+                  <time>Jun 2022 - Present</time>
+                  <div>
+                    <p class="role">IT Support Technician, Independent</p>
+                    <ul>
+                      <li>Supported desktops, laptops, and mobile devices across mixed systems.</li>
+                      <li>Provisioned accounts and documented processes that reduced repetition.</li>
+                      <li>Used structured troubleshooting to keep support work calm and traceable.</li>
+                    </ul>
+                  </div>
+                  <div class="loc">Beaverton, OR</div>
+                </div>
+
+                <div class="timeline-item">
+                  <time>Aug 2021 - Feb 2025</time>
+                  <div>
+                    <p class="role">Specialist, Apple Inc.</p>
+                    <ul>
+                      <li>Delivered frequent in-person support while maintaining a clear tone.</li>
+                      <li>Managed setup, migration, and follow-up for customers and business users.</li>
+                    </ul>
+                  </div>
+                  <div class="loc">Portland, OR</div>
+                </div>
+              </div>
+            </section>
+
+            <section class="sheet-section">
+              <h3>Section health</h3>
+              <div class="fit-note">
+                <div class="note">
+                  <p class="kicker">Hierarchy strategy</p>
+                  <p class="main">Document structure leads, controls follow.</p>
+                  <p class="sub">
+                    The page should feel like one coherent artifact, not a stack of cards.
+                  </p>
+                </div>
+                <div class="note">
+                  <p class="kicker">Guidance integration</p>
+                  <p class="main">Inline, section-aware, and tightly scoped.</p>
+                  <p class="sub">
+                    Advice appears where the user is editing so context switching stays low.
+                  </p>
+                </div>
+              </div>
+            </section>
+          </article>
+        </section>
+
+        <aside class="drawer">
+          <p class="panel-title">Section drawer</p>
+          <div class="stack">
+            <div class="drawer-card">
+              <p class="kicker">Current section</p>
+              <p class="main">Experience role 1</p>
+              <p class="sub">Fields update in a docked drawer instead of a full-width sidebar.</p>
+            </div>
+            <div class="drawer-card">
+              <p class="kicker">Why this works</p>
+              <p class="main">It breaks the visual repetition of standard editor systems.</p>
+              <p class="sub">Users see the document first, then adjust the selected section in context.</p>
+            </div>
+            <div class="drawer-card">
+              <p class="kicker">Editing model</p>
+              <p class="main">Section by section, with progressive disclosure.</p>
+              <p class="sub">Only the active section expands. Everything else becomes a concise summary.</p>
+            </div>
+            <div class="drawer-card">
+              <p class="kicker">Calm trust cues</p>
+              <p class="main">Soft color, strong spacing, restrained motion.</p>
+              <p class="sub">The system feels editorial rather than app-store generic.</p>
+            </div>
+          </div>
+          <div class="drawer-segment">
+            A bottom drawer or docked section inspector would let this concept scale without
+            turning into a monotonous left-rail form stack.
+          </div>
+          <p class="footer">
+            Preview and editor stay linked, but the editor never becomes the hero.
+          </p>
+        </aside>
+      </section>
+    </main>
+  </body>
+</html>

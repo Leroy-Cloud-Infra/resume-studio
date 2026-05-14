@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Structured Professional Editor</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4efe7;
+        --paper: #fffdf9;
+        --ink: #171411;
+        --muted: #675f55;
+        --line: rgba(23, 20, 17, 0.1);
+        --accent: #8a5b26;
+        --accent-2: #2e4c9a;
+        --shadow: 0 24px 82px rgba(49, 34, 14, 0.12);
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+        background:
+          radial-gradient(circle at top left, rgba(255, 255, 255, 0.86), transparent 34%),
+          linear-gradient(165deg, #f8f2e8 0%, #f0e9dd 52%, #ece4d7 100%);
+      }
+
+      .shell {
+        max-width: 1550px;
+        margin: 0 auto;
+        padding: 28px;
+      }
+
+      .chrome {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 16px 18px;
+        border-radius: 22px;
+        border: 1px solid var(--line);
+        background: rgba(255, 252, 246, 0.85);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(12px);
+      }
+
+      .chrome .brand {
+        display: grid;
+        gap: 4px;
+      }
+
+      .eyebrow {
+        margin: 0;
+        font: 800 10.5px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      .chrome h1 {
+        margin: 0;
+        font-size: clamp(1.6rem, 2.6vw, 3rem);
+        line-height: 0.98;
+        letter-spacing: -0.05em;
+      }
+
+      .chrome p {
+        margin: 0;
+        color: var(--muted);
+        font: 400 13px/1.7 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .status {
+        align-self: center;
+        color: var(--muted);
+        font: 700 12px/1.4 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: minmax(420px, 44%) minmax(0, 1fr);
+        gap: 18px;
+        margin-top: 18px;
+        align-items: start;
+      }
+
+      .editor,
+      .preview {
+        border-radius: 28px;
+        border: 1px solid var(--line);
+        background: rgba(255, 253, 248, 0.8);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(10px);
+      }
+
+      .editor {
+        padding: 18px;
+      }
+
+      .editor-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: end;
+        padding-bottom: 14px;
+        border-bottom: 1px solid rgba(23, 20, 17, 0.08);
+      }
+
+      .editor-head h2 {
+        margin: 0;
+        font: 800 10.5px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent-2);
+      }
+
+      .editor-head p {
+        margin: 5px 0 0;
+        color: var(--muted);
+        font: 400 13px/1.6 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .outline {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .outline span {
+        display: inline-flex;
+        align-items: center;
+        min-height: 30px;
+        padding: 0 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(23, 20, 17, 0.08);
+        background: #fff;
+        color: var(--muted);
+        font: 700 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .outline .active {
+        color: var(--ink);
+        background: linear-gradient(135deg, rgba(138, 91, 38, 0.12), rgba(46, 76, 154, 0.08));
+      }
+
+      .section {
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid rgba(23, 20, 17, 0.08);
+      }
+
+      .section-title {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: baseline;
+        margin-bottom: 10px;
+      }
+
+      .section-title h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        letter-spacing: -0.02em;
+      }
+
+      .section-title p {
+        margin: 0;
+        color: var(--muted);
+        font: 400 12px/1.6 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .guidance {
+        margin: 0 0 12px;
+        color: #6a6257;
+        font: 400 12.5px/1.6 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .entry {
+        margin-top: 10px;
+        border-top: 1px solid rgba(23, 20, 17, 0.08);
+        padding-top: 10px;
+      }
+
+      .entry.active {
+        margin-top: 0;
+        padding: 12px 12px 10px;
+        border-radius: 18px;
+        border: 1px solid rgba(23, 20, 17, 0.08);
+        background: linear-gradient(180deg, #fffefb, #f8f3ea);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+      }
+
+      .entry-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: start;
+      }
+
+      .entry-meta {
+        display: grid;
+        gap: 2px;
+      }
+
+      .entry-meta .title {
+        margin: 0;
+        font: 800 13px/1.4 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .entry-meta .sub {
+        margin: 0;
+        color: var(--muted);
+        font: 400 12px/1.55 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        color: var(--muted);
+        font: 700 12px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .actions span {
+        cursor: default;
+      }
+
+      .fields {
+        display: grid;
+        gap: 10px;
+        margin-top: 12px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .field {
+        display: grid;
+        gap: 5px;
+      }
+
+      .field label,
+      .bullets h4 {
+        margin: 0;
+        font: 800 10.5px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .value {
+        min-height: 38px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(23, 20, 17, 0.09);
+        background: #fff;
+        font: 400 13px/1.4 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .bullets {
+        margin-top: 12px;
+      }
+
+      .bullets h4 {
+        margin-bottom: 8px;
+      }
+
+      .bullet-row {
+        display: grid;
+        grid-template-columns: 18px minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: center;
+        margin-top: 8px;
+      }
+
+      .handle {
+        color: #8c857d;
+        font-size: 14px;
+        line-height: 1;
+      }
+
+      .bullet {
+        min-height: 36px;
+        padding: 9px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(23, 20, 17, 0.09);
+        background: #fff;
+        font: 400 13px/1.45 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .bullet-actions {
+        color: var(--muted);
+        font: 700 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        white-space: nowrap;
+      }
+
+      .entry.collapsed {
+        padding: 10px 0 10px;
+      }
+
+      .entry.collapsed .entry-head {
+        align-items: center;
+      }
+
+      .entry.collapsed .title {
+        font-size: 12.5px;
+      }
+
+      .footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px solid rgba(23, 20, 17, 0.08);
+        color: var(--muted);
+        font: 400 12px/1.7 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .preview {
+        padding: 20px;
+      }
+
+      .preview .sheet {
+        min-height: 1040px;
+        padding: 34px 36px 44px;
+        border-radius: 22px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(250, 246, 240, 0.99));
+        box-shadow: 0 18px 44px rgba(36, 24, 12, 0.08);
+      }
+
+      .preview h2 {
+        margin: 0;
+        font-size: clamp(2rem, 3vw, 3.6rem);
+        line-height: 0.95;
+        letter-spacing: -0.06em;
+      }
+
+      .preview p {
+        color: var(--muted);
+        font: 400 13px/1.6 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      @media (max-width: 1260px) {
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .fields,
+        .entry-head,
+        .footer {
+          grid-template-columns: 1fr;
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="chrome">
+        <div class="brand">
+          <p class="eyebrow">Direction 01</p>
+          <h1>Structured professional editor</h1>
+          <p>
+            Clear hierarchy, efficient repeated sections, and an editor that feels like part of the
+            document system instead of a separate form builder.
+          </p>
+        </div>
+        <div class="status">Autosaved 12 seconds ago</div>
+      </header>
+
+      <section class="workspace">
+        <aside class="editor">
+          <div class="editor-head">
+            <div>
+              <h2>Resume structure</h2>
+              <p>Work Experience is active. Changes reflect instantly in the preview.</p>
+            </div>
+            <div class="outline">
+              <span>Header</span>
+              <span>Summary</span>
+              <span class="active">Work Experience</span>
+              <span>Skills</span>
+              <span>Education</span>
+            </div>
+          </div>
+
+          <section class="section">
+            <div class="section-title">
+              <h3>Work Experience</h3>
+              <p>3 entries • 12 bullets</p>
+            </div>
+            <p class="guidance">
+              Keep the best role at the top. Collapse inactive entries so the active one stays easy
+              to scan.
+            </p>
+
+            <article class="entry active">
+              <div class="entry-head">
+                <div class="entry-meta">
+                  <p class="title">IT Support Technician</p>
+                  <p class="sub">Independent · Beaverton, OR · Jun 2022 - Present</p>
+                </div>
+                <div class="actions">
+                  <span>Move up</span>
+                  <span>Move down</span>
+                  <span>Collapse</span>
+                  <span>Remove</span>
+                </div>
+              </div>
+
+              <div class="fields">
+                <div class="field">
+                  <label>Role title</label>
+                  <div class="value">IT Support Technician</div>
+                </div>
+                <div class="field">
+                  <label>Company</label>
+                  <div class="value">Independent</div>
+                </div>
+                <div class="field">
+                  <label>Location</label>
+                  <div class="value">Beaverton, OR</div>
+                </div>
+                <div class="field">
+                  <label>Date range</label>
+                  <div class="value">Jun 2022 - Present</div>
+                </div>
+              </div>
+
+              <div class="bullets">
+                <h4>Bullets</h4>
+                <div class="bullet-row">
+                  <div class="handle">⋮⋮</div>
+                  <div class="bullet">Delivered hands-on support across Windows, macOS, and Linux.</div>
+                  <div class="bullet-actions">Add below · Delete</div>
+                </div>
+                <div class="bullet-row">
+                  <div class="handle">⋮⋮</div>
+                  <div class="bullet">Provisioned devices, users, and support workflows.</div>
+                  <div class="bullet-actions">Add below · Delete</div>
+                </div>
+                <div class="bullet-row">
+                  <div class="handle">⋮⋮</div>
+                  <div class="bullet">Maintained documentation and troubleshooting steps for repeat use.</div>
+                  <div class="bullet-actions">Add below · Delete</div>
+                </div>
+              </div>
+            </article>
+
+            <article class="entry collapsed">
+              <div class="entry-head">
+                <div class="entry-meta">
+                  <p class="title">Specialist, Apple Inc.</p>
+                  <p class="sub">Portland, OR · Aug 2021 - Feb 2025 · 4 bullets</p>
+                </div>
+                <div class="actions">
+                  <span>Edit</span>
+                  <span>Reorder</span>
+                </div>
+              </div>
+            </article>
+
+            <article class="entry collapsed">
+              <div class="entry-head">
+                <div class="entry-meta">
+                  <p class="title">AppleCare Advisor, Xerox</p>
+                  <p class="sub">Tigard, OR · Jul 2016 - Jun 2017 · 2 bullets</p>
+                </div>
+                <div class="actions">
+                  <span>Edit</span>
+                  <span>Reorder</span>
+                </div>
+              </div>
+            </article>
+
+            <div class="footer">
+              <span>Add experience</span>
+              <span>Duplicate selected entry</span>
+              <span>Expanded entry only</span>
+            </div>
+          </section>
+        </aside>
+
+        <section class="preview">
+          <div class="sheet">
+            <h2>Cesar Hernandez Lopez</h2>
+            <p>IT Support Technician · Beaverton, Oregon · Resume preview updates as the left editor changes.</p>
+            <div style="margin-top:18px;border-top:1px solid rgba(23,20,17,.08);padding-top:18px;">
+              <p style="margin:0 0 8px;font:800 11px/1 ui-sans-serif,system-ui;text-transform:uppercase;letter-spacing:.18em;color:var(--accent-2);">Work Experience</p>
+              <p style="margin:0 0 10px;font:400 15px/1.7 ui-sans-serif,system-ui;">The preview should feel like it is linked directly to the active entry.</p>
+              <div style="display:grid;gap:14px;">
+                <div style="display:grid;grid-template-columns:92px minmax(0,1fr) 110px;gap:14px;align-items:start;padding-top:12px;border-top:1px solid rgba(23,20,17,.07);">
+                  <div style="font:700 12px/1.5 ui-sans-serif,system-ui;color:var(--muted);">Jun 2022</div>
+                  <div>
+                    <div style="font:800 14px/1.45 ui-sans-serif,system-ui;">IT Support Technician, Independent</div>
+                    <div style="margin-top:6px;font:400 13px/1.65 ui-sans-serif,system-ui;color:#26201a;">Delivered hands-on support across mixed environments and kept documentation practical.</div>
+                  </div>
+                  <div style="font:700 12px/1.5 ui-sans-serif,system-ui;color:var(--muted);text-align:right;">Present</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

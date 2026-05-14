@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Resume Studio Behavior Model</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f3efe8;
+        --paper: #fffdf9;
+        --ink: #171411;
+        --muted: #69625a;
+        --line: rgba(23, 20, 17, 0.1);
+        --accent: #27468f;
+        --accent-2: #8a5b26;
+        --shadow: 0 24px 78px rgba(52, 34, 14, 0.11);
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+        background:
+          radial-gradient(circle at top left, rgba(255, 255, 255, 0.88), transparent 34%),
+          linear-gradient(165deg, #f7f2ea 0%, #f0e9dd 52%, #ece4d8 100%);
+      }
+
+      .wrap {
+        max-width: 1220px;
+        margin: 0 auto;
+        padding: 40px 28px 54px;
+      }
+
+      .hero {
+        display: grid;
+        gap: 18px;
+        grid-template-columns: minmax(0, 1.4fr) minmax(300px, 0.95fr);
+        align-items: end;
+        margin-bottom: 22px;
+      }
+
+      .eyebrow {
+        margin: 0 0 10px;
+        font: 800 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: var(--accent-2);
+      }
+
+      h1 {
+        margin: 0;
+        max-width: 12ch;
+        font-size: clamp(2.3rem, 4vw, 4.8rem);
+        line-height: 0.94;
+        letter-spacing: -0.06em;
+      }
+
+      .lede {
+        margin: 14px 0 0;
+        max-width: 70ch;
+        color: var(--muted);
+        font: 400 15px/1.7 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .panel {
+        padding: 20px 22px;
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        background: rgba(255, 252, 246, 0.84);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(12px);
+      }
+
+      .panel h2 {
+        margin: 0 0 10px;
+        font: 800 12px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .panel p {
+        margin: 0;
+        color: var(--muted);
+        font: 400 14px/1.7 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .links {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-top: 20px;
+      }
+
+      .link {
+        display: block;
+        padding: 18px 18px 16px;
+        border-radius: 22px;
+        border: 1px solid var(--line);
+        background: rgba(255, 253, 248, 0.88);
+        box-shadow: var(--shadow);
+        text-decoration: none;
+        color: var(--ink);
+      }
+
+      .link .kicker {
+        margin: 0 0 8px;
+        font: 800 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      .link h2 {
+        margin: 0;
+        font-size: 1.8rem;
+        line-height: 1.02;
+        letter-spacing: -0.05em;
+      }
+
+      .link p {
+        margin: 10px 0 0;
+        color: var(--muted);
+        font: 400 13px/1.65 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      @media (max-width: 1100px) {
+        .hero,
+        .links {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Resume Studio behavior model</p>
+          <h1>How the product should behave while work is happening.</h1>
+          <p class="lede">
+            These pages are state studies, not visual concepts. They focus on document-first
+            workflow, transient controls, structural navigation, and what the interface does during
+            long editing sessions.
+          </p>
+        </div>
+        <div class="panel">
+          <h2>What to watch for</h2>
+          <p>
+            The document should remain primary. Controls should appear only when the user needs
+            them, then recede. Navigation should follow structure and focus should stay with the
+            content.
+          </p>
+        </div>
+      </section>
+
+      <section class="links">
+        <a class="link" href="./refined-workspace.html">
+          <p class="kicker">State 01</p>
+          <h2>Refined workspace</h2>
+          <p>Normal browsing and light editing, with the document in charge and the dock quiet.</p>
+        </a>
+        <a class="link" href="./editing-state.html">
+          <p class="kicker">State 02</p>
+          <h2>Editing state</h2>
+          <p>Active section editing, contextual controls, and inline focus near the content.</p>
+        </a>
+        <a class="link" href="./navigation-state.html">
+          <p class="kicker">State 03</p>
+          <h2>Navigation state</h2>
+          <p>Structural movement through the resume, with a lightweight map and focus-follow behavior.</p>
+        </a>
+      </section>
+    </main>
+  </body>
+</html>

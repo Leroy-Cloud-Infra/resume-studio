@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Direction 04 - Editorial Workbench</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4efe7;
+        --sheet: #fffcf7;
+        --sheet-2: #f6f1e8;
+        --ink: #161311;
+        --muted: #6b645a;
+        --line: rgba(22, 19, 17, 0.09);
+        --accent: #8a5a29;
+        --accent-2: #2950a0;
+        --accent-3: #0d7365;
+        --shadow: 0 28px 90px rgba(65, 44, 18, 0.12);
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 15% 0%, rgba(255, 255, 255, 0.88), transparent 30%),
+          radial-gradient(circle at 88% 12%, rgba(41, 80, 160, 0.09), transparent 24%),
+          linear-gradient(165deg, #f8f3eb 0%, #f1eadf 52%, #ece4d9 100%);
+        font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      }
+
+      .shell {
+        max-width: 1500px;
+        margin: 0 auto;
+        padding: 28px;
+      }
+
+      .mast {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: end;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 18px 20px 20px;
+        border-radius: 24px;
+        border: 1px solid var(--line);
+        background: rgba(255, 252, 246, 0.82);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(12px);
+      }
+
+      .mast .brand {
+        display: grid;
+        gap: 8px;
+      }
+
+      .mast .eyebrow {
+        margin: 0;
+        font: 800 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      .mast h1 {
+        margin: 0;
+        font-size: clamp(1.9rem, 3vw, 3.5rem);
+        line-height: 0.96;
+        letter-spacing: -0.05em;
+      }
+
+      .mast p {
+        margin: 0;
+        max-width: 68ch;
+        color: var(--muted);
+        font: 400 14px/1.65 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .mode-strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .mode {
+        display: inline-flex;
+        align-items: center;
+        min-height: 38px;
+        padding: 0 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(22, 19, 17, 0.12);
+        background: rgba(255, 255, 255, 0.7);
+        font: 700 12px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .mode.active {
+        background: linear-gradient(135deg, rgba(138, 90, 41, 0.14), rgba(41, 80, 160, 0.1));
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: 260px minmax(0, 1fr) 340px;
+        gap: 18px;
+        align-items: start;
+        margin-top: 18px;
+      }
+
+      .spine,
+      .inspector {
+        border-radius: 28px;
+        border: 1px solid var(--line);
+        background: rgba(255, 252, 247, 0.8);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(10px);
+      }
+
+      .spine {
+        padding: 18px;
+      }
+
+      .spine h2,
+      .inspector h2 {
+        margin: 0 0 12px;
+        font: 800 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent-3);
+      }
+
+      .spine-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .spine-item {
+        padding: 12px 0 14px;
+        border-bottom: 1px solid rgba(22, 19, 17, 0.08);
+      }
+
+      .spine-item:last-child { border-bottom: 0; }
+
+      .spine-item .label {
+        margin: 0 0 6px;
+        font: 700 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .spine-item .main {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.45;
+        font-weight: 700;
+      }
+
+      .spine-item .sub {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font: 400 12px/1.55 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .preview {
+        padding: 22px;
+        border-radius: 30px;
+        border: 1px solid var(--line);
+        background:
+          radial-gradient(circle at 25% 0%, rgba(138, 90, 41, 0.08), transparent 28%),
+          radial-gradient(circle at 88% 14%, rgba(41, 80, 160, 0.07), transparent 24%),
+          rgba(255, 252, 247, 0.74);
+        box-shadow: var(--shadow);
+      }
+
+      .sheet {
+        min-height: 980px;
+        padding: 34px 36px;
+        border-radius: 22px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(252, 249, 244, 0.98));
+        box-shadow: 0 18px 44px rgba(35, 23, 12, 0.08);
+      }
+
+      .sheet-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: end;
+        padding-bottom: 16px;
+        border-bottom: 1px solid rgba(22, 19, 17, 0.12);
+      }
+
+      .sheet-head h3 {
+        margin: 0;
+        font-size: clamp(2.1rem, 3vw, 3.8rem);
+        line-height: 0.94;
+        letter-spacing: -0.06em;
+      }
+
+      .sheet-head p {
+        margin: 0;
+        max-width: 24ch;
+        color: var(--muted);
+        font: 400 13px/1.6 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        text-align: right;
+      }
+
+      .sheet-section {
+        padding-top: 18px;
+        margin-top: 18px;
+        border-top: 1px solid rgba(22, 19, 17, 0.08);
+      }
+
+      .sheet-section:first-of-type {
+        margin-top: 0;
+        border-top: 0;
+        padding-top: 0;
+      }
+
+      .sheet-section h4 {
+        margin: 0 0 10px;
+        font: 800 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent-2);
+      }
+
+      .summary {
+        margin: 0;
+        max-width: 72ch;
+        font-size: 15px;
+        line-height: 1.72;
+        color: #2a251f;
+      }
+
+      .timeline {
+        display: grid;
+        gap: 16px;
+      }
+
+      .role {
+        display: grid;
+        grid-template-columns: 98px minmax(0, 1fr) 120px;
+        gap: 14px;
+        align-items: start;
+      }
+
+      .role time,
+      .role .loc {
+        font: 700 12px/1.5 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--muted);
+      }
+
+      .role .title {
+        margin: 0;
+        font: 800 14px/1.45 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .role ul {
+        margin: 8px 0 0;
+        padding-left: 18px;
+        color: #281f19;
+        font: 400 13px/1.62 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .sheet-note {
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px solid rgba(22, 19, 17, 0.08);
+        color: var(--muted);
+        font: 400 12px/1.7 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .inspector {
+        padding: 18px;
+      }
+
+      .inspector .block {
+        padding: 14px 0;
+        border-bottom: 1px solid rgba(22, 19, 17, 0.08);
+      }
+
+      .inspector .block:last-child { border-bottom: 0; }
+
+      .inspector .label {
+        margin: 0 0 6px;
+        font: 800 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .inspector .main {
+        margin: 0;
+        font: 700 14px/1.45 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .inspector .sub {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font: 400 12px/1.55 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .dock {
+        margin-top: 14px;
+        padding: 14px 16px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, rgba(13, 115, 101, 0.08), rgba(41, 80, 160, 0.06));
+        color: #21302a;
+        font: 400 12px/1.7 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      @media (max-width: 1320px) {
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 860px) {
+        .mode-strip,
+        .role,
+        .sheet-head {
+          grid-template-columns: 1fr;
+        }
+
+        .sheet-head p {
+          text-align: left;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="mast">
+        <div class="brand">
+          <p class="eyebrow">Direction 04</p>
+          <h1>Editorial Workbench</h1>
+          <p>
+            A calmer hybrid: the document stays primary, the controls are docked contextually,
+            and the interface reads more like an editorial instrument than a software workspace.
+          </p>
+        </div>
+        <div class="mode-strip">
+          <span class="mode active">Overview</span>
+          <span class="mode">Summary</span>
+          <span class="mode">Experience</span>
+          <span class="mode">Skills</span>
+          <span class="mode">Education</span>
+        </div>
+      </header>
+
+      <section class="workspace">
+        <aside class="spine">
+          <h2>Structural navigation</h2>
+          <div class="spine-list">
+            <div class="spine-item">
+              <p class="label">Active section</p>
+              <p class="main">Experience, role 1</p>
+              <p class="sub">The user is inside a section, not inside a settings drawer.</p>
+            </div>
+            <div class="spine-item">
+              <p class="label">Focus mode</p>
+              <p class="main">Page-fit aware editing</p>
+              <p class="sub">Navigation describes context without shouting with cards or metrics.</p>
+            </div>
+            <div class="spine-item">
+              <p class="label">Guidance</p>
+              <p class="main">Ambient editorial notes</p>
+              <p class="sub">The advice is present, but it reads like margin commentary.</p>
+            </div>
+          </div>
+        </aside>
+
+        <section class="preview">
+          <article class="sheet">
+            <div class="sheet-head">
+              <div>
+                <h3>Cesar Hernandez Lopez</h3>
+                <p>IT Support Technician · Beaverton, Oregon · A workbench for calm, operational editing.</p>
+              </div>
+              <p>
+                Document first<br />
+                Controls only appear when they matter
+              </p>
+            </div>
+
+            <section class="sheet-section">
+              <h4>Summary</h4>
+              <p class="summary">
+                IT support technician with six-plus years of experience across end-user support,
+                account administration, device provisioning, and network troubleshooting. The page
+                is built to feel deliberate and dense without becoming cramped.
+              </p>
+              <div class="sheet-note">
+                Summary guidance should feel like a typographic note in the margin, not an assistant
+                prompt floating above the work.
+              </div>
+            </section>
+
+            <section class="sheet-section">
+              <h4>Experience</h4>
+              <div class="timeline">
+                <div class="role">
+                  <time>Jun 2022 - Present</time>
+                  <div>
+                    <p class="title">IT Support Technician, Independent</p>
+                    <ul>
+                      <li>Provisioned users and devices across mixed environments.</li>
+                      <li>Documented support flows and repeated fixes in a calm, readable system.</li>
+                      <li>Managed technical work with enough density to feel credible.</li>
+                    </ul>
+                  </div>
+                  <div class="loc">Beaverton, OR</div>
+                </div>
+                <div class="role">
+                  <time>Aug 2021 - Feb 2025</time>
+                  <div>
+                    <p class="title">Specialist, Apple Inc.</p>
+                    <ul>
+                      <li>Supported customer setup, migration, and device troubleshooting.</li>
+                      <li>Kept the workflow operational while staying concise and composed.</li>
+                    </ul>
+                  </div>
+                  <div class="loc">Portland, OR</div>
+                </div>
+              </div>
+            </section>
+
+            <section class="sheet-section">
+              <h4>Contextual control</h4>
+              <div class="sheet-note">
+                One docked inspector appears only for the active section. It can hold actions, notes,
+                and brief guidance without becoming a persistent sidebar.
+              </div>
+            </section>
+          </article>
+        </section>
+
+        <aside class="inspector">
+          <h2>Docked inspector</h2>
+          <div class="block">
+            <p class="label">Current selection</p>
+            <p class="main">Experience role 1</p>
+            <p class="sub">This would slide in or dock near the active section, then recede when idle.</p>
+          </div>
+          <div class="block">
+            <p class="label">Suggested move</p>
+            <p class="main">Trim one bullet, keep the strongest proof</p>
+            <p class="sub">Advice stays operational and specific, not assistant-like.</p>
+          </div>
+          <div class="block">
+            <p class="label">Hierarchy rule</p>
+            <p class="main">Whitespace and typography do the work.</p>
+            <p class="sub">Borders are minimal so the sheet feels editorial instead of app-like.</p>
+          </div>
+          <div class="dock">
+            If a control does not help the active section, it should disappear. That keeps the
+            system calm, legible, and trustworthy.
+          </div>
+        </aside>
+      </section>
+    </main>
+  </body>
+</html>

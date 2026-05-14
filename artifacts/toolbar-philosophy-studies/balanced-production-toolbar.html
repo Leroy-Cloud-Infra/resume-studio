@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Balanced Production Toolbar</title>
+    <link rel="stylesheet" href="base.css" />
+    <style>
+      :root {
+        --toolbar-pad-y: 11px;
+        --toolbar-pad-x: 15px;
+        --toolbar-radius: 15px;
+        --toolbar-surface: rgba(255, 252, 246, 0.95);
+        --toolbar-group-gap: 14px;
+        --toolbar-item-gap: 8px;
+      }
+      .toolbar-grid {
+        display: grid;
+        grid-template-columns: 1.1fr 1fr auto;
+        gap: 12px;
+        align-items: center;
+      }
+      .toolbar-group.center {
+        justify-content: center;
+      }
+      .toolbar-group.right {
+        gap: 8px;
+      }
+      .toolbar-note {
+        margin: 2px 0 0;
+        color: var(--muted);
+        font: 400 11.5px/1.5 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      .toolbar-item {
+        min-height: 33px;
+        padding: 0 9px;
+        border-radius: 9px;
+      }
+      .toolbar-item.focus {
+        border-color: rgba(41, 80, 160, 0.16);
+        background: rgba(41, 80, 160, 0.04);
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="chrome">
+        <p class="eyebrow">Study 04</p>
+        <h1>Balanced Production Toolbar</h1>
+        <p>Restrained but usable. The likely daily default.</p>
+      </header>
+
+      <header class="toolbar" aria-label="Document toolbar">
+        <div class="toolbar-grid">
+          <div class="toolbar-group">
+            <div class="toolbar-block">
+              <div class="toolbar-kicker">Resume</div>
+              <p class="toolbar-title">Cesar Hernandez Lopez</p>
+              <p class="toolbar-note">Saved · Page 2 · Dense technical resume</p>
+            </div>
+          </div>
+          <div class="toolbar-group center">
+            <span class="toolbar-badge">Template: Technical Minimal</span>
+            <span class="toolbar-item secondary">Density · Tight</span>
+            <span class="toolbar-item secondary">Theme · Editorial</span>
+          </div>
+          <div class="toolbar-group right">
+            <button class="toolbar-item subtle">Undo</button>
+            <button class="toolbar-item subtle">Redo</button>
+            <button class="toolbar-item subtle">Add section</button>
+            <button class="toolbar-item focus">Export</button>
+            <button class="toolbar-item subtle">Settings</button>
+          </div>
+        </div>
+      </header>
+
+      <section class="workspace">
+        <aside class="editor">
+          <div class="status"><h2>Work Experience</h2><p>Balanced density for daily use.</p></div>
+          <section class="section"><div class="section-head"><div class="section-title"><div class="collapse">+</div><div><p class="section-name">Header</p><p class="section-meta">Collapsed</p></div></div><div class="controls">Edit</div></div></section>
+          <section class="section"><div class="section-head"><div class="section-title"><div class="collapse">+</div><div><p class="section-name">Summary</p><p class="section-meta">Collapsed</p></div></div><div class="controls">Edit</div></div></section>
+          <section class="section">
+            <div class="section-head"><div class="section-title"><div class="collapse">−</div><div><p class="section-name">Work Experience</p><p class="section-meta">Expanded</p></div></div><div class="controls">Add role</div></div>
+            <p class="helper">Page 2 · Dense role · Readable</p>
+            <article class="role active">
+              <div class="role-head"><div><p class="role-title">IT Support Technician</p><p class="role-sub">Independent · Jun 2022 - Present</p></div><div class="controls">Remove</div></div>
+              <div class="fields">
+                <div class="field"><label>Title</label><div class="value active">IT Support Technician</div></div>
+                <div class="field"><label>Company</label><div class="value">Independent</div></div>
+                <div class="field"><label>Location</label><div class="value">San Francisco, CA</div></div>
+                <div class="field"><label>Dates</label><div class="value">Add dates</div></div>
+              </div>
+              <div class="guidance-line"><span class="token">Page 2</span><span class="token">Long bullet</span><span class="token">Readable</span></div>
+              <div class="bullets">
+                <h4>Bullets</h4>
+                <div class="bullet"><div class="handle">•</div><div class="text active">Resolved endpoint, access, and onboarding issues for a 180-person mixed-device team.</div><div class="actions">Remove</div></div>
+                <div class="bullet"><div class="handle">•</div><div class="text">Documented repeat fixes and reduced handoff time for common support requests.</div><div class="actions">Remove</div></div>
+                <div class="bullet"><div class="handle">•</div><div class="text">Add bullet</div><div class="actions">Remove</div></div>
+              </div>
+              <p class="helper">Long bullet · Dense role</p>
+            </article>
+            <article class="role inactive"><div class="role-head"><div><p class="role-title">Desktop Support Specialist</p><p class="role-sub">Northwind Labs · Mar 2020 - May 2022</p></div><div class="controls">Expand</div></div></article>
+            <article class="role inactive"><div class="role-head"><div><p class="role-title">Help Desk Associate</p><p class="role-sub">Summit Support · Jul 2018 - Feb 2020</p></div><div class="controls">Expand</div></div></article>
+          </section>
+          <section class="section"><div class="section-head"><div class="section-title"><div class="collapse">+</div><div><p class="section-name">Skills</p><p class="section-meta">Collapsed</p></div></div><div class="controls">Edit</div></div></section>
+          <section class="section"><div class="section-head"><div class="section-title"><div class="collapse">+</div><div><p class="section-name">Education</p><p class="section-meta">Collapsed</p></div></div><div class="controls">Edit</div></div></section>
+        </aside>
+        <section class="preview">
+          <h3>Cesar Hernandez Lopez</h3>
+          <p>IT Support Technician · Desktop support, device lifecycle, and technical operations</p>
+          <div class="resume-body">
+            <p style="margin-top: 0; font: 800 12px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: .16em; text-transform: uppercase; color: var(--accent);">Work Experience</p>
+            <p style="margin-top: 12px;">IT Support Technician | Independent | Jun 2022 - Present</p>
+            <p>• Resolved endpoint, access, and onboarding issues for a 180-person mixed-device team.</p>
+            <p>• Documented repeat fixes and reduced handoff time for common support requests.</p>
+            <p>• Maintained device inventory, ticket triage, and routine workstation setup.</p>
+          </div>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

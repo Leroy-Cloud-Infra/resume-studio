@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Resume Studio - Navigation State</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #eef2ef;
+        --paper: #fffdfa;
+        --ink: #181f1c;
+        --muted: #66736d;
+        --line: rgba(24, 31, 28, 0.09);
+        --accent: #0f6f60;
+        --accent-2: #355fcc;
+        --accent-3: #aa652a;
+        --shadow: 0 26px 84px rgba(18, 35, 31, 0.13);
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background:
+          radial-gradient(circle at top left, rgba(15, 111, 96, 0.08), transparent 28%),
+          radial-gradient(circle at 85% 12%, rgba(53, 95, 204, 0.08), transparent 24%),
+          linear-gradient(180deg, #f4f7f5 0%, #edf2ee 54%, #e7ede9 100%);
+      }
+
+      .shell {
+        max-width: 1540px;
+        margin: 0 auto;
+        padding: 28px;
+      }
+
+      .top {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 18px 20px;
+        border-radius: 24px;
+        border: 1px solid var(--line);
+        background: rgba(255, 253, 249, 0.84);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(12px);
+      }
+
+      .brand {
+        display: grid;
+        gap: 6px;
+      }
+
+      .eyebrow {
+        margin: 0;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2rem, 3vw, 3.5rem);
+        line-height: 0.95;
+        letter-spacing: -0.05em;
+      }
+
+      .top p {
+        margin: 0;
+        max-width: 74ch;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.7;
+      }
+
+      .state-strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .state {
+        display: inline-flex;
+        align-items: center;
+        min-height: 38px;
+        padding: 0 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(24, 31, 28, 0.1);
+        background: #fff;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .state.active {
+        background: linear-gradient(135deg, rgba(15, 111, 96, 0.12), rgba(53, 95, 204, 0.08));
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: 220px minmax(0, 1fr) 320px;
+        gap: 18px;
+        align-items: start;
+        margin-top: 18px;
+      }
+
+      .map,
+      .dock {
+        padding: 18px;
+        border-radius: 26px;
+        border: 1px solid var(--line);
+        background: rgba(255, 253, 249, 0.8);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(10px);
+      }
+
+      .map h2,
+      .dock h2 {
+        margin: 0 0 12px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent-3);
+      }
+
+      .map-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .map-item {
+        padding: 12px 0 14px;
+        border-bottom: 1px solid rgba(24, 31, 28, 0.08);
+      }
+
+      .map-item:last-child { border-bottom: 0; }
+
+      .map-item .label {
+        margin: 0 0 6px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .map-item .main {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1.5;
+      }
+
+      .map-item .sub {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .document {
+        padding: 24px;
+        border-radius: 30px;
+        border: 1px solid var(--line);
+        background: rgba(255, 253, 249, 0.78);
+        box-shadow: var(--shadow);
+      }
+
+      .page {
+        min-height: 1040px;
+        padding: 32px 36px 42px;
+        border-radius: 22px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(251, 247, 242, 0.99));
+        box-shadow: 0 18px 44px rgba(33, 24, 15, 0.08);
+      }
+
+      .page-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: end;
+        padding-bottom: 16px;
+        border-bottom: 1px solid rgba(24, 31, 28, 0.1);
+      }
+
+      .page-head h2 {
+        margin: 0;
+        font-size: clamp(2rem, 3vw, 3.6rem);
+        line-height: 0.95;
+        letter-spacing: -0.06em;
+      }
+
+      .page-head p {
+        margin: 0;
+        max-width: 26ch;
+        text-align: right;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .content {
+        display: grid;
+        gap: 18px;
+        margin-top: 18px;
+      }
+
+      .section {
+        display: grid;
+        gap: 10px;
+        padding-top: 14px;
+        border-top: 1px solid rgba(24, 31, 28, 0.07);
+      }
+
+      .section:first-child {
+        padding-top: 0;
+        border-top: 0;
+      }
+
+      .section .label {
+        margin: 0;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent-2);
+      }
+
+      .section .row {
+        display: grid;
+        grid-template-columns: 90px minmax(0, 1fr) 120px;
+        gap: 14px;
+        align-items: start;
+      }
+
+      .section .time,
+      .section .loc {
+        font: 700 12px/1.5 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--muted);
+      }
+
+      .section .title {
+        margin: 0;
+        font: 800 14px/1.45 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .section ul {
+        margin: 8px 0 0;
+        padding-left: 18px;
+        color: #25201a;
+        font-size: 13px;
+        line-height: 1.62;
+      }
+
+      .focus {
+        display: inline;
+        padding: 0 3px 1px;
+        border-bottom: 1px solid rgba(15, 111, 96, 0.35);
+        background: linear-gradient(180deg, rgba(15, 111, 96, 0.08), transparent 82%);
+      }
+
+      .annotation {
+        margin-top: 10px;
+        padding: 11px 13px;
+        border-left: 2px solid rgba(15, 111, 96, 0.22);
+        background: linear-gradient(90deg, rgba(15, 111, 96, 0.06), transparent 72%);
+        color: #33463f;
+        font-size: 12px;
+        line-height: 1.65;
+      }
+
+      .annotation strong {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      .dock .block {
+        padding: 14px;
+        border-radius: 18px;
+        border: 1px solid rgba(24, 31, 28, 0.08);
+        background: #fff;
+      }
+
+      .dock .block + .block {
+        margin-top: 12px;
+      }
+
+      .dock .kicker {
+        margin: 0 0 6px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .dock .main {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1.55;
+      }
+
+      .dock .sub {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .session {
+        margin-top: 16px;
+        padding: 14px 15px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(24, 31, 28, 0.08);
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.65;
+      }
+
+      .footer {
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px solid rgba(24, 31, 28, 0.08);
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.7;
+      }
+
+      @media (max-width: 1100px) {
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .page-head,
+        .section .row {
+          grid-template-columns: 1fr;
+        }
+
+        .page-head p {
+          text-align: left;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="top">
+        <div class="brand">
+          <p class="eyebrow">Navigation state</p>
+          <h1>Structural movement through the document.</h1>
+          <p>
+            The user is moving by section, not by panel. The map follows the current place in the
+            document, and the rest of the interface stays quiet so the page can do the orienting.
+          </p>
+        </div>
+        <div class="state-strip">
+          <span class="state active">Section: Experience</span>
+          <span class="state">Page 2</span>
+          <span class="state">Focus follow on</span>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <aside class="map">
+          <h2>Map</h2>
+          <div class="map-list">
+            <div class="map-item">
+              <p class="label">Current position</p>
+              <p class="main">Experience / role 2</p>
+              <p class="sub">The active area follows scroll position and keyboard navigation.</p>
+            </div>
+            <div class="map-item">
+              <p class="label">Next sections</p>
+              <p class="main">Skills, education</p>
+              <p class="sub">The map shows what is ahead without demanding interaction.</p>
+            </div>
+            <div class="map-item">
+              <p class="label">Movement</p>
+              <p class="main">j / k, arrows, heading jumps</p>
+              <p class="sub">The workspace supports quick structural travel during long sessions.</p>
+            </div>
+          </div>
+        </aside>
+
+        <article class="document">
+          <div class="page">
+            <div class="page-head">
+              <div>
+                <h2>Cesar Hernandez Lopez</h2>
+                <p>Focus follows structure.</p>
+              </div>
+              <p>
+                Current block:<br />
+                Experience / Apple Inc.
+              </p>
+            </div>
+
+            <div class="content">
+              <section class="section">
+                <p class="label">Above the fold</p>
+                <p class="title">Earlier sections remain in the memory of the map.</p>
+                <div class="annotation">
+                  <strong>Scroll-aware behavior</strong>
+                  As the user moves down the page, the map updates the active section without opening
+                  anything new.
+                </div>
+              </section>
+
+              <section class="section">
+                <p class="label">Active section</p>
+                <div class="row">
+                  <div class="time">Aug 2021 - Feb 2025</div>
+                  <div>
+                    <p class="title"><span class="focus">Specialist, Apple Inc.</span></p>
+                    <ul>
+                      <li>The current section is highlighted while the rest of the workspace stays quiet.</li>
+                      <li>Controls can appear briefly, but the map and the page remain the main cues.</li>
+                    </ul>
+                  </div>
+                  <div class="loc">Portland, OR</div>
+                </div>
+                <div class="annotation">
+                  <strong>Transient controls</strong>
+                  A small dock can appear only for this section, then vanish when the user moves on.
+                </div>
+              </section>
+
+              <section class="section">
+                <p class="label">Why it feels natural</p>
+                <p class="title">The product reacts to where the user is working.</p>
+                <div class="annotation">
+                  <strong>Focus trail</strong>
+                  The interface remembers the last touched block so the user can move back without
+                  re-orienting from scratch.
+                </div>
+              </section>
+            </div>
+
+            <div class="session">
+              In a long session, this should feel like navigating a manuscript: the outline helps,
+              the page stays primary, and the UI clears itself when the user enters flow.
+            </div>
+          </div>
+        </article>
+
+        <aside class="dock">
+          <h2>Transient dock</h2>
+          <div class="block">
+            <p class="kicker">Current selection</p>
+            <p class="main">Role 2 / Apple Inc.</p>
+            <p class="sub">This is the only section that needs immediate controls right now.</p>
+          </div>
+          <div class="block">
+            <p class="kicker">Available move</p>
+            <p class="main">Jump to summary or next section</p>
+            <p class="sub">Navigation remains lightweight and section-oriented.</p>
+          </div>
+          <div class="block">
+            <p class="kicker">What stays visible</p>
+            <p class="main">Current block, page position, outline</p>
+            <p class="sub">Everything else can fade while the user is moving through the document.</p>
+          </div>
+          <p class="footer">
+            The navigation state should feel like a composition tool in motion, not a page of
+            controls waiting to be used.
+          </p>
+        </aside>
+      </section>
+    </main>
+  </body>
+</html>

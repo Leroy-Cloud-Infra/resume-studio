@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Spacing and Rhythm Studies</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4f1ea;
+        --paper: #fffdf8;
+        --ink: #181512;
+        --muted: #686158;
+        --line: rgba(24, 21, 18, 0.1);
+        --accent: #0f6f60;
+        --accent-2: #2950a0;
+        --shadow: 0 10px 28px rgba(49, 34, 14, 0.06);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background:
+          radial-gradient(circle at top left, rgba(255,255,255,0.88), transparent 36%),
+          linear-gradient(165deg, #f8f4ec 0%, #f1ebdf 55%, #ece4d7 100%);
+      }
+      .page { max-width: 1700px; margin: 0 auto; padding: 30px 26px 44px; }
+      .intro {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.95fr);
+        align-items: end;
+        margin-bottom: 22px;
+      }
+      .eyebrow {
+        margin: 0 0 10px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: var(--accent-2);
+      }
+      h1 {
+        margin: 0;
+        max-width: 14ch;
+        font-family: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, serif;
+        font-size: clamp(2.2rem, 4.2vw, 4.8rem);
+        line-height: 0.94;
+        letter-spacing: -0.06em;
+      }
+      .lede {
+        margin: 14px 0 0;
+        max-width: 72ch;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.7;
+      }
+      .panel {
+        padding: 18px 20px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: rgba(255,255,255,0.8);
+        box-shadow: var(--shadow);
+      }
+      .panel h2 {
+        margin: 0 0 8px;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+      .panel p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin-top: 18px;
+      }
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: rgba(255,253,248,0.88);
+        padding: 18px;
+        box-shadow: var(--shadow);
+        min-height: 176px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+      .card h2 {
+        margin: 0;
+        font: 800 12px/1.2 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+      .card h3 {
+        margin: 10px 0 0;
+        font-size: clamp(1.5rem, 2vw, 2rem);
+        line-height: 1;
+        letter-spacing: -0.04em;
+      }
+      .card p {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font: 400 13px/1.7 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      .link {
+        margin-top: 16px;
+        color: var(--ink);
+        font: 700 12px/1.2 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      a { color: inherit; text-decoration: none; }
+      @media (max-width: 860px) {
+        .intro { grid-template-columns: 1fr; }
+        .grid { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header class="intro">
+        <div>
+          <p class="eyebrow">Spacing and Rhythm Studies</p>
+          <h1>How the editor should breathe</h1>
+          <p class="lede">The same editor structure and content are shown across four spacing systems so density, grouping, and vertical pacing can be compared directly.</p>
+        </div>
+        <aside class="panel">
+          <h2>What varies</h2>
+          <p>Only spacing, grouping, separators, vertical rhythm, section pacing, bullet rhythm, and expanded versus collapsed density.</p>
+        </aside>
+      </header>
+      <section class="grid">
+        <a class="card" href="tight-operational-rhythm.html">
+          <div>
+            <h2>Study 01</h2>
+            <h3>Tight Operational Rhythm</h3>
+            <p>Denser pacing for long technical resumes and high-frequency editing.</p>
+          </div>
+          <div class="link">Open study</div>
+        </a>
+        <a class="card" href="editorial-breathing-rhythm.html">
+          <div>
+            <h2>Study 02</h2>
+            <h3>Editorial Breathing Rhythm</h3>
+            <p>More whitespace and clearer pauses between document groups.</p>
+          </div>
+          <div class="link">Open study</div>
+        </a>
+        <a class="card" href="structured-cluster-rhythm.html">
+          <div>
+            <h2>Study 03</h2>
+            <h3>Structured Cluster Rhythm</h3>
+            <p>Controlled density pockets organized by grouped clusters.</p>
+          </div>
+          <div class="link">Open study</div>
+        </a>
+        <a class="card" href="balanced-production-rhythm.html">
+          <div>
+            <h2>Study 04</h2>
+            <h3>Balanced Production Rhythm</h3>
+            <p>Balanced density and calmness for everyday use.</p>
+          </div>
+          <div class="link">Open study</div>
+        </a>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Direction 01 - Quiet Editorial Desk</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f3eee6;
+        --surface: #fffdf8;
+        --surface-2: #f8f2e9;
+        --ink: #171411;
+        --muted: #6c655b;
+        --line: rgba(23, 20, 17, 0.11);
+        --accent: #8b5a24;
+        --accent-2: #27468a;
+        --good: #2e6a49;
+        --warn: #9b5c14;
+        --shadow: 0 24px 80px rgba(59, 41, 17, 0.12);
+        --sheet-shadow: 0 30px 80px rgba(44, 28, 11, 0.16);
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(255, 255, 255, 0.8), transparent 32%),
+          radial-gradient(circle at 80% 0%, rgba(150, 180, 255, 0.16), transparent 24%),
+          linear-gradient(165deg, #f7f1e8 0%, #f1eadf 48%, #ece3d7 100%);
+        font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      }
+
+      .shell {
+        max-width: 1440px;
+        margin: 0 auto;
+        padding: 28px;
+      }
+
+      .topbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 16px 20px;
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: rgba(255, 252, 246, 0.76);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(14px);
+      }
+
+      .brand {
+        display: grid;
+        gap: 6px;
+      }
+
+      .brand span {
+        font: 700 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      .brand h1 {
+        margin: 0;
+        font-size: 1.45rem;
+        letter-spacing: -0.03em;
+      }
+
+      .topbar p {
+        margin: 0;
+        max-width: 58ch;
+        color: var(--muted);
+        font: 400 14px/1.6 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .status {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 38px;
+        padding: 0 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(23, 20, 17, 0.12);
+        background: #ffffff;
+        font: 600 12px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--ink);
+      }
+
+      .pill strong {
+        font-weight: 700;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: 360px minmax(0, 1fr);
+        gap: 18px;
+        margin-top: 18px;
+      }
+
+      .editor {
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-radius: 26px;
+        background: rgba(255, 253, 248, 0.84);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(12px);
+      }
+
+      .editor section + section {
+        margin-top: 16px;
+      }
+
+      .section-label {
+        margin: 0 0 10px;
+        font: 700 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      .stack {
+        display: grid;
+        gap: 10px;
+      }
+
+      .field {
+        padding: 14px 14px 12px;
+        border-radius: 18px;
+        border: 1px solid rgba(23, 20, 17, 0.08);
+        background: linear-gradient(180deg, #fffdf9, #f7f1e8);
+      }
+
+      .field .kicker {
+        margin: 0 0 6px;
+        font: 700 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .field .value {
+        margin: 0;
+        font: 500 14px/1.5 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .callout {
+        margin-top: 10px;
+        padding: 12px 14px;
+        border-left: 3px solid var(--accent);
+        border-radius: 14px;
+        background: rgba(139, 90, 36, 0.07);
+        font: 400 13px/1.6 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--muted);
+      }
+
+      .field-grid {
+        display: grid;
+        gap: 10px;
+      }
+
+      .small-grid {
+        display: grid;
+        gap: 8px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .score-row {
+        display: grid;
+        gap: 10px;
+      }
+
+      .score {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 11px 12px;
+        border-radius: 14px;
+        background: var(--surface);
+        border: 1px solid rgba(23, 20, 17, 0.08);
+        font: 600 13px/1.4 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .score span {
+        color: var(--muted);
+        font-weight: 500;
+      }
+
+      .score b {
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .preview {
+        position: relative;
+        padding: 26px;
+        border: 1px solid var(--line);
+        border-radius: 30px;
+        background: rgba(255, 253, 248, 0.72);
+        box-shadow: var(--sheet-shadow);
+        overflow: hidden;
+      }
+
+      .preview::before {
+        content: "";
+        position: absolute;
+        inset: 18px;
+        border-radius: 22px;
+        background:
+          linear-gradient(to right, rgba(23, 20, 17, 0.06) 0 1px, transparent 1px 100%) 0 0 / 100% 1px repeat-y,
+          linear-gradient(180deg, rgba(23, 20, 17, 0.03), transparent 18%);
+        opacity: 0.4;
+        pointer-events: none;
+      }
+
+      .sheet {
+        position: relative;
+        z-index: 1;
+        min-height: 920px;
+        padding: 32px 36px;
+        border-radius: 18px;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 251, 244, 0.98)),
+          #fff;
+        box-shadow: 0 22px 50px rgba(34, 22, 11, 0.08);
+      }
+
+      .sheet-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        align-items: end;
+        padding-bottom: 16px;
+        border-bottom: 1px solid rgba(23, 20, 17, 0.14);
+      }
+
+      .name {
+        margin: 0;
+        font-size: clamp(2rem, 2.8vw, 3.6rem);
+        line-height: 0.94;
+        letter-spacing: -0.06em;
+      }
+
+      .meta {
+        margin: 0;
+        text-align: right;
+        max-width: 22ch;
+        font: 500 13px/1.6 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--muted);
+      }
+
+      .sheet-body {
+        display: grid;
+        gap: 18px;
+        padding-top: 18px;
+      }
+
+      .sheet-section {
+        display: grid;
+        gap: 8px;
+      }
+
+      .sheet-section h2 {
+        margin: 0;
+        font: 700 12px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+
+      .summary-text {
+        max-width: 72ch;
+        margin: 0;
+        font-size: 15px;
+        line-height: 1.72;
+        color: #2d2a26;
+      }
+
+      .experience {
+        display: grid;
+        gap: 14px;
+      }
+
+      .job {
+        display: grid;
+        grid-template-columns: 92px minmax(0, 1fr) 120px;
+        gap: 14px;
+        padding-top: 14px;
+        border-top: 1px solid rgba(23, 20, 17, 0.08);
+      }
+
+      .job:first-child {
+        border-top: 0;
+        padding-top: 0;
+      }
+
+      .job time,
+      .job .loc {
+        font: 500 12px/1.5 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--muted);
+      }
+
+      .job .role {
+        margin: 0;
+        font: 700 15px/1.45 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .job ul {
+        margin: 6px 0 0;
+        padding-left: 18px;
+        color: #27221d;
+        font: 400 13px/1.65 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .skills {
+        display: grid;
+        gap: 10px;
+      }
+
+      .skill-row {
+        display: grid;
+        grid-template-columns: 260px 1fr;
+        gap: 14px;
+        padding-top: 12px;
+        border-top: 1px solid rgba(23, 20, 17, 0.08);
+      }
+
+      .skill-row:first-child {
+        border-top: 0;
+        padding-top: 0;
+      }
+
+      .skill-row b {
+        font: 700 13px/1.4 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .skill-row p {
+        margin: 0;
+        color: #28231e;
+        font: 400 13px/1.55 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .guidance {
+        margin-top: 14px;
+        padding: 12px 14px;
+        border-radius: 16px;
+        background: rgba(39, 70, 138, 0.06);
+        border: 1px solid rgba(39, 70, 138, 0.12);
+        color: #2c3a5f;
+        font: 500 13px/1.55 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .footer-note {
+        margin: 16px 0 0;
+        font: 400 12px/1.6 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--muted);
+      }
+
+      @media (max-width: 1160px) {
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+
+        .sheet {
+          min-height: 0;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .job,
+        .skill-row,
+        .sheet-head {
+          grid-template-columns: 1fr;
+        }
+
+        .sheet-head {
+          align-items: start;
+        }
+
+        .meta {
+          text-align: left;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div class="brand">
+          <span>Direction 01</span>
+          <h1>Quiet Editorial Desk</h1>
+        </div>
+        <p>
+          The resume stays visually dominant. Editing exists, but it reads like a manuscript
+          desk, not a software admin panel.
+        </p>
+        <div class="status">
+          <div class="pill"><strong>1 page</strong> target</div>
+          <div class="pill">Editorial tone</div>
+          <div class="pill">Inline guidance</div>
+        </div>
+      </header>
+
+      <section class="workspace">
+        <aside class="editor">
+          <section>
+            <p class="section-label">Workspace philosophy</p>
+            <div class="field">
+              <p class="kicker">Preview-first</p>
+              <p class="value">
+                This direction treats the resume as a document, not a form. The preview is the
+                main surface; the editor is a slim, contextual companion.
+              </p>
+            </div>
+            <div class="callout">
+              Calm trust comes from visual restraint, strong typography, and a preview that feels
+              like a polished page rather than a canvas.
+            </div>
+          </section>
+
+          <section>
+            <p class="section-label">Editing model</p>
+            <div class="stack">
+              <div class="field">
+                <p class="kicker">Header</p>
+                <p class="value">Name, contact line, and links only.</p>
+              </div>
+              <div class="field">
+                <p class="kicker">Experience</p>
+                <p class="value">Each role opens as a focused card with concise fields.</p>
+              </div>
+              <div class="field">
+                <p class="kicker">Guidance</p>
+                <p class="value">Page-fit and bullet-quality notes stay visible but quiet.</p>
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <p class="section-label">Natural guidance</p>
+            <div class="small-grid">
+              <div class="field">
+                <p class="kicker">Fit</p>
+                <p class="value">88% page used</p>
+              </div>
+              <div class="field">
+                <p class="kicker">Bullets</p>
+                <p class="value">Balanced density</p>
+              </div>
+            </div>
+            <div class="callout">
+              Guidance is phrased as editorial feedback: “tighten,” “prioritize,” or “scan risk.”
+            </div>
+          </section>
+
+          <section>
+            <p class="section-label">Hierarchy strategy</p>
+            <div class="score-row">
+              <div class="score"><b>Preview</b><span>Primary</span></div>
+              <div class="score"><b>Current section</b><span>Secondary</span></div>
+              <div class="score"><b>Advice</b><span>Tertiary</span></div>
+            </div>
+          </section>
+        </aside>
+
+        <section class="preview">
+          <article class="sheet">
+            <div class="sheet-head">
+              <div>
+                <h2 class="name">Cesar Hernandez Lopez</h2>
+                <p class="footer-note">IT Support Technician · Beaverton, Oregon · cesarhernandezl@proton.me</p>
+              </div>
+              <p class="meta">
+                Calm editorial system<br />
+                One document, one voice, one clear hierarchy
+              </p>
+            </div>
+
+            <div class="sheet-body">
+              <section class="sheet-section">
+                <h2>Summary</h2>
+                <p class="summary-text">
+                  IT support technician with six-plus years of experience across macOS, Windows,
+                  and Linux environments. Strong in account administration, network troubleshooting,
+                  device provisioning, and documentation. Clear, calm, and explicit structure keeps
+                  the page trustworthy.
+                </p>
+                <div class="guidance">
+                  Summary is concise enough to feel intentional, but still leaves room for the page
+                  to breathe.
+                </div>
+              </section>
+
+              <section class="sheet-section">
+                <h2>Experience</h2>
+                <div class="experience">
+                  <div class="job">
+                    <time>Jun 2022 - Present</time>
+                    <div>
+                      <p class="role">IT Support Technician, Independent</p>
+                      <ul>
+                        <li>Resolved desktop, mobile, and network issues across mixed environments.</li>
+                        <li>Provisioned users, devices, and knowledge base workflows.</li>
+                        <li>Kept ticket notes and documentation aligned with support outcomes.</li>
+                      </ul>
+                    </div>
+                    <div class="loc">Beaverton, OR</div>
+                  </div>
+
+                  <div class="job">
+                    <time>Aug 2021 - Feb 2025</time>
+                    <div>
+                      <p class="role">Specialist, Apple Inc.</p>
+                      <ul>
+                        <li>Supported daily customer workflows, migrations, and device setup.</li>
+                        <li>Maintained a high-trust tone through clear and practical communication.</li>
+                      </ul>
+                    </div>
+                    <div class="loc">Portland, OR</div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="sheet-section">
+                <h2>Technical Skills</h2>
+                <div class="skills">
+                  <div class="skill-row">
+                    <b>Platforms</b>
+                    <p>Windows, macOS, Linux, iOS</p>
+                  </div>
+                  <div class="skill-row">
+                    <b>Administration</b>
+                    <p>Active Directory, Microsoft 365, Google Workspace, PowerShell basics</p>
+                  </div>
+                  <div class="skill-row">
+                    <b>Networking</b>
+                    <p>DNS, DHCP, VPN, Wi‑Fi, IP routing, Tailscale</p>
+                  </div>
+                </div>
+                <div class="guidance">
+                  The hierarchy stays simple: section title, then the page content, then a single
+                  small note if needed.
+                </div>
+              </section>
+            </div>
+          </article>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

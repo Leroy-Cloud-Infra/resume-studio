@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Resume Studio - Editing State</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4efe7;
+        --paper: #fffdf9;
+        --ink: #181512;
+        --muted: #685f56;
+        --line: rgba(24, 21, 18, 0.09);
+        --accent: #8a5b26;
+        --accent-2: #2d4a95;
+        --shadow: 0 24px 82px rgba(50, 34, 15, 0.12);
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+        background:
+          radial-gradient(circle at top left, rgba(255, 255, 255, 0.82), transparent 34%),
+          linear-gradient(165deg, #f8f2e8 0%, #f0e9dd 52%, #ece4d7 100%);
+      }
+
+      .shell {
+        max-width: 1540px;
+        margin: 0 auto;
+        padding: 28px;
+      }
+
+      .top {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 18px 20px;
+        border-radius: 24px;
+        border: 1px solid var(--line);
+        background: rgba(255, 252, 246, 0.84);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(12px);
+      }
+
+      .brand {
+        display: grid;
+        gap: 6px;
+      }
+
+      .eyebrow {
+        margin: 0;
+        font: 800 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2rem, 3vw, 3.5rem);
+        line-height: 0.96;
+        letter-spacing: -0.05em;
+      }
+
+      .top p {
+        margin: 0;
+        max-width: 74ch;
+        color: var(--muted);
+        font: 400 14px/1.7 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: 220px minmax(0, 1fr) 330px;
+        gap: 18px;
+        align-items: start;
+        margin-top: 18px;
+      }
+
+      .map,
+      .dock {
+        padding: 18px;
+        border-radius: 26px;
+        border: 1px solid var(--line);
+        background: rgba(255, 253, 249, 0.8);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(10px);
+      }
+
+      .map h2,
+      .dock h2 {
+        margin: 0 0 12px;
+        font: 800 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent-2);
+      }
+
+      .map-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .map-item {
+        padding: 12px 0 14px;
+        border-bottom: 1px solid rgba(24, 21, 18, 0.08);
+      }
+
+      .map-item:last-child { border-bottom: 0; }
+
+      .map-item .label {
+        margin: 0 0 6px;
+        font: 800 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .map-item .main {
+        margin: 0;
+        font: 700 13px/1.5 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .map-item .sub {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font: 400 12px/1.55 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .document {
+        padding: 24px;
+        border-radius: 30px;
+        border: 1px solid var(--line);
+        background: rgba(255, 253, 248, 0.78);
+        box-shadow: var(--shadow);
+      }
+
+      .page {
+        min-height: 1060px;
+        padding: 32px 36px 42px;
+        border-radius: 22px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(250, 246, 240, 0.99));
+        box-shadow: 0 18px 44px rgba(36, 24, 12, 0.08);
+      }
+
+      .page-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: end;
+        padding-bottom: 16px;
+        border-bottom: 1px solid rgba(24, 21, 18, 0.1);
+      }
+
+      .page-head h2 {
+        margin: 0;
+        font-size: clamp(2rem, 3vw, 3.6rem);
+        line-height: 0.95;
+        letter-spacing: -0.06em;
+      }
+
+      .page-head p {
+        margin: 0;
+        max-width: 24ch;
+        text-align: right;
+        color: var(--muted);
+        font: 400 13px/1.6 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .content {
+        display: grid;
+        gap: 18px;
+        margin-top: 18px;
+      }
+
+      .editing-focus {
+        position: relative;
+        padding-top: 14px;
+        border-top: 1px solid rgba(24, 21, 18, 0.07);
+      }
+
+      .editing-focus:first-child {
+        padding-top: 0;
+        border-top: 0;
+      }
+
+      .editing-focus .label {
+        margin: 0 0 8px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent-2);
+      }
+
+      .active-line {
+        display: inline;
+        padding: 0 3px 1px;
+        background: linear-gradient(180deg, rgba(138, 91, 38, 0.12), transparent 78%);
+        border-bottom: 1px solid rgba(138, 91, 38, 0.3);
+      }
+
+      .editing-focus .text {
+        margin: 0;
+        max-width: 74ch;
+        font-size: 15px;
+        line-height: 1.72;
+        color: #25201a;
+      }
+
+      .cursor {
+        display: inline-block;
+        width: 1px;
+        height: 1.1em;
+        margin-left: 2px;
+        vertical-align: -0.15em;
+        background: #2a241d;
+      }
+
+      .inline-dock {
+        position: absolute;
+        right: -18px;
+        top: 22px;
+        width: 290px;
+        padding: 12px;
+        border-radius: 18px;
+        border: 1px solid rgba(24, 21, 18, 0.08);
+        background: rgba(255, 255, 255, 0.96);
+        box-shadow: 0 14px 30px rgba(39, 26, 12, 0.08);
+      }
+
+      .inline-dock .row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        font: 700 12px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .inline-dock .row span {
+        color: var(--muted);
+      }
+
+      .inline-dock .controls {
+        margin-top: 10px;
+        display: grid;
+        gap: 8px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .inline-dock button {
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(24, 21, 18, 0.1);
+        background: #fff;
+        color: var(--ink);
+        font: 700 12px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .annotation {
+        margin-top: 10px;
+        padding: 11px 13px;
+        border-left: 2px solid rgba(45, 74, 149, 0.24);
+        background: linear-gradient(90deg, rgba(45, 74, 149, 0.07), transparent 72%);
+        color: #384665;
+        font: 400 12px/1.65 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .annotation strong {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--accent-2);
+      }
+
+      .dock .block {
+        padding: 14px;
+        border-radius: 18px;
+        border: 1px solid rgba(24, 21, 18, 0.08);
+        background: #fff;
+      }
+
+      .dock .block + .block {
+        margin-top: 12px;
+      }
+
+      .dock .kicker {
+        margin: 0 0 6px;
+        font: 800 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .dock .main {
+        margin: 0;
+        font: 700 13px/1.55 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .dock .sub {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font: 400 12px/1.55 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .session {
+        margin-top: 16px;
+        padding: 14px 15px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(24, 21, 18, 0.08);
+        color: var(--muted);
+        font: 400 13px/1.65 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .footer {
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px solid rgba(24, 21, 18, 0.08);
+        color: var(--muted);
+        font: 400 12px/1.7 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      @media (max-width: 1100px) {
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+
+        .inline-dock {
+          position: static;
+          width: auto;
+          margin-top: 14px;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .page-head {
+          grid-template-columns: 1fr;
+        }
+
+        .page-head p {
+          text-align: left;
+        }
+
+        .inline-dock .controls {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="top">
+        <div class="brand">
+          <p class="eyebrow">Editing state</p>
+          <h1>Editing happens right next to the active content.</h1>
+          <p>
+            The page tightens around the selected section. The dock appears only because the user
+            is actively working here, and it stays small enough that the document still feels like
+            the application.
+          </p>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <aside class="map">
+          <h2>Location</h2>
+          <div class="map-list">
+            <div class="map-item">
+              <p class="label">Selected block</p>
+              <p class="main">Experience / role 1 / bullets</p>
+              <p class="sub">Cursor and controls follow the exact passage being edited.</p>
+            </div>
+            <div class="map-item">
+              <p class="label">Allowed controls</p>
+              <p class="main">Split, shorten, reorder, remove</p>
+              <p class="sub">These are transient and disappear when the user leaves the block.</p>
+            </div>
+            <div class="map-item">
+              <p class="label">Editing feel</p>
+              <p class="main">Focused and compact</p>
+              <p class="sub">The rest of the workspace softens so the user can stay in flow.</p>
+            </div>
+          </div>
+        </aside>
+
+        <article class="document">
+          <div class="page">
+            <div class="page-head">
+              <div>
+                <h2>Cesar Hernandez Lopez</h2>
+                <p>Active edit, no extra layers.</p>
+              </div>
+              <p>
+                Section focus:<br />
+                Experience role 1
+              </p>
+            </div>
+
+            <div class="content">
+              <section class="editing-focus">
+                <p class="label">Experience</p>
+                <p class="text">
+                  <span class="active-line">Delivered hands-on support across mixed environments</span><span class="cursor"></span>.
+                  The line is being edited in place. The dock sits close enough to help, but not so
+                  close that it steals attention.
+                </p>
+                <div class="inline-dock">
+                  <div class="row"><strong>Active line</strong> <span>Keep / trim / split</span></div>
+                  <div class="controls">
+                    <button>Keep</button>
+                    <button>Shorten</button>
+                    <button>Split</button>
+                    <button>Remove</button>
+                  </div>
+                </div>
+                <div class="annotation">
+                  <strong>Guidance</strong>
+                  This bullet is long enough to warrant trimming, but not long enough to need a full
+                  rewrite.
+                </div>
+              </section>
+
+              <section class="editing-focus">
+                <p class="label">Adjacent block</p>
+                <p class="text">
+                  The next bullet is visible but de-emphasized. The user can move to it with the
+                  keyboard without opening a new panel or changing modes.
+                </p>
+                <div class="annotation">
+                  <strong>Keyboard behavior</strong>
+                  Enter advances to the next editable line, Escape collapses the dock, Tab stays inside
+                  the block until the user exits intentionally.
+                </div>
+              </section>
+            </div>
+
+            <div class="session">
+              During a long edit, the workspace becomes smaller and quieter. The document expands in
+              importance while background structure fades to the minimum necessary orientation.
+            </div>
+          </div>
+        </article>
+
+        <aside class="dock">
+          <h2>Transient dock</h2>
+          <div class="block">
+            <p class="kicker">Current action</p>
+            <p class="main">Editing one bullet</p>
+            <p class="sub">The dock only shows controls that apply to the active line.</p>
+          </div>
+          <div class="block">
+            <p class="kicker">Persistence</p>
+            <p class="main">Section title and page position stay visible</p>
+            <p class="sub">Everything else is allowed to disappear while typing.</p>
+          </div>
+          <div class="block">
+            <p class="kicker">Quieting rule</p>
+            <p class="main">Less chrome while the cursor is active</p>
+            <p class="sub">If the user is in flow, the interface should stop asking for attention.</p>
+          </div>
+          <p class="footer">
+            Active editing should feel like writing in a document with a small working note nearby,
+            not like operating a control panel.
+          </p>
+        </aside>
+      </section>
+    </main>
+  </body>
+</html>

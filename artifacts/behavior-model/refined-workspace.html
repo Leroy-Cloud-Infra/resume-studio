@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Resume Studio - Refined Workspace</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4efe7;
+        --paper: #fffdf9;
+        --ink: #181512;
+        --muted: #6a6258;
+        --line: rgba(24, 21, 18, 0.09);
+        --accent: #8a5b26;
+        --accent-2: #2e4c9a;
+        --shadow: 0 24px 82px rgba(51, 34, 14, 0.12);
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+        background:
+          radial-gradient(circle at top left, rgba(255, 255, 255, 0.86), transparent 34%),
+          linear-gradient(165deg, #f8f2e8 0%, #f0e9dd 52%, #ece4d7 100%);
+      }
+
+      .shell {
+        max-width: 1550px;
+        margin: 0 auto;
+        padding: 28px;
+      }
+
+      .top {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 18px 20px;
+        border-radius: 24px;
+        border: 1px solid var(--line);
+        background: rgba(255, 252, 246, 0.84);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(12px);
+      }
+
+      .brand {
+        display: grid;
+        gap: 6px;
+      }
+
+      .eyebrow {
+        margin: 0;
+        font: 800 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2rem, 3vw, 3.5rem);
+        line-height: 0.96;
+        letter-spacing: -0.05em;
+      }
+
+      .top p {
+        margin: 0;
+        max-width: 72ch;
+        color: var(--muted);
+        font: 400 14px/1.7 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: 220px minmax(0, 1fr) 300px;
+        gap: 18px;
+        align-items: start;
+        margin-top: 18px;
+      }
+
+      .map,
+      .dock {
+        padding: 18px;
+        border-radius: 26px;
+        border: 1px solid var(--line);
+        background: rgba(255, 253, 249, 0.8);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(10px);
+      }
+
+      .map h2,
+      .dock h2 {
+        margin: 0 0 12px;
+        font: 800 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent-2);
+      }
+
+      .map-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .map-item {
+        padding: 12px 0 14px;
+        border-bottom: 1px solid rgba(24, 21, 18, 0.08);
+      }
+
+      .map-item:last-child { border-bottom: 0; }
+
+      .map-item .label {
+        margin: 0 0 6px;
+        font: 800 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .map-item .main {
+        margin: 0;
+        font: 700 13px/1.5 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .map-item .sub {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font: 400 12px/1.55 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .document {
+        padding: 24px;
+        border-radius: 30px;
+        border: 1px solid var(--line);
+        background: rgba(255, 253, 248, 0.78);
+        box-shadow: var(--shadow);
+      }
+
+      .page {
+        min-height: 1060px;
+        padding: 32px 36px 42px;
+        border-radius: 22px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(250, 246, 240, 0.99));
+        box-shadow: 0 18px 44px rgba(36, 24, 12, 0.08);
+      }
+
+      .page-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: end;
+        padding-bottom: 16px;
+        border-bottom: 1px solid rgba(24, 21, 18, 0.1);
+      }
+
+      .page-head h2 {
+        margin: 0;
+        font-size: clamp(2rem, 3vw, 3.6rem);
+        line-height: 0.95;
+        letter-spacing: -0.06em;
+      }
+
+      .page-head p {
+        margin: 0;
+        max-width: 24ch;
+        text-align: right;
+        color: var(--muted);
+        font: 400 13px/1.6 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .content {
+        display: grid;
+        gap: 18px;
+        margin-top: 18px;
+      }
+
+      .section {
+        display: grid;
+        gap: 10px;
+        padding-top: 14px;
+        border-top: 1px solid rgba(24, 21, 18, 0.07);
+      }
+
+      .section:first-child {
+        padding-top: 0;
+        border-top: 0;
+      }
+
+      .section .label {
+        margin: 0;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent-2);
+      }
+
+      .section .row {
+        display: grid;
+        grid-template-columns: 90px minmax(0, 1fr) 120px;
+        gap: 14px;
+        align-items: start;
+      }
+
+      .section .time,
+      .section .loc {
+        font: 700 12px/1.5 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--muted);
+      }
+
+      .section .title {
+        margin: 0;
+        font: 800 14px/1.45 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .section ul {
+        margin: 8px 0 0;
+        padding-left: 18px;
+        font: 400 13px/1.62 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #26201a;
+      }
+
+      .quiet-note {
+        margin-top: 10px;
+        padding: 12px 14px;
+        border-left: 2px solid rgba(138, 91, 38, 0.24);
+        background: linear-gradient(90deg, rgba(138, 91, 38, 0.06), transparent 72%);
+        color: #403731;
+        font: 400 12px/1.65 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .dock .block {
+        padding: 14px;
+        border-radius: 18px;
+        border: 1px solid rgba(24, 21, 18, 0.08);
+        background: #fff;
+      }
+
+      .dock .block + .block {
+        margin-top: 12px;
+      }
+
+      .dock .kicker {
+        margin: 0 0 6px;
+        font: 800 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .dock .main {
+        margin: 0;
+        font: 700 13px/1.55 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .dock .sub {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font: 400 12px/1.55 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .footer {
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px solid rgba(24, 21, 18, 0.08);
+        color: var(--muted);
+        font: 400 12px/1.7 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .session {
+        margin-top: 16px;
+        padding: 14px 15px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(24, 21, 18, 0.08);
+        color: var(--muted);
+        font: 400 13px/1.65 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      @media (max-width: 1100px) {
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .page-head,
+        .section .row {
+          grid-template-columns: 1fr;
+        }
+
+        .page-head p {
+          text-align: left;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="top">
+        <div class="brand">
+          <p class="eyebrow">Refined workspace</p>
+          <h1>Document primary, controls secondary.</h1>
+          <p>
+            The workspace keeps its weight on the document. Structural navigation stays visible but
+            quiet. The dock only carries what is needed for the active section.
+          </p>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <aside class="map">
+          <h2>Structure</h2>
+          <div class="map-list">
+            <div class="map-item">
+              <p class="label">Active section</p>
+              <p class="main">Experience / role 1</p>
+              <p class="sub">The focus follows the section the user is reading or editing.</p>
+            </div>
+            <div class="map-item">
+              <p class="label">Neighboring sections</p>
+              <p class="main">Summary above, skills below</p>
+              <p class="sub">The map shows context without taking over the page edge.</p>
+            </div>
+            <div class="map-item">
+              <p class="label">Quiet state</p>
+              <p class="main">No open controls</p>
+              <p class="sub">When the user is moving through the document, the dock recedes.</p>
+            </div>
+          </div>
+        </aside>
+
+        <article class="document">
+          <div class="page">
+            <div class="page-head">
+              <div>
+                <h2>Cesar Hernandez Lopez</h2>
+                <p>Resume Studio in its normal working state.</p>
+              </div>
+              <p>
+                Last focus:<br />
+                Experience role 1
+              </p>
+            </div>
+
+            <div class="content">
+              <section class="section">
+                <p class="label">Summary</p>
+                <p class="title">Document-native operating behavior keeps the page in charge.</p>
+                <div class="quiet-note">
+                  Guidance appears only as a small note when the section needs attention.
+                </div>
+              </section>
+
+              <section class="section">
+                <p class="label">Experience</p>
+                <div class="row">
+                  <div class="time">Jun 2022 - Present</div>
+                  <div>
+                    <p class="title">IT Support Technician, Independent</p>
+                    <ul>
+                      <li>Support work happens close to the content, not in a separate form layer.</li>
+                      <li>Controls stay quiet until the user selects this section.</li>
+                    </ul>
+                  </div>
+                  <div class="loc">Beaverton, OR</div>
+                </div>
+                <div class="quiet-note">
+                  A small note can indicate page fit or density without turning into a persistent widget.
+                </div>
+              </section>
+
+              <section class="section">
+                <p class="label">Long session behavior</p>
+                <p class="title">The UI should get out of the way when the user is in flow.</p>
+                <div class="quiet-note">
+                  During focused writing, only the cursor, the current line, and a minimal map should
+                  feel alive.
+                </div>
+              </section>
+            </div>
+
+            <div class="session">
+              In a long session, the workspace should feel steadier and quieter than a form builder:
+              the document is the surface, and everything else exists to preserve orientation.
+            </div>
+          </div>
+        </article>
+
+        <aside class="dock">
+          <h2>Dock</h2>
+          <div class="block">
+            <p class="kicker">What persists</p>
+            <p class="main">Structure, current focus, page position</p>
+            <p class="sub">These stay visible because they help the user stay oriented.</p>
+          </div>
+          <div class="block">
+            <p class="kicker">What disappears</p>
+            <p class="main">Editing controls when idle</p>
+            <p class="sub">The dock should shrink back when the user moves on.</p>
+          </div>
+          <div class="block">
+            <p class="kicker">Guidance</p>
+            <p class="main">A small editorial note</p>
+            <p class="sub">It should feel like a margin cue, not a product widget.</p>
+          </div>
+          <p class="footer">
+            The normal state should already feel like the application. Nothing should look like an
+            extra layer waiting on top of the work.
+          </p>
+        </aside>
+      </section>
+    </main>
+  </body>
+</html>

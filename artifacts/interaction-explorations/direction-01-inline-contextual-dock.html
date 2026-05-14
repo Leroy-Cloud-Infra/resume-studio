@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Direction 01 - Inline Editing + Contextual Dock</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4efe7;
+        --sheet: #fffdf9;
+        --ink: #171411;
+        --muted: #696057;
+        --line: rgba(23, 20, 17, 0.09);
+        --accent: #8a5b29;
+        --accent-2: #2d4a97;
+        --shadow: 0 26px 80px rgba(49, 34, 14, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(255, 255, 255, 0.82), transparent 34%),
+          linear-gradient(160deg, #f7f1e8 0%, #f1eadf 52%, #eae0d5 100%);
+      }
+
+      .shell {
+        max-width: 1520px;
+        margin: 0 auto;
+        padding: 28px;
+      }
+
+      .mast {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: end;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 18px 20px;
+        border-radius: 24px;
+        border: 1px solid var(--line);
+        background: rgba(255, 252, 246, 0.84);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(12px);
+      }
+
+      .brand {
+        display: grid;
+        gap: 6px;
+      }
+
+      .eyebrow {
+        margin: 0;
+        font: 800 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2rem, 3vw, 3.5rem);
+        line-height: 0.97;
+        letter-spacing: -0.05em;
+      }
+
+      .lede {
+        margin: 0;
+        max-width: 70ch;
+        color: var(--muted);
+        font: 400 14px/1.7 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        min-height: 38px;
+        padding: 0 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(23, 20, 17, 0.1);
+        background: #fff;
+        font: 700 12px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .chip.active {
+        background: linear-gradient(135deg, rgba(138, 91, 41, 0.12), rgba(45, 74, 151, 0.08));
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 18px;
+        align-items: start;
+        margin-top: 18px;
+      }
+
+      .document {
+        position: relative;
+        padding: 26px;
+        border-radius: 30px;
+        border: 1px solid var(--line);
+        background: rgba(255, 252, 247, 0.76);
+        box-shadow: var(--shadow);
+      }
+
+      .sheet {
+        min-height: 1020px;
+        padding: 34px 36px 42px;
+        border-radius: 22px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(250, 246, 240, 0.99));
+        box-shadow: 0 18px 44px rgba(37, 24, 11, 0.08);
+      }
+
+      .sheet-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: end;
+        padding-bottom: 16px;
+        border-bottom: 1px solid rgba(23, 20, 17, 0.1);
+      }
+
+      .sheet-head h2 {
+        margin: 0;
+        font-size: clamp(2rem, 3vw, 3.6rem);
+        line-height: 0.95;
+        letter-spacing: -0.06em;
+      }
+
+      .sheet-head p {
+        margin: 0;
+        max-width: 24ch;
+        text-align: right;
+        color: var(--muted);
+        font: 400 13px/1.6 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .paragraphs {
+        display: grid;
+        gap: 18px;
+        margin-top: 18px;
+      }
+
+      .para {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: 96px minmax(0, 1fr);
+        align-items: start;
+        padding-top: 14px;
+        border-top: 1px solid rgba(23, 20, 17, 0.07);
+      }
+
+      .para:first-child {
+        padding-top: 0;
+        border-top: 0;
+      }
+
+      .para .meta {
+        font: 700 12px/1.5 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--muted);
+      }
+
+      .para .content {
+        margin: 0;
+        font: 400 15px/1.75 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #23201b;
+      }
+
+      .inline-focus {
+        display: inline;
+        padding: 0 3px 2px;
+        border-bottom: 1px solid rgba(138, 91, 41, 0.35);
+        background: linear-gradient(180deg, rgba(138, 91, 41, 0.08), transparent 85%);
+      }
+
+      .annotation {
+        margin-top: 10px;
+        padding: 11px 13px;
+        border-left: 2px solid rgba(45, 74, 151, 0.24);
+        background: linear-gradient(90deg, rgba(45, 74, 151, 0.07), transparent 72%);
+        color: #334164;
+        font: 400 12px/1.65 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .annotation strong {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--accent-2);
+      }
+
+      .dock {
+        position: sticky;
+        top: 28px;
+        padding: 18px;
+        border-radius: 26px;
+        border: 1px solid var(--line);
+        background: rgba(255, 252, 247, 0.86);
+        box-shadow: var(--shadow);
+      }
+
+      .dock h2 {
+        margin: 0 0 12px;
+        font: 800 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent-2);
+      }
+
+      .dock .stack {
+        display: grid;
+        gap: 12px;
+      }
+
+      .dock .block {
+        padding: 14px;
+        border-radius: 18px;
+        border: 1px solid rgba(23, 20, 17, 0.08);
+        background: linear-gradient(180deg, #fffefb, #f8f3ea);
+      }
+
+      .dock .kicker {
+        margin: 0 0 6px;
+        font: 800 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .dock .main {
+        margin: 0;
+        font: 700 13px/1.55 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .dock .sub {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font: 400 12px/1.55 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .dock .footer {
+        margin: 14px 0 0;
+        padding-top: 14px;
+        border-top: 1px solid rgba(23, 20, 17, 0.08);
+        color: var(--muted);
+        font: 400 12px/1.7 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .long-session {
+        margin-top: 16px;
+        padding: 14px 16px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(23, 20, 17, 0.08);
+        font: 400 13px/1.65 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--muted);
+      }
+
+      @media (max-width: 1100px) {
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+
+        .dock {
+          position: static;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .para,
+        .sheet-head {
+          grid-template-columns: 1fr;
+        }
+
+        .sheet-head p {
+          text-align: left;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="mast">
+        <div class="brand">
+          <p class="eyebrow">Direction 01</p>
+          <h1>Inline Editing + Contextual Dock</h1>
+          <p class="lede">
+            Editing happens in the text flow. A small dock appears only when a section or paragraph
+            is active, so the interface behaves like a writing surface with tools, not a tool
+            surrounded by content.
+          </p>
+        </div>
+        <div class="chips" aria-label="editing modes">
+          <span class="chip active">Edit in place</span>
+          <span class="chip">Dock follows focus</span>
+          <span class="chip">Minimal chrome</span>
+        </div>
+      </header>
+
+      <section class="workspace">
+        <article class="document">
+          <div class="sheet">
+            <div class="sheet-head">
+              <div>
+                <h2>Cesar Hernandez Lopez</h2>
+                <p>Document-first editing surface with contextual tools.</p>
+              </div>
+              <p>
+                Active section:<br />
+                Experience / role 1
+              </p>
+            </div>
+
+            <div class="paragraphs">
+              <section class="para">
+                <div class="meta">Summary</div>
+                <div>
+                  <p class="content">
+                    <span class="inline-focus">IT support technician with six-plus years of
+                    experience across desktop, mobile, and network support.</span> The user edits
+                    this paragraph directly. The system offers a narrow set of actions only while
+                    the cursor is here.
+                  </p>
+                  <div class="annotation">
+                    <strong>Guidance</strong>
+                    Keep the summary short enough that the page stays breathable.
+                  </div>
+                </div>
+              </section>
+
+              <section class="para">
+                <div class="meta">Experience</div>
+                <div>
+                  <p class="content">
+                    <span class="inline-focus">June 2022 to present, Independent.</span> Each role
+                    is edited in place, but selecting the heading opens a small dock with date,
+                    location, and bullet controls.
+                  </p>
+                  <div class="annotation">
+                    <strong>Contextual dock</strong>
+                    The dock appears beside the active role rather than living in a permanent rail.
+                  </div>
+                </div>
+              </section>
+
+              <section class="para">
+                <div class="meta">Bullets</div>
+                <div>
+                  <p class="content">
+                    Bullets are edited inline as well. When a bullet is selected, the dock shows only
+                    the edits relevant to that bullet: tighten, reorder, delete, or pin.
+                  </p>
+                  <div class="annotation">
+                    <strong>Long-session behavior</strong>
+                    The dock shrinks when idle, so the workspace stays readable after extended
+                    editing.
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <div class="long-session">
+              During long sessions, this model behaves like a writing app: the cursor stays in the
+              document, the dock follows the current focus, and the page never hands over too much
+              screen to persistent controls.
+            </div>
+          </div>
+        </article>
+
+        <aside class="dock">
+          <h2>Contextual dock</h2>
+          <div class="stack">
+            <div class="block">
+              <p class="kicker">Current focus</p>
+              <p class="main">Experience role 1</p>
+              <p class="sub">The dock is tethered to the selected section, not the viewport edge.</p>
+            </div>
+            <div class="block">
+              <p class="kicker">Available actions</p>
+              <p class="main">Edit dates, tighten bullets, pin section</p>
+              <p class="sub">Actions are contextual and collapse once they are no longer relevant.</p>
+            </div>
+            <div class="block">
+              <p class="kicker">Guidance</p>
+              <p class="main">Shorten before expanding</p>
+              <p class="sub">The note reads like editorial feedback, not assistant output.</p>
+            </div>
+          </div>
+          <p class="footer">
+            Section navigation can happen from headings or from cursor movement. The dock reacts to
+            where the user is working, not to a fixed application state.
+          </p>
+        </aside>
+      </section>
+    </main>
+  </body>
+</html>

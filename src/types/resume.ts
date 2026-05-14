@@ -2,10 +2,11 @@ export type Resume = {
   title: string;
   header: ResumeHeader;
   summary: string;
-  skills: ResumeSkillGroup[];
+  technicalSkills: ResumeSkillsSection;
   experience: ResumeExperienceItem[];
-  projects: ResumeProjectItem[];
   education: ResumeEducationItem[];
+  projects: ResumeProjectItem[];
+  customSections: ResumeCustomSection[];
 };
 
 export type ResumeHeader = {
@@ -20,13 +21,33 @@ export type ResumeExperienceItem = {
   company: string;
   title: string;
   location: string;
-  dates: string;
+  dateRange: ResumeDateRange;
   bullets: string[];
 };
 
-export type ResumeSkillGroup = {
-  category: string;
-  items: string[];
+export type ResumeDateRange = {
+  startMonth: string;
+  startYear: string;
+  endMonth?: string;
+  endYear?: string;
+  current?: boolean;
+};
+
+export type ResumeSkillCategory = {
+  id: string;
+  label: string;
+  value: string;
+};
+
+export type ResumeSkillsSection = {
+  title: string;
+  categories: ResumeSkillCategory[];
+};
+
+export type ResumeCustomSection = {
+  id: string;
+  title: string;
+  lines: string[];
 };
 
 export type ResumeProjectItem = {
@@ -38,7 +59,7 @@ export type ResumeProjectItem = {
 export type ResumeEducationItem = {
   school: string;
   degree: string;
-  dates: string;
+  dateRange: ResumeDateRange;
   location?: string;
   coursework?: string[];
 };

@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Refined Square</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4efe7;
+        --paper: #fffdf8;
+        --ink: #181512;
+        --muted: #686158;
+        --line: rgba(24, 21, 18, 0.1);
+        --accent: #0f6f60;
+        --accent-2: #2950a0;
+        --shadow: 0 18px 34px rgba(49, 34, 14, 0.08);
+        --r-field: 3px;
+        --r-role: 4px;
+        --r-bullet: 3px;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+        background:
+          radial-gradient(circle at top left, rgba(255,255,255,0.84), transparent 34%),
+          linear-gradient(165deg, #f8f2e8 0%, #f0e9dd 52%, #ece4d7 100%);
+      }
+      .shell { max-width: 1580px; margin: 0 auto; padding: 28px; }
+      .chrome { padding: 16px 18px; border: 1px solid var(--line); border-radius: 18px; background: rgba(255,252,246,0.9); }
+      .eyebrow { margin: 0; font: 800 10.5px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent-2); }
+      h1 { margin: 6px 0 0; font-size: clamp(1.8rem, 2.8vw, 3.2rem); line-height: 0.98; letter-spacing: -0.05em; }
+      .chrome p { margin: 6px 0 0; color: var(--muted); font: 400 13px/1.7 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .workspace { display: grid; grid-template-columns: minmax(470px, 46%) minmax(0, 1fr); gap: 18px; margin-top: 18px; align-items: start; }
+      .editor, .preview { border: 1px solid var(--line); border-radius: 16px; background: rgba(255,253,248,0.86); }
+      .editor { padding: 14px 14px 16px; }
+      .preview { padding: 18px; box-shadow: var(--shadow); }
+      .status { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+      .status h2 { margin: 0; font: 800 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); }
+      .status p { margin: 0; color: var(--muted); font: 400 12px/1.6 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .section { border-top: 1px solid var(--line); }
+      .section-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 11px 0; }
+      .section-title { display: flex; align-items: center; gap: 8px; }
+      .collapse { width: 12px; color: #756c62; font: 700 12px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .section-name { margin: 0; font: 800 13px/1.3 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .section-meta { margin: 1px 0 0; color: var(--muted); font: 400 12px/1.4 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .controls { color: var(--muted); font: 700 11px/1.2 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; white-space: nowrap; }
+      .role { border-top: 1px solid var(--line); padding: 10px 0; }
+      .role.active { padding: 12px 12px 12px 12px; border: 1px solid rgba(15,111,96,0.14); border-radius: var(--r-role); background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(246,241,232,0.99)); }
+      .role.inactive .fields, .role.inactive .bullets, .role.inactive .helper { display: none; }
+      .role-head { display: flex; justify-content: space-between; gap: 12px; align-items: start; }
+      .role-title { margin: 0; font: 800 13px/1.35 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .role-sub { margin: 2px 0 0; color: var(--muted); font: 400 12px/1.5 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .fields { display: grid; gap: 8px; margin-top: 10px; grid-template-columns: 1.2fr 1fr 1fr 1fr; }
+      .field { display: grid; gap: 4px; }
+      .label { margin: 0; font: 800 10.5px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+      .surface { min-height: 34px; padding: 8px 10px; border: 1px solid rgba(24, 21, 18, 0.09); border-radius: var(--r-field); background: #fff; font: 400 12.5px/1.4 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .surface.active { border-color: rgba(15,111,96,0.3); box-shadow: inset 0 0 0 1px rgba(15,111,96,0.14); }
+      .surface.hover { background: linear-gradient(180deg, #fff, rgba(248,244,236,0.92)); }
+      .surface.empty { color: rgba(24, 21, 18, 0.42); border-style: dashed; }
+      .surface.inline { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+      .caret { width: 1px; height: 1em; background: rgba(15,111,96,0.88); }
+      .bullets { margin-top: 10px; }
+      .bullets h4 { margin: 0 0 8px; font: 800 10.5px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+      .bullet { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 8px; align-items: center; margin-top: 8px; }
+      .bullet-marker { color: #867c71; font-size: 13px; }
+      .bulletbox { min-height: 30px; padding: 7px 10px; border: 1px solid rgba(24, 21, 18, 0.09); border-radius: var(--r-bullet); background: #fff; font: 400 12.5px/1.45 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .bulletbox.active { border-color: rgba(15,111,96,0.34); box-shadow: inset 0 0 0 1px rgba(15,111,96,0.12); }
+      .bulletbox.hover { background: linear-gradient(180deg, #fff, rgba(248,244,236,0.92)); }
+      .bulletbox.empty { color: rgba(24, 21, 18, 0.42); border-style: dashed; }
+      .bullet-actions { color: var(--muted); font: 700 11px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .helper { margin-top: 8px; color: var(--muted); font: 400 11px/1.4 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .preview h3 { margin: 0; font-size: clamp(2rem, 3vw, 3.4rem); line-height: 0.95; letter-spacing: -0.06em; }
+      .preview p { margin: 10px 0 0; color: var(--muted); font: 400 13px/1.7 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      @media (max-width: 1100px) { .workspace { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="chrome">
+        <p class="eyebrow">Variation 01</p>
+        <h1>Refined Square</h1>
+        <p>Mature, dense, and operational with minimal radius.</p>
+      </header>
+
+      <section class="workspace">
+        <aside class="editor">
+          <div class="status">
+            <h2>Work Experience</h2>
+            <p>Square, precise, and dense.</p>
+          </div>
+          <section class="section">
+            <div class="section-head">
+              <div class="section-title"><div class="collapse">+</div><div><p class="section-name">Header</p><p class="section-meta">Collapsed</p></div></div>
+              <div class="controls">Edit</div>
+            </div>
+          </section>
+          <section class="section">
+            <div class="section-head">
+              <div class="section-title"><div class="collapse">+</div><div><p class="section-name">Summary</p><p class="section-meta">Collapsed</p></div></div>
+              <div class="controls">Edit</div>
+            </div>
+          </section>
+          <section class="section">
+            <div class="section-head">
+              <div class="section-title"><div class="collapse">−</div><div><p class="section-name">Work Experience</p><p class="section-meta">Expanded</p></div></div>
+              <div class="controls">Add role</div>
+            </div>
+            <p class="helper">Status: focused role and bullet rows read like structured document surfaces.</p>
+            <article class="role active">
+              <div class="role-head"><div><p class="role-title">IT Support Technician</p><p class="role-sub">Independent · Jun 2022 - Present</p></div><div class="controls">Remove</div></div>
+              <div class="fields">
+                <div class="field"><p class="label">Title</p><div class="surface active">IT Support Technician<span class="caret"></span></div></div>
+                <div class="field"><p class="label">Company</p><div class="surface hover">Independent</div></div>
+                <div class="field"><p class="label">Location</p><div class="surface">San Francisco, CA</div></div>
+                <div class="field"><p class="label">Dates</p><div class="surface empty">Add dates</div></div>
+              </div>
+              <div class="bullets">
+                <h4>Bullets</h4>
+                <div class="bullet"><div class="bullet-marker">•</div><div class="bulletbox active">Resolved endpoint, access, and onboarding issues for a 180-person mixed-device team.<span class="caret" style="display:inline-block; vertical-align:-0.1em; margin-left:2px;"></span></div><div class="bullet-actions">Remove</div></div>
+                <div class="bullet"><div class="bullet-marker">•</div><div class="bulletbox hover">Documented repeat fixes and reduced handoff time for common support requests.</div><div class="bullet-actions">Remove</div></div>
+                <div class="bullet"><div class="bullet-marker">•</div><div class="bulletbox empty">Add bullet</div><div class="bullet-actions">Remove</div></div>
+              </div>
+              <p class="helper">Add bullet · typing stays close to the surface.</p>
+            </article>
+            <article class="role inactive"><div class="role-head"><div><p class="role-title">Desktop Support Specialist</p><p class="role-sub">Northwind Labs · Mar 2020 - May 2022</p></div><div class="controls">Expand</div></div></article>
+            <article class="role inactive"><div class="role-head"><div><p class="role-title">Help Desk Associate</p><p class="role-sub">Summit Support · Jul 2018 - Feb 2020</p></div><div class="controls">Expand</div></div></article>
+          </section>
+          <section class="section"><div class="section-head"><div class="section-title"><div class="collapse">+</div><div><p class="section-name">Skills</p><p class="section-meta">Collapsed</p></div></div><div class="controls">Edit</div></div></section>
+          <section class="section"><div class="section-head"><div class="section-title"><div class="collapse">+</div><div><p class="section-name">Education</p><p class="section-meta">Collapsed</p></div></div><div class="controls">Edit</div></div></section>
+        </aside>
+        <section class="preview">
+          <h3>Cesar Hernandez Lopez</h3>
+          <p>IT Support Technician · Desktop support, device lifecycle, and technical operations</p>
+          <p style="margin-top: 14px;">The right-side preview stays immediate and stable while the editor reads as a precise production tool.</p>
+          <div style="margin-top: 30px; border-top: 1px solid rgba(24,21,18,0.08); padding-top: 14px;">
+            <p style="margin: 0; font: 800 12px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: .16em; text-transform: uppercase; color: var(--accent);">Work Experience</p>
+            <p style="margin-top: 12px;">IT Support Technician | Independent | Jun 2022 - Present</p>
+            <p>• Resolved endpoint, access, and onboarding issues for a 180-person mixed-device team.</p>
+            <p>• Documented repeat fixes and reduced handoff time for common support requests.</p>
+            <p>• Maintained device inventory, ticket triage, and routine workstation setup.</p>
+          </div>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

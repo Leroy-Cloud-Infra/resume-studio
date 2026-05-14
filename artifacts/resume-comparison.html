@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+<head>
+<meta charset='utf-8'>
+<title>Resume Geometry Comparison</title>
+<style>
+  body{margin:0;font-family:Arial,sans-serif;background:#f1f2f4;color:#111}
+  .wrap{padding:16px}
+  .row{display:flex;gap:18px;align-items:flex-start}
+  .panel{background:#fff;border:1px solid #bbb;box-shadow:0 1px 3px rgba(0,0,0,.12);padding:8px}
+  .title{font-size:14px;font-weight:700;margin:0 0 8px 0}
+  .rulerframe{position:relative;padding-left:28px;padding-top:28px;background:#f8f8f8}
+  .ruler-top{position:absolute;left:28px;top:0;right:0;height:28px;background:
+    repeating-linear-gradient(to right,#777 0,#777 1px,transparent 1px,transparent 19px),
+    repeating-linear-gradient(to right,#333 0,#333 1px,transparent 1px,transparent 99px);
+    border-bottom:1px solid #999}
+  .ruler-left{position:absolute;left:0;top:28px;bottom:0;width:28px;background:
+    repeating-linear-gradient(to bottom,#777 0,#777 1px,transparent 1px,transparent 19px),
+    repeating-linear-gradient(to bottom,#333 0,#333 1px,transparent 1px,transparent 99px);
+    border-right:1px solid #999}
+  .doc{display:block;width:780px;height:auto;border:1px solid #d0d0d0;background:#fff}
+  .caption{font-size:12px;color:#333;margin-top:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="row">
+    <div class="panel">
+      <p class="title">Reference Resume PDF (Quick Look render)</p>
+      <div class="rulerframe">
+        <div class="ruler-top"></div>
+        <div class="ruler-left"></div>
+        <img class="doc" src="file:///Users/cesarhernandez/Projects/resume-studio/artifacts/Cesar%20Hernandez%20Lopez%20Resume.pdf.png" />
+      </div>
+      <div class="caption">Scale matched width; rulers at 20px minor / 100px major ticks</div>
+    </div>
+    <div class="panel">
+      <p class="title">Resume Studio Generated PDF (updated)</p>
+      <div class="rulerframe">
+        <div class="ruler-top"></div>
+        <div class="ruler-left"></div>
+        <img class="doc" src="file:///Users/cesarhernandez/Projects/resume-studio/artifacts/resume-generated-updated.pdf.png" />
+      </div>
+      <div class="caption">Same display width and ruler scale for direct geometry comparison</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

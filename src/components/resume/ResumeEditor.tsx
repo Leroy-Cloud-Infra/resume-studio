@@ -1336,9 +1336,9 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                             </span>
                           </div>
                         </button>
-                        <div className="flex items-center gap-1.5">
+                        <div className="rs-experience-role-actions">
                           <button
-                            className={BUTTON_SECONDARY_CLASSES}
+                            className={`${BUTTON_SECONDARY_CLASSES} rs-experience-role-action`}
                             type="button"
                             onClick={() =>
                               setExpandedExperienceIndex((currentIndex) =>
@@ -1349,7 +1349,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                             {isExpanded ? "Collapse" : "Edit"}
                           </button>
                           <button
-                            className={BUTTON_DANGER_CLASSES}
+                            className={`${BUTTON_DANGER_CLASSES} rs-experience-role-action`}
                             type="button"
                             onClick={() => handleRemoveExperience(jobIndex)}
                             disabled={resume.experience.length <= 1}

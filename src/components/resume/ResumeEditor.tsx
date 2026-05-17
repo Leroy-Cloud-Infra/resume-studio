@@ -45,7 +45,6 @@ const BUTTON_PRIMARY_CLASSES = `${BUTTON_BASE_CLASSES} rs-button--primary`;
 const BUTTON_DANGER_CLASSES = `${BUTTON_BASE_CLASSES} rs-button--danger`;
 const UI_NOTE_CLASSES = "rs-ui-note";
 const ITEM_SURFACE_CLASSES = "rs-section-item";
-const SUBITEM_SURFACE_CLASSES = "rs-subitem-surface";
 const ITEM_INDEX_CLASSES = "rs-item-index";
 const ITEM_SUMMARY_CLASSES = "rs-item-summary";
 const LETTER_PAGE_ASPECT_RATIO = 11 / 8.5;
@@ -1539,8 +1538,8 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                             </div>
                           </div>
 
-                          <div className="mt-3 space-y-2">
-                            <div className="flex items-center justify-between gap-2">
+                          <div className="rs-bullet-composer">
+                            <div className="rs-bullet-composer-head">
                               <div>
                                 <p className={ITEM_INDEX_CLASSES}>
                                   Bullets
@@ -1550,7 +1549,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                                 </p>
                               </div>
                               <button
-                                className={BUTTON_SECONDARY_CLASSES}
+                                className="rs-bullet-add-action"
                                 type="button"
                                 onClick={() =>
                                   updateExperience(jobIndex, (currentJob) => ({
@@ -1563,28 +1562,17 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                               </button>
                             </div>
                             {job.bullets.map((bullet, bulletIndex) => {
-                              const bulletLengthStatus = getBulletLengthStatus(bullet.trim().length);
-                              const bulletHintClass =
-                                bulletLengthStatus === "veryLong"
-                                  ? "rs-guidance-flag rs-guidance-flag--high"
-                                  : "rs-guidance-flag rs-guidance-flag--medium";
-
                               return (
                                 <div
                                   key={bulletIndex}
-                                  className={SUBITEM_SURFACE_CLASSES}
+                                  className="rs-bullet-piece"
                                 >
-                                  <div className="mb-1.5 flex items-center justify-between gap-2">
-                                    <span className="flex items-center gap-1.5 text-xs font-medium text-slate-600">
+                                  <div className="rs-bullet-piece-head">
+                                    <span className="rs-bullet-piece-label">
                                       Bullet {bulletIndex + 1}
-                                      {bulletLengthStatus === "veryLong" ? (
-                                        <span className={bulletHintClass}>
-                                          Very long
-                                        </span>
-                                      ) : null}
                                     </span>
                                     <button
-                                      className={BUTTON_DANGER_CLASSES}
+                                      className="rs-bullet-remove-action"
                                       type="button"
                                       onClick={() =>
                                         updateExperience(jobIndex, (currentJob) => ({
@@ -1595,11 +1583,11 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                                         }))
                                       }
                                     >
-                                      Remove bullet
+                                      Remove
                                     </button>
                                   </div>
                                   <textarea
-                                    className="min-h-[76px] w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
+                                    className="rs-bullet-textarea"
                                     value={bullet}
                                     onChange={(event) =>
                                       updateExperience(jobIndex, (currentJob) => ({

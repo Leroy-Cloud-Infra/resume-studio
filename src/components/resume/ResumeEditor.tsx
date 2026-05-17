@@ -1362,168 +1362,182 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
 
                       {isExpanded ? (
                         <div className="mt-3 border-t border-slate-200 pt-3">
-                          <div className="grid gap-2 sm:grid-cols-2">
-                            <label className="block text-sm">
-                              <span className="mb-1 block text-xs font-medium text-slate-600">Title</span>
-                              <input
-                                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
-                                value={job.title}
-                                onChange={(event) =>
-                                  updateExperience(jobIndex, (currentJob) => ({
-                                    ...currentJob,
-                                    title: event.target.value,
-                                  }))
-                                }
-                              />
-                            </label>
-                            <label className="block text-sm">
-                              <span className="mb-1 block text-xs font-medium text-slate-600">Company</span>
-                              <input
-                                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
-                                value={job.company}
-                                onChange={(event) =>
-                                  updateExperience(jobIndex, (currentJob) => ({
-                                    ...currentJob,
-                                    company: event.target.value,
-                                  }))
-                                }
-                              />
-                            </label>
-                          </div>
-
-                          <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                            <label className="block text-sm">
-                              <span className="mb-1 block text-xs font-medium text-slate-600">Start month</span>
-                              <select
-                                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
-                                value={job.dateRange.startMonth}
-                                onChange={(event) =>
-                                  updateExperience(jobIndex, (currentJob) => ({
-                                    ...currentJob,
-                                    dateRange: {
-                                      ...currentJob.dateRange,
-                                      startMonth: event.target.value,
-                                    },
-                                  }))
-                                }
-                              >
-                                {MONTH_OPTIONS.map((month) => (
-                                  <option key={month} value={month}>
-                                    {month}
-                                  </option>
-                                ))}
-                              </select>
-                            </label>
-                            <label className="block text-sm">
-                              <span className="mb-1 block text-xs font-medium text-slate-600">Start year</span>
-                              <select
-                                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
-                                value={job.dateRange.startYear}
-                                onChange={(event) =>
-                                  updateExperience(jobIndex, (currentJob) => ({
-                                    ...currentJob,
-                                    dateRange: {
-                                      ...currentJob.dateRange,
-                                      startYear: event.target.value,
-                                    },
-                                  }))
-                                }
-                              >
-                                {YEAR_OPTIONS.map((year) => (
-                                  <option key={year} value={year}>
-                                    {year}
-                                  </option>
-                                ))}
-                              </select>
-                            </label>
-                          </div>
-
-                          <label className="mt-2 flex items-center gap-2 text-sm text-slate-700">
-                            <input
-                              className="h-4 w-4 rounded border-slate-300"
-                              type="checkbox"
-                              checked={Boolean(job.dateRange.current)}
-                              onChange={(event) =>
-                                updateExperience(jobIndex, (currentJob) => ({
-                                  ...currentJob,
-                                  dateRange: {
-                                    ...currentJob.dateRange,
-                                    current: event.target.checked,
-                                    endMonth: event.target.checked
-                                      ? undefined
-                                      : currentJob.dateRange.endMonth ?? currentJob.dateRange.startMonth,
-                                    endYear: event.target.checked
-                                      ? undefined
-                                      : currentJob.dateRange.endYear ?? currentJob.dateRange.startYear,
-                                  },
-                                }))
-                              }
-                            />
-                            Currently in this role
-                          </label>
-
-                          {!job.dateRange.current ? (
-                            <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                              <label className="block text-sm">
-                                <span className="mb-1 block text-xs font-medium text-slate-600">End month</span>
-                                <select
-                                  className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
-                                  value={job.dateRange.endMonth ?? MONTH_OPTIONS[0]}
+                          <div className="rs-experience-metadata">
+                            <div className="rs-property-row">
+                              <div className="rs-property-label">Title</div>
+                              <div className="rs-property-value">
+                                <input
+                                  className="rs-property-control"
+                                  value={job.title}
                                   onChange={(event) =>
                                     updateExperience(jobIndex, (currentJob) => ({
                                       ...currentJob,
-                                      dateRange: {
-                                        ...currentJob.dateRange,
-                                        endMonth: event.target.value,
-                                      },
+                                      title: event.target.value,
                                     }))
                                   }
-                                >
-                                  {MONTH_OPTIONS.map((month) => (
-                                    <option key={month} value={month}>
-                                      {month}
-                                    </option>
-                                  ))}
-                                </select>
-                              </label>
-                              <label className="block text-sm">
-                                <span className="mb-1 block text-xs font-medium text-slate-600">End year</span>
-                                <select
-                                  className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
-                                  value={job.dateRange.endYear ?? YEAR_OPTIONS[0]}
-                                  onChange={(event) =>
-                                    updateExperience(jobIndex, (currentJob) => ({
-                                      ...currentJob,
-                                      dateRange: {
-                                        ...currentJob.dateRange,
-                                        endYear: event.target.value,
-                                      },
-                                    }))
-                                  }
-                                >
-                                  {YEAR_OPTIONS.map((year) => (
-                                    <option key={year} value={year}>
-                                      {year}
-                                    </option>
-                                  ))}
-                                </select>
-                              </label>
+                                />
+                              </div>
                             </div>
-                          ) : null}
 
-                          <label className="mt-2 block text-sm">
-                            <span className="mb-1 block text-xs font-medium text-slate-600">Location</span>
-                            <input
-                              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
-                              value={job.location}
-                              onChange={(event) =>
-                                updateExperience(jobIndex, (currentJob) => ({
-                                  ...currentJob,
-                                  location: event.target.value,
-                                }))
-                              }
-                            />
-                          </label>
+                            <div className="rs-property-row">
+                              <div className="rs-property-label">Company</div>
+                              <div className="rs-property-value">
+                                <input
+                                  className="rs-property-control"
+                                  value={job.company}
+                                  onChange={(event) =>
+                                    updateExperience(jobIndex, (currentJob) => ({
+                                      ...currentJob,
+                                      company: event.target.value,
+                                    }))
+                                  }
+                                />
+                              </div>
+                            </div>
+
+                            <div className="rs-property-row rs-property-row--dates">
+                              <div className="rs-property-label">Dates</div>
+                              <div className="rs-property-value">
+                                <div className="rs-property-grid">
+                                  <label className="rs-property-field">
+                                    <span className="rs-property-field-label">Start month</span>
+                                    <select
+                                      className="rs-property-control"
+                                      value={job.dateRange.startMonth}
+                                      onChange={(event) =>
+                                        updateExperience(jobIndex, (currentJob) => ({
+                                          ...currentJob,
+                                          dateRange: {
+                                            ...currentJob.dateRange,
+                                            startMonth: event.target.value,
+                                          },
+                                        }))
+                                      }
+                                    >
+                                      {MONTH_OPTIONS.map((month) => (
+                                        <option key={month} value={month}>
+                                          {month}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </label>
+
+                                  <label className="rs-property-field">
+                                    <span className="rs-property-field-label">Start year</span>
+                                    <select
+                                      className="rs-property-control"
+                                      value={job.dateRange.startYear}
+                                      onChange={(event) =>
+                                        updateExperience(jobIndex, (currentJob) => ({
+                                          ...currentJob,
+                                          dateRange: {
+                                            ...currentJob.dateRange,
+                                            startYear: event.target.value,
+                                          },
+                                        }))
+                                      }
+                                    >
+                                      {YEAR_OPTIONS.map((year) => (
+                                        <option key={year} value={year}>
+                                          {year}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </label>
+                                </div>
+
+                                <label className="rs-property-toggle">
+                                  <input
+                                    className="rs-checkbox"
+                                    type="checkbox"
+                                    checked={Boolean(job.dateRange.current)}
+                                    onChange={(event) =>
+                                      updateExperience(jobIndex, (currentJob) => ({
+                                        ...currentJob,
+                                        dateRange: {
+                                          ...currentJob.dateRange,
+                                          current: event.target.checked,
+                                          endMonth: event.target.checked
+                                            ? undefined
+                                            : currentJob.dateRange.endMonth ?? currentJob.dateRange.startMonth,
+                                          endYear: event.target.checked
+                                            ? undefined
+                                            : currentJob.dateRange.endYear ?? currentJob.dateRange.startYear,
+                                        },
+                                      }))
+                                    }
+                                  />
+                                  <span>Current role</span>
+                                </label>
+
+                                {!job.dateRange.current ? (
+                                  <div className="rs-property-grid rs-property-grid--end">
+                                    <label className="rs-property-field">
+                                      <span className="rs-property-field-label">End month</span>
+                                      <select
+                                        className="rs-property-control"
+                                        value={job.dateRange.endMonth ?? MONTH_OPTIONS[0]}
+                                        onChange={(event) =>
+                                          updateExperience(jobIndex, (currentJob) => ({
+                                            ...currentJob,
+                                            dateRange: {
+                                              ...currentJob.dateRange,
+                                              endMonth: event.target.value,
+                                            },
+                                          }))
+                                        }
+                                      >
+                                        {MONTH_OPTIONS.map((month) => (
+                                          <option key={month} value={month}>
+                                            {month}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </label>
+
+                                    <label className="rs-property-field">
+                                      <span className="rs-property-field-label">End year</span>
+                                      <select
+                                        className="rs-property-control"
+                                        value={job.dateRange.endYear ?? YEAR_OPTIONS[0]}
+                                        onChange={(event) =>
+                                          updateExperience(jobIndex, (currentJob) => ({
+                                            ...currentJob,
+                                            dateRange: {
+                                              ...currentJob.dateRange,
+                                              endYear: event.target.value,
+                                            },
+                                          }))
+                                        }
+                                      >
+                                        {YEAR_OPTIONS.map((year) => (
+                                          <option key={year} value={year}>
+                                            {year}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </label>
+                                  </div>
+                                ) : null}
+                              </div>
+                            </div>
+
+                            <div className="rs-property-row">
+                              <div className="rs-property-label">Location</div>
+                              <div className="rs-property-value">
+                                <input
+                                  className="rs-property-control"
+                                  value={job.location}
+                                  onChange={(event) =>
+                                    updateExperience(jobIndex, (currentJob) => ({
+                                      ...currentJob,
+                                      location: event.target.value,
+                                    }))
+                                  }
+                                />
+                              </div>
+                            </div>
+                          </div>
 
                           <div className="mt-3 space-y-2">
                             <div className="flex items-center justify-between gap-2">

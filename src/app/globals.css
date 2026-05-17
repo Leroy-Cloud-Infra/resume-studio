@@ -464,6 +464,95 @@ body {
   padding: 10px;
 }
 
+.rs-experience-metadata {
+  border-top: 1px solid rgba(24, 28, 33, 0.05);
+}
+
+.rs-property-row {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 8px 0;
+  border-top: 1px solid rgba(24, 28, 33, 0.05);
+}
+
+.rs-property-row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.rs-property-row:last-child {
+  padding-bottom: 0;
+}
+
+.rs-property-label {
+  padding-top: 7px;
+  color: #56606a;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.rs-property-value {
+  min-width: 0;
+}
+
+.rs-property-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.rs-property-grid--end {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(24, 28, 33, 0.05);
+}
+
+.rs-property-field {
+  display: block;
+  min-width: 0;
+}
+
+.rs-property-field-label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--rs-text-muted);
+  font-size: 10.5px;
+  line-height: 1.35;
+}
+
+.resume-editor-panel .rs-property-control {
+  width: 100%;
+  min-height: 32px;
+  border: 1px solid rgba(24, 28, 33, 0.12);
+  border-radius: 5px;
+  background: rgba(252, 252, 251, 0.82);
+  padding: 6px 8px;
+  color: #1f252c;
+  font-size: 12.5px;
+  line-height: 1.4;
+  box-shadow: none;
+}
+
+.resume-editor-panel .rs-property-control:focus {
+  border-color: rgba(48, 72, 104, 0.28);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 0 0 2px rgba(48, 72, 104, 0.1);
+}
+
+.rs-property-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  color: #515b66;
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
 .rs-subitem-surface {
   border: 1px solid var(--rs-line-soft);
   border-radius: 7px;
@@ -639,6 +728,19 @@ body {
   .resume-preview-stage-scroll {
     overflow: visible;
     scrollbar-gutter: auto;
+  }
+
+  .rs-property-row {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .rs-property-label {
+    padding-top: 0;
+  }
+
+  .rs-property-grid {
+    grid-template-columns: 1fr;
   }
 }
 

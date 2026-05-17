@@ -39,11 +39,15 @@ const YEAR_OPTIONS = Array.from({ length: CURRENT_YEAR - 1979 + 4 }, (_, index) 
   String(CURRENT_YEAR + 3 - index),
 );
 
-const BUTTON_BASE_CLASSES =
-  "inline-flex items-center rounded-md border px-3 py-1.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-50";
-const BUTTON_SECONDARY_CLASSES = `${BUTTON_BASE_CLASSES} border-slate-300 text-slate-700 hover:bg-slate-100`;
-const BUTTON_PRIMARY_CLASSES = `${BUTTON_BASE_CLASSES} border-slate-300 bg-slate-900 text-white hover:bg-slate-800`;
-const BUTTON_DANGER_CLASSES = `${BUTTON_BASE_CLASSES} border-red-200 text-red-700 hover:bg-red-50`;
+const BUTTON_BASE_CLASSES = "rs-button";
+const BUTTON_SECONDARY_CLASSES = `${BUTTON_BASE_CLASSES} rs-button--secondary`;
+const BUTTON_PRIMARY_CLASSES = `${BUTTON_BASE_CLASSES} rs-button--primary`;
+const BUTTON_DANGER_CLASSES = `${BUTTON_BASE_CLASSES} rs-button--danger`;
+const UI_NOTE_CLASSES = "rs-ui-note";
+const ITEM_SURFACE_CLASSES = "rs-section-item";
+const SUBITEM_SURFACE_CLASSES = "rs-subitem-surface";
+const ITEM_INDEX_CLASSES = "rs-item-index";
+const ITEM_SUMMARY_CLASSES = "rs-item-summary";
 const LETTER_PAGE_ASPECT_RATIO = 11 / 8.5;
 const PAGE_LIMIT_WARNING_RATIO = 0.93;
 const PAGE_OVERFLOW_TOLERANCE_PX = 8;
@@ -361,7 +365,7 @@ function analyzeExperienceBullets(bullets: string[]): BulletGuidance {
         status: "veryDense",
         label: "Very dense",
         message: "Consider shortening or prioritizing bullets.",
-        className: "border-orange-200 bg-orange-50 text-orange-800",
+        className: "rs-guidance-chip rs-guidance-chip--high",
         averageLength,
         longBulletCount,
         veryLongBulletCount,
@@ -372,7 +376,7 @@ function analyzeExperienceBullets(bullets: string[]): BulletGuidance {
           status: "dense",
           label: "Dense",
           message: "Some bullets may wrap heavily.",
-          className: "border-amber-200 bg-amber-50 text-amber-800",
+          className: "rs-guidance-chip rs-guidance-chip--medium",
           averageLength,
           longBulletCount,
           veryLongBulletCount,
@@ -382,7 +386,7 @@ function analyzeExperienceBullets(bullets: string[]): BulletGuidance {
           status: "balanced",
           label: "Balanced",
           message: "This role should scan cleanly.",
-          className: "border-sky-200 bg-sky-50 text-sky-800",
+          className: "rs-guidance-chip rs-guidance-chip--low",
           averageLength,
           longBulletCount,
           veryLongBulletCount,
@@ -395,7 +399,7 @@ function analyzeExperienceBullets(bullets: string[]): BulletGuidance {
       status: "warning",
       label: "Warning",
       message: "Consider prioritizing the strongest bullets.",
-      className: "border-orange-200 bg-orange-50 text-orange-800",
+      className: "rs-guidance-chip rs-guidance-chip--high",
       density,
       bulletMetrics,
     };
@@ -407,7 +411,7 @@ function analyzeExperienceBullets(bullets: string[]): BulletGuidance {
       status: "caution",
       label: "Caution",
       message: "This section is becoming visually dense.",
-      className: "border-amber-200 bg-amber-50 text-amber-800",
+      className: "rs-guidance-chip rs-guidance-chip--medium",
       density,
       bulletMetrics,
     };
@@ -419,7 +423,7 @@ function analyzeExperienceBullets(bullets: string[]): BulletGuidance {
       status: "ideal",
       label: "Ideal",
       message: "Good detail and scan balance.",
-      className: "border-emerald-200 bg-emerald-50 text-emerald-800",
+      className: "rs-guidance-chip rs-guidance-chip--low",
       density,
       bulletMetrics,
     };
@@ -430,7 +434,7 @@ function analyzeExperienceBullets(bullets: string[]): BulletGuidance {
     status: "light",
     label: "Light",
     message: "This role may feel underdeveloped.",
-    className: "border-slate-200 bg-white text-slate-600",
+    className: "rs-guidance-chip rs-guidance-chip--low",
     density,
     bulletMetrics,
   };
@@ -470,6 +474,66 @@ function formatEducationCardSummary(item: Resume["education"][number]) {
     item.school.trim() || "School",
     formatDateRange(item.dateRange),
   ].join(" · ");
+}
+
+type EditorSectionId =
+  | "header"
+  | "summary"
+  | "experience"
+  | "education"
+  | "skills"
+  | "customSections";
+
+function truncateEditorSectionSummary(value: string, maxLength = 88) {
+  const normalized = value.replace(/\s+/g, " ").trim();
+
+  if (!normalized) {
+    return "Empty";
+  }
+
+  if (normalized.length <= maxLength) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, maxLength - 1).trimEnd()}…`;
+}
+
+function EditorStackSection({
+  title,
+  summary,
+  isOpen,
+  onToggle,
+  children,
+}: {
+  title: string;
+  summary: string;
+  isOpen: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rs-editor-section">
+      <button
+        className="rs-editor-section-toggle"
+        type="button"
+        onClick={onToggle}
+      >
+        <span className="rs-editor-section-disclosure">
+          {isOpen ? "−" : "+"}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="rs-editor-section-title">
+            {title}
+          </span>
+          <span className="rs-editor-section-summary">
+            {summary}
+          </span>
+        </span>
+      </button>
+
+      {isOpen ? <div className="rs-editor-section-body">{children}</div> : null}
+    </section>
+  );
 }
 
 function normalizeCustomSections(value: unknown): ResumeCustomSection[] {
@@ -710,6 +774,7 @@ function isResumeStoragePayload(value: unknown): value is ResumeStoragePayload {
 
 export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
   const [resume, setResume] = useState<Resume>(initialResume);
+  const [openEditorSection, setOpenEditorSection] = useState<EditorSectionId | null>("experience");
   const [expandedExperienceIndex, setExpandedExperienceIndex] = useState<number | null>(0);
   const [expandedEducationIndex, setExpandedEducationIndex] = useState<number | null>(0);
   const [pageAwareness, setPageAwareness] = useState<PageAwarenessState>({
@@ -877,6 +942,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
   const handleReset = () => {
     window.localStorage.removeItem(RESUME_STORAGE_KEY);
     setResume(initialResume);
+    setOpenEditorSection("experience");
     setExpandedExperienceIndex(0);
     setExpandedEducationIndex(0);
   };
@@ -994,157 +1060,228 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
     ? Math.round((pageAwareness.contentHeight / pageAwareness.firstPageHeight) * 100)
     : 0;
   const pageFillPercent = Math.min(100, rawPageFillPercent);
-  const pageStatusLabel = pageAwareness.isOverflowing
-    ? `${pageAwareness.pageCount} ${pageAwareness.pageCount === 1 ? "Page" : "Pages"}`
+  const documentTitle = resume.title.trim() || resume.header.name.trim() || "Untitled resume";
+  const templateLabel = selectedTemplate?.name ?? "Template";
+  const pageCountLabel = `${pageAwareness.pageCount} ${
+    pageAwareness.pageCount === 1 ? "page" : "pages"
+  }`;
+  const previewStateLabel = pageAwareness.isOverflowing
+    ? "Saved locally · page 2 active"
     : pageAwareness.isNearLimit
-      ? "Near Limit"
-      : "1 Page";
-  const pageStatusDetail = pageAwareness.isOverflowing
-    ? "Content continues past page 1"
-    : pageAwareness.isNearLimit
-      ? `About ${pageFillPercent}% used`
-      : "Fits";
-  const toolbarTitle = resume.title.trim() || resume.header.name.trim() || "Untitled resume";
-  const toolbarIdentityNote =
-    resume.header.name.trim() && resume.header.name.trim() !== toolbarTitle
-      ? resume.header.name.trim()
-      : "Draft";
+      ? `Saved locally · ${pageFillPercent}% used`
+      : "Saved locally";
+  const headerSectionSummary = truncateEditorSectionSummary(
+    [
+      resume.header.name.trim(),
+      resume.header.email.trim(),
+      resume.header.phone.trim(),
+      resume.header.location.trim(),
+    ]
+      .filter(Boolean)
+      .join(" · "),
+  );
+  const summarySectionSummary = truncateEditorSectionSummary(resume.summary);
+  const experienceSectionSummary = truncateEditorSectionSummary(
+    resume.experience.length > 0
+      ? `${resume.experience.length} ${
+          resume.experience.length === 1 ? "role" : "roles"
+        } · ${formatExperienceCardSummary(resume.experience[0])}`
+      : "No roles",
+  );
+  const educationSectionSummary = truncateEditorSectionSummary(
+    resume.education.length > 0
+      ? `${resume.education.length} ${
+          resume.education.length === 1 ? "entry" : "entries"
+        } · ${formatEducationCardSummary(resume.education[0])}`
+      : "No education entries",
+  );
+  const skillsSectionSummary = truncateEditorSectionSummary(
+    resume.technicalSkills.categories.length > 0
+      ? `${resume.technicalSkills.categories.length} ${
+          resume.technicalSkills.categories.length === 1 ? "category" : "categories"
+        } · ${resume.technicalSkills.categories
+          .slice(0, 2)
+          .map((category) => category.label.trim() || "Untitled")
+          .join(" · ")}`
+      : "No skill categories",
+  );
+  const customSectionsSummary = truncateEditorSectionSummary(
+    resume.customSections.length > 0
+      ? `${resume.customSections.length} ${
+          resume.customSections.length === 1 ? "section" : "sections"
+        } · ${resume.customSections
+          .slice(0, 2)
+          .map((section) => section.title.trim() || "Untitled")
+          .join(" · ")}`
+      : "No custom sections",
+  );
+  const toggleEditorSection = (sectionId: EditorSectionId) => {
+    setOpenEditorSection((currentSection) =>
+      currentSection === sectionId ? null : sectionId,
+    );
+  };
 
   return (
     <main className="resume-app-shell">
       <header className="resume-shell-toolbar" aria-label="Workspace toolbar">
         <div className="resume-shell-toolbar-rail">
-          <div className="resume-shell-toolbar-group resume-shell-toolbar-group--identity">
-            <div className="resume-shell-toolbar-block">
-              <p className="resume-shell-toolbar-kicker">Resume</p>
-              <p className="resume-shell-toolbar-title">{toolbarTitle}</p>
-              <p className="resume-shell-toolbar-note">{toolbarIdentityNote}</p>
-            </div>
+          <div className="resume-shell-toolbar-brand">
+            <p className="resume-shell-toolbar-kicker">Resume Studio</p>
           </div>
 
-          <div className="resume-shell-toolbar-group resume-shell-toolbar-group--right">
-            <div className="resume-shell-toolbar-meta">
-              <p className="resume-shell-toolbar-meta-label">{pageStatusLabel}</p>
-              <p className="resume-shell-toolbar-meta-detail">{pageStatusDetail}</p>
-            </div>
-
-            <div className="resume-shell-toolbar-actions">
-              <button
-                className="resume-shell-toolbar-button resume-shell-toolbar-button--subtle"
-                type="button"
-                onClick={handleReset}
-              >
-                Reset sample
-              </button>
-              <button
-                className="resume-shell-toolbar-button resume-shell-toolbar-button--export"
-                type="button"
-                onClick={handleExportPDF}
-              >
-                Export PDF
-              </button>
-            </div>
+          <div className="resume-shell-toolbar-actions">
+            <button
+              className="resume-shell-toolbar-button resume-shell-toolbar-button--export"
+              type="button"
+              onClick={handleExportPDF}
+            >
+              Export PDF
+            </button>
           </div>
         </div>
       </header>
 
       <div className="resume-workspace">
         <section className="resume-editor-panel">
-          <div className="space-y-7">
-            <div className="space-y-3">
-              <div>
-                <h2 className="text-sm font-semibold uppercase tracking-[0.1em] text-slate-700">
-                  Header
-                </h2>
-                <p className="mt-1 text-xs text-slate-500">
+          <div className="resume-editor-head">
+            <div className="resume-editor-head-block">
+              <p className="resume-editor-template-name">{templateLabel}</p>
+              <p className="resume-editor-document-name">{documentTitle}</p>
+            </div>
+
+            <div className="resume-editor-head-actions">
+              <div className="resume-editor-head-undo">
+                <button
+                  className="resume-editor-head-action resume-editor-head-action--control is-disabled"
+                  type="button"
+                  disabled
+                >
+                  Undo
+                </button>
+                <button
+                  className="resume-editor-head-action resume-editor-head-action--control is-disabled"
+                  type="button"
+                  disabled
+                >
+                  Redo
+                </button>
+              </div>
+
+              <button
+                className="resume-editor-head-action resume-editor-head-action--subtle"
+                type="button"
+                onClick={handleReset}
+              >
+                Reset sample
+              </button>
+            </div>
+          </div>
+
+          <div className="resume-editor-panel-scroll">
+            <div className="resume-editor-stack divide-y divide-slate-200">
+              <EditorStackSection
+              title="Header"
+              summary={headerSectionSummary}
+              isOpen={openEditorSection === "header"}
+              onToggle={() => toggleEditorSection("header")}
+            >
+              <div className="space-y-3">
+                <p className={UI_NOTE_CLASSES}>
                   Contact details shown at the top of the resume.
                 </p>
+
+                <label className="block text-sm">
+                  <span className="mb-1 block font-medium text-slate-700">Name</span>
+                  <input
+                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
+                    value={resume.header.name}
+                    onChange={(event) =>
+                      setResume((current) => ({
+                        ...current,
+                        header: { ...current.header, name: event.target.value },
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className="block text-sm">
+                  <span className="mb-1 block font-medium text-slate-700">Email</span>
+                  <input
+                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
+                    value={resume.header.email}
+                    onChange={(event) =>
+                      setResume((current) => ({
+                        ...current,
+                        header: { ...current.header, email: event.target.value },
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className="block text-sm">
+                  <span className="mb-1 block font-medium text-slate-700">Phone</span>
+                  <input
+                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
+                    value={resume.header.phone}
+                    onChange={(event) =>
+                      setResume((current) => ({
+                        ...current,
+                        header: { ...current.header, phone: event.target.value },
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className="block text-sm">
+                  <span className="mb-1 block font-medium text-slate-700">Location</span>
+                  <input
+                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
+                    value={resume.header.location}
+                    onChange={(event) =>
+                      setResume((current) => ({
+                        ...current,
+                        header: { ...current.header, location: event.target.value },
+                      }))
+                    }
+                  />
+                </label>
               </div>
+            </EditorStackSection>
 
-              <label className="block text-sm">
-                <span className="mb-1 block font-medium text-slate-700">Name</span>
-                <input
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
-                  value={resume.header.name}
-                  onChange={(event) =>
-                    setResume((current) => ({
-                      ...current,
-                      header: { ...current.header, name: event.target.value },
-                    }))
-                  }
-                />
-              </label>
-
-              <label className="block text-sm">
-                <span className="mb-1 block font-medium text-slate-700">Email</span>
-                <input
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
-                  value={resume.header.email}
-                  onChange={(event) =>
-                    setResume((current) => ({
-                      ...current,
-                      header: { ...current.header, email: event.target.value },
-                    }))
-                  }
-                />
-              </label>
-
-              <label className="block text-sm">
-                <span className="mb-1 block font-medium text-slate-700">Phone</span>
-                <input
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
-                  value={resume.header.phone}
-                  onChange={(event) =>
-                    setResume((current) => ({
-                      ...current,
-                      header: { ...current.header, phone: event.target.value },
-                    }))
-                  }
-                />
-              </label>
-
-              <label className="block text-sm">
-                <span className="mb-1 block font-medium text-slate-700">Location</span>
-                <input
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
-                  value={resume.header.location}
-                  onChange={(event) =>
-                    setResume((current) => ({
-                      ...current,
-                      header: { ...current.header, location: event.target.value },
-                    }))
-                  }
-                />
-              </label>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <h2 className="text-sm font-semibold uppercase tracking-[0.1em] text-slate-700">
-                  Professional Summary
-                </h2>
-                <p className="mt-1 text-xs text-slate-500">
+            <EditorStackSection
+              title="Summary"
+              summary={summarySectionSummary}
+              isOpen={openEditorSection === "summary"}
+              onToggle={() => toggleEditorSection("summary")}
+            >
+              <div className="space-y-3">
+                <p className={UI_NOTE_CLASSES}>
                   Keep this short and specific to your current target roles.
                 </p>
+                <label className="block text-sm">
+                  <span className="mb-1 block font-medium text-slate-700">Summary text</span>
+                  <textarea
+                    className="h-28 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
+                    value={resume.summary}
+                    onChange={(event) =>
+                      setResume((current) => ({ ...current, summary: event.target.value }))
+                    }
+                  />
+                </label>
               </div>
-              <label className="block text-sm">
-                <span className="mb-1 block font-medium text-slate-700">Summary text</span>
-                <textarea
-                  className="h-28 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
-                  value={resume.summary}
-                  onChange={(event) =>
-                    setResume((current) => ({ ...current, summary: event.target.value }))
-                  }
-                />
-              </label>
-            </div>
+            </EditorStackSection>
 
-            <div className="space-y-3">
-              <div>
+            <EditorStackSection
+              title="Experience"
+              summary={experienceSectionSummary}
+              isOpen={openEditorSection === "experience"}
+              onToggle={() => toggleEditorSection("experience")}
+            >
+              <div className="space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h2 className="text-sm font-semibold uppercase tracking-[0.1em] text-slate-700">
-                    Experience
-                  </h2>
+                  <p className={UI_NOTE_CLASSES}>
+                    Expand a role to edit fields. Collapsed summaries update live as you type.
+                  </p>
                   <button
                     className={BUTTON_PRIMARY_CLASSES}
                     type="button"
@@ -1153,18 +1290,14 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                     Add experience
                   </button>
                 </div>
-                <p className="mt-1 text-xs text-slate-500">
-                  Expand a role to edit fields. Collapsed summaries update live as you type.
-                </p>
-              </div>
-              <div className="space-y-3">
+                <div className="space-y-3">
                 {resume.experience.map((job, jobIndex) => {
                   const isExpanded = expandedExperienceIndex === jobIndex;
                   const bulletGuidance = analyzeExperienceBullets(job.bullets);
                   return (
                     <div
-                      key={`${job.company}-${job.title}-${jobIndex}`}
-                      className="rounded-lg border border-slate-200 bg-slate-50/70 p-3"
+                      key={jobIndex}
+                      className={ITEM_SURFACE_CLASSES}
                     >
                       <div className="flex flex-wrap items-start justify-between gap-2">
                         <button
@@ -1176,16 +1309,14 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                             )
                           }
                         >
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-600">
+                          <p className={ITEM_INDEX_CLASSES}>
                             Experience {jobIndex + 1}
                           </p>
-                          <p className="mt-0.5 truncate text-sm font-medium text-slate-900">
+                          <p className={ITEM_SUMMARY_CLASSES}>
                             {formatExperienceCardSummary(job)}
                           </p>
                           <div className="mt-2 flex max-w-full flex-wrap gap-1.5">
-                            <span
-                              className={`inline-flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md border px-2 py-1 text-xs ${bulletGuidance.className}`}
-                            >
+                            <span className={bulletGuidance.className}>
                               <span className="font-semibold">{bulletGuidance.label}</span>
                               <span className="text-[11px] opacity-80">
                                 {bulletGuidance.bulletCount}{" "}
@@ -1195,9 +1326,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                                 {bulletGuidance.message}
                               </span>
                             </span>
-                            <span
-                              className={`inline-flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md border px-2 py-1 text-xs ${bulletGuidance.density.className}`}
-                            >
+                            <span className={bulletGuidance.density.className}>
                               <span className="font-semibold">{bulletGuidance.density.label}</span>
                               <span className="text-[11px] opacity-80">
                                 Avg {bulletGuidance.density.averageLength} chars
@@ -1399,10 +1528,10 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                           <div className="mt-3 space-y-2">
                             <div className="flex items-center justify-between gap-2">
                               <div>
-                                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">
+                                <p className={ITEM_INDEX_CLASSES}>
                                   Bullets
                                 </p>
-                                <p className="mt-0.5 text-xs text-slate-500">
+                                <p className={UI_NOTE_CLASSES}>
                                   {bulletGuidance.message} {bulletGuidance.density.message}
                                 </p>
                               </div>
@@ -1423,22 +1552,20 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                               const bulletLengthStatus = getBulletLengthStatus(bullet.trim().length);
                               const bulletHintClass =
                                 bulletLengthStatus === "veryLong"
-                                  ? "border-orange-200 bg-orange-50 text-orange-700"
-                                  : "border-amber-200 bg-amber-50 text-amber-700";
+                                  ? "rs-guidance-flag rs-guidance-flag--high"
+                                  : "rs-guidance-flag rs-guidance-flag--medium";
 
                               return (
                                 <div
-                                  key={`${job.company}-${job.title}-${bulletIndex}`}
-                                  className="rounded-md border border-slate-200 bg-white p-2"
+                                  key={bulletIndex}
+                                  className={SUBITEM_SURFACE_CLASSES}
                                 >
                                   <div className="mb-1.5 flex items-center justify-between gap-2">
                                     <span className="flex items-center gap-1.5 text-xs font-medium text-slate-600">
                                       Bullet {bulletIndex + 1}
-                                      {bulletLengthStatus !== "normal" ? (
-                                        <span
-                                          className={`rounded-full border px-1.5 py-0.5 text-[10px] font-semibold ${bulletHintClass}`}
-                                        >
-                                          {bulletLengthStatus === "veryLong" ? "Very long" : "Long"}
+                                      {bulletLengthStatus === "veryLong" ? (
+                                        <span className={bulletHintClass}>
+                                          Very long
                                         </span>
                                       ) : null}
                                     </span>
@@ -1481,14 +1608,20 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                   );
                 })}
               </div>
-            </div>
+              </div>
+            </EditorStackSection>
 
-            <div className="space-y-3">
-              <div>
+            <EditorStackSection
+              title="Education"
+              summary={educationSectionSummary}
+              isOpen={openEditorSection === "education"}
+              onToggle={() => toggleEditorSection("education")}
+            >
+              <div className="space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h2 className="text-sm font-semibold uppercase tracking-[0.1em] text-slate-700">
-                    Education
-                  </h2>
+                  <p className={UI_NOTE_CLASSES}>
+                    Expand an entry to edit school details and structured dates.
+                  </p>
                   <button
                     className={BUTTON_PRIMARY_CLASSES}
                     type="button"
@@ -1497,17 +1630,13 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                     Add education
                   </button>
                 </div>
-                <p className="mt-1 text-xs text-slate-500">
-                  Expand an entry to edit school details and structured dates.
-                </p>
-              </div>
-              <div className="space-y-3">
+                <div className="space-y-3">
                 {resume.education.map((item, itemIndex) => {
                   const isExpanded = expandedEducationIndex === itemIndex;
                   return (
                     <div
-                      key={`${item.school}-${item.degree}-${itemIndex}`}
-                      className="rounded-lg border border-slate-200 bg-slate-50/70 p-3"
+                      key={itemIndex}
+                      className={ITEM_SURFACE_CLASSES}
                     >
                       <div className="flex flex-wrap items-start justify-between gap-2">
                         <button
@@ -1519,10 +1648,10 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                             )
                           }
                         >
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-600">
+                          <p className={ITEM_INDEX_CLASSES}>
                             Education {itemIndex + 1}
                           </p>
-                          <p className="mt-0.5 truncate text-sm font-medium text-slate-900">
+                          <p className={ITEM_SUMMARY_CLASSES}>
                             {formatEducationCardSummary(item)}
                           </p>
                         </button>
@@ -1734,14 +1863,20 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                   );
                 })}
               </div>
-            </div>
+              </div>
+            </EditorStackSection>
 
-            <div className="space-y-3">
-              <div>
+            <EditorStackSection
+              title="Skills"
+              summary={skillsSectionSummary}
+              isOpen={openEditorSection === "skills"}
+              onToggle={() => toggleEditorSection("skills")}
+            >
+              <div className="space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h2 className="text-sm font-semibold uppercase tracking-[0.1em] text-slate-700">
-                    Technical Skills
-                  </h2>
+                  <p className={UI_NOTE_CLASSES}>
+                    Edit category labels and values. The preview keeps the inline label:value format.
+                  </p>
                   <button
                     className={BUTTON_PRIMARY_CLASSES}
                     type="button"
@@ -1765,34 +1900,30 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                     Add category
                   </button>
                 </div>
-                <p className="mt-1 text-xs text-slate-500">
-                  Edit category labels and values. The preview keeps the inline label:value format.
-                </p>
-              </div>
-              <label className="block text-sm">
-                <span className="mb-1 block text-xs font-medium text-slate-600">Section title</span>
-                <input
-                  className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
-                  value={resume.technicalSkills.title}
-                  onChange={(event) =>
-                    setResume((current) => ({
-                      ...current,
-                      technicalSkills: {
-                        ...current.technicalSkills,
-                        title: event.target.value,
-                      },
-                    }))
-                  }
-                />
-              </label>
-              <div className="space-y-3">
+                <label className="block text-sm">
+                  <span className="mb-1 block text-xs font-medium text-slate-600">Section title</span>
+                  <input
+                    className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
+                    value={resume.technicalSkills.title}
+                    onChange={(event) =>
+                      setResume((current) => ({
+                        ...current,
+                        technicalSkills: {
+                          ...current.technicalSkills,
+                          title: event.target.value,
+                        },
+                      }))
+                    }
+                  />
+                </label>
+                <div className="space-y-3">
                 {resume.technicalSkills.categories.map((category, categoryIndex) => (
                   <div
                     key={category.id}
-                    className="rounded-lg border border-slate-200 bg-slate-50/70 p-3"
+                    className={ITEM_SURFACE_CLASSES}
                   >
                     <div className="mb-2 flex items-center justify-between gap-2">
-                      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">
+                      <p className={ITEM_INDEX_CLASSES}>
                         Category {categoryIndex + 1}
                       </p>
                       <p className="min-w-0 flex-1 truncate text-right text-xs text-slate-500">
@@ -1848,25 +1979,48 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                   </div>
                 ))}
               </div>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <h2 className="text-sm font-semibold uppercase tracking-[0.1em] text-slate-700">
-                  Custom Resume Sections
-                </h2>
-                <p className="mt-1 text-xs text-slate-500">
-                  Optional sections for Projects, Certifications, Awards, Languages, or Volunteer work.
-                </p>
               </div>
+            </EditorStackSection>
+
+            <EditorStackSection
+              title="Custom Sections"
+              summary={customSectionsSummary}
+              isOpen={openEditorSection === "customSections"}
+              onToggle={() => toggleEditorSection("customSections")}
+            >
               <div className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className={UI_NOTE_CLASSES}>
+                    Optional sections for Projects, Certifications, Awards, Languages, or Volunteer work.
+                  </p>
+                  <button
+                    className={BUTTON_SECONDARY_CLASSES}
+                    type="button"
+                    onClick={() =>
+                      setResume((current) => ({
+                        ...current,
+                        customSections: [
+                          ...current.customSections,
+                          {
+                            id: createId("section"),
+                            title: "New Section",
+                            lines: [],
+                          },
+                        ],
+                      }))
+                    }
+                  >
+                    Add custom section
+                  </button>
+                </div>
+                <div className="space-y-3">
                 {resume.customSections.map((section, sectionIndex) => (
                   <div
                     key={section.id}
-                    className="rounded-lg border border-slate-200 bg-slate-50/70 p-3"
+                    className={ITEM_SURFACE_CLASSES}
                   >
                     <div className="mb-2 flex items-center justify-between gap-2">
-                      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">
+                      <p className={ITEM_INDEX_CLASSES}>
                         Section {sectionIndex + 1}
                       </p>
                       <button
@@ -1915,25 +2069,8 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                   </div>
                 ))}
               </div>
-              <button
-                className={BUTTON_SECONDARY_CLASSES}
-                type="button"
-                onClick={() =>
-                  setResume((current) => ({
-                    ...current,
-                    customSections: [
-                      ...current.customSections,
-                      {
-                        id: createId("section"),
-                        title: "New Section",
-                        lines: [],
-                      },
-                    ],
-                  }))
-                }
-              >
-                Add custom section
-              </button>
+              </div>
+              </EditorStackSection>
             </div>
           </div>
         </section>
@@ -1942,22 +2079,32 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
           ref={previewShellRef}
           className="resume-preview-shell relative"
         >
-          {pageAwareness.hasSecondPage ? (
-            <div
-              aria-hidden="true"
-              className="resume-page-break-guide pointer-events-none absolute z-10 flex -translate-y-1/2 items-center gap-2 text-[10px] font-medium text-slate-500"
-              style={{
-                top: pageAwareness.markerTop,
-                left: pageAwareness.markerLeft,
-                width: pageAwareness.markerWidth,
-              }}
-            >
-              <span className="h-0 flex-1 border-t border-dashed border-slate-300" />
-              <span className="bg-white/85 px-1">Page 2 starts here</span>
-              <span className="h-0 w-10 border-t border-dashed border-slate-300" />
+          <div className="resume-preview-stage-head">
+            <div className="resume-preview-stage-block">
+              <p className="resume-preview-stage-count">{pageCountLabel}</p>
             </div>
-          ) : null}
-          <SelectedTemplate resume={renderResume} />
+
+            <p className="resume-preview-stage-state">{previewStateLabel}</p>
+          </div>
+
+          <div className="resume-preview-stage-scroll">
+            {pageAwareness.hasSecondPage ? (
+              <div
+                aria-hidden="true"
+                className="resume-page-break-guide pointer-events-none absolute z-10 flex -translate-y-1/2 items-center gap-2 text-[10px] font-medium text-slate-500"
+                style={{
+                  top: pageAwareness.markerTop,
+                  left: pageAwareness.markerLeft,
+                  width: pageAwareness.markerWidth,
+                }}
+              >
+                <span className="h-0 flex-1 border-t border-dashed border-slate-300" />
+                <span className="bg-white/85 px-1">Page 2 starts here</span>
+                <span className="h-0 w-10 border-t border-dashed border-slate-300" />
+              </div>
+            ) : null}
+            <SelectedTemplate resume={renderResume} />
+          </div>
         </section>
       </div>
     </main>

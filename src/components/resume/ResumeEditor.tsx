@@ -2061,7 +2061,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
               <div className="space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className={UI_NOTE_CLASSES}>
-                    Edit category labels and values. The preview keeps the inline label:value format.
+                    Labels become bold prefixes. Skills appear after them in the resume.
                   </p>
                   <button
                     className={BUTTON_PRIMARY_CLASSES}
@@ -2086,37 +2086,38 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                     Add category
                   </button>
                 </div>
-                <label className="block text-sm">
-                  <span className="mb-1 block text-xs font-medium text-slate-600">Section title</span>
-                  <input
-                    className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
-                    value={resume.technicalSkills.title}
-                    onChange={(event) =>
-                      setResume((current) => ({
-                        ...current,
-                        technicalSkills: {
-                          ...current.technicalSkills,
-                          title: event.target.value,
-                        },
-                      }))
-                    }
-                  />
-                </label>
-                <div className="space-y-3">
+                <div className="rs-skill-section-title">
+                  <div className="rs-property-row">
+                    <div className="rs-property-label">Section title</div>
+                    <div className="rs-property-value">
+                      <input
+                        className="rs-property-control rs-skill-control"
+                        value={resume.technicalSkills.title}
+                        onChange={(event) =>
+                          setResume((current) => ({
+                            ...current,
+                            technicalSkills: {
+                              ...current.technicalSkills,
+                              title: event.target.value,
+                            },
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-2">
                 {resume.technicalSkills.categories.map((category, categoryIndex) => (
                   <div
                     key={category.id}
-                    className={ITEM_SURFACE_CLASSES}
+                    className="rs-skill-group"
                   >
-                    <div className="mb-2 flex items-center justify-between gap-2">
-                      <p className={ITEM_INDEX_CLASSES}>
+                    <div className="rs-skill-group-head">
+                      <p className="rs-skill-group-index">
                         Category {categoryIndex + 1}
                       </p>
-                      <p className="min-w-0 flex-1 truncate text-right text-xs text-slate-500">
-                        {category.label.trim() || "New Category"}
-                      </p>
                       <button
-                        className={BUTTON_DANGER_CLASSES}
+                        className="rs-skill-group-remove"
                         type="button"
                         onClick={() =>
                           setResume((current) => ({
@@ -2131,37 +2132,47 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                         }
                         disabled={resume.technicalSkills.categories.length <= 1}
                       >
-                        Remove category
+                        Remove
                       </button>
                     </div>
 
-                    <label className="block text-sm">
-                      <span className="mb-1 block text-xs font-medium text-slate-600">Category label</span>
-                      <input
-                        className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
-                        value={category.label}
-                        onChange={(event) =>
-                          updateTechnicalSkillCategory(categoryIndex, (currentCategory) => ({
-                            ...currentCategory,
-                            label: event.target.value,
-                          }))
-                        }
-                      />
-                    </label>
+                    <div className="rs-skill-group-fields">
+                      <div className="rs-property-row">
+                        <div className="rs-property-label">Display label</div>
+                        <div className="rs-property-value">
+                          <input
+                            className="rs-property-control rs-skill-control"
+                            value={category.label}
+                            onChange={(event) =>
+                              updateTechnicalSkillCategory(categoryIndex, (currentCategory) => ({
+                                ...currentCategory,
+                                label: event.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                      </div>
 
-                    <label className="mt-2 block text-sm">
-                      <span className="mb-1 block text-xs font-medium text-slate-600">Skills/value</span>
-                      <textarea
-                        className="min-h-[70px] w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
-                        value={category.value}
-                        onChange={(event) =>
-                          updateTechnicalSkillCategory(categoryIndex, (currentCategory) => ({
-                            ...currentCategory,
-                            value: event.target.value,
-                          }))
-                        }
-                      />
-                    </label>
+                      <div className="rs-property-row">
+                        <div className="rs-property-label">Skills</div>
+                        <div className="rs-property-value">
+                          <textarea
+                            className={`rs-property-control rs-skill-control rs-skill-textarea${
+                              category.value.length > 90 || category.value.includes("\n")
+                                ? " is-expanded"
+                                : ""
+                            }`}
+                            value={category.value}
+                            onChange={(event) =>
+                              updateTechnicalSkillCategory(categoryIndex, (currentCategory) => ({
+                                ...currentCategory,
+                                value: event.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>

@@ -49,7 +49,7 @@ const ITEM_INDEX_CLASSES = "rs-item-index";
 const ITEM_SUMMARY_CLASSES = "rs-item-summary";
 const LETTER_PAGE_ASPECT_RATIO = 11 / 8.5;
 const PAGE_LIMIT_WARNING_RATIO = 0.93;
-const PAGE_OVERFLOW_TOLERANCE_PX = 8;
+const PAGE_OVERFLOW_TOLERANCE_PX = 12;
 const LONG_BULLET_LENGTH = 120;
 const VERY_LONG_BULLET_LENGTH = 180;
 
@@ -64,6 +64,21 @@ type PageAwarenessState = {
   markerTop: number;
   markerLeft: number;
   markerWidth: number;
+};
+
+type PreviewMeasurementDebug = {
+  currentScale: number;
+  measuredElement: string;
+  rawMeasuredWidth: number;
+  rawMeasuredHeight: number;
+  legacyWidth: number;
+  legacyHeight: number;
+  unscaledContentHeight: number;
+  calculatedFirstPageHeight: number;
+  overflowAmount: number;
+  computedPageCount: number;
+  legacyOverflowAmount: number;
+  legacyPageCount: number;
 };
 
 type BulletGuidanceStatus = "light" | "ideal" | "caution" | "warning";
@@ -794,9 +809,11 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
     markerLeft: 0,
     markerWidth: 0,
   });
+  const [previewMeasurementDebug, setPreviewMeasurementDebug] = useState<PreviewMeasurementDebug | null>(null);
   const previewShellRef = useRef<HTMLElement | null>(null);
   const previewStageScrollRef = useRef<HTMLDivElement | null>(null);
   const previewScaleRef = useRef(1);
+  const previewScrollRestoreRef = useRef<number | null>(null);
   const hasRestoredFromStorage = useRef(false);
   const fallbackTechnicalSkills = useRef(initialResume.technicalSkills);
   const initialResumeHash = useMemo(
@@ -817,13 +834,18 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
     const shellRect = previewShell.getBoundingClientRect();
     const articleRect = resumeArticle.getBoundingClientRect();
     const currentScale = previewScaleRef.current || 1;
+    const measuredElement = `${resumeArticle.tagName.toLowerCase()}.${Array.from(resumeArticle.classList).join(".")}`;
     const naturalWidth = articleRect.width / currentScale;
     const firstPageHeight = naturalWidth * LETTER_PAGE_ASPECT_RATIO;
     if (firstPageHeight <= 0) {
       return;
     }
 
-    const contentHeight = articleRect.height / currentScale;
+    const legacyWidth = resumeArticle.offsetWidth;
+    const legacyContentHeight = Math.max(resumeArticle.scrollHeight, resumeArticle.offsetHeight);
+    const legacyFirstPageHeight = legacyWidth * LETTER_PAGE_ASPECT_RATIO;
+    const unscaledContentHeight = articleRect.height / currentScale;
+    const contentHeight = unscaledContentHeight;
     const measuredOverflowHeight = contentHeight - firstPageHeight;
     const isOverflowing = measuredOverflowHeight > PAGE_OVERFLOW_TOLERANCE_PX;
     const overflowHeight = isOverflowing ? measuredOverflowHeight : 0;
@@ -833,6 +855,10 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
       : 1;
     const isNearLimit =
       !isOverflowing && contentHeight / firstPageHeight >= PAGE_LIMIT_WARNING_RATIO;
+    const legacyOverflowAmount = legacyContentHeight - legacyFirstPageHeight;
+    const legacyPageCount = legacyOverflowAmount > PAGE_OVERFLOW_TOLERANCE_PX
+      ? Math.max(2, Math.ceil(legacyContentHeight / legacyFirstPageHeight))
+      : 1;
 
     setPageAwareness({
       pageCount,
@@ -846,6 +872,26 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
       markerLeft: articleRect.left - shellRect.left,
       markerWidth: articleRect.width,
     });
+
+    if (process.env.NODE_ENV !== "production") {
+      const nextDebugState: PreviewMeasurementDebug = {
+        currentScale,
+        measuredElement,
+        rawMeasuredWidth: articleRect.width,
+        rawMeasuredHeight: articleRect.height,
+        legacyWidth,
+        legacyHeight: legacyContentHeight,
+        unscaledContentHeight,
+        calculatedFirstPageHeight: firstPageHeight,
+        overflowAmount: measuredOverflowHeight,
+        computedPageCount: pageCount,
+        legacyOverflowAmount,
+        legacyPageCount,
+      };
+
+      setPreviewMeasurementDebug(nextDebugState);
+      console.info("[resume-preview-measurement]", nextDebugState);
+    }
   }, []);
 
   const [previewScale, setPreviewScale] = useState(1);
@@ -929,6 +975,45 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
   }, [measurePreviewScale, renderResume]);
 
   useEffect(() => {
+    const resetPreviewScrollForPrint = () => {
+      const previewStageScroll = previewStageScrollRef.current;
+
+      if (!previewStageScroll) {
+        return;
+      }
+
+      if (previewScrollRestoreRef.current === null) {
+        previewScrollRestoreRef.current = previewStageScroll.scrollTop;
+      }
+
+      previewStageScroll.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    };
+
+    const restorePreviewScrollAfterPrint = () => {
+      const previewStageScroll = previewStageScrollRef.current;
+
+      if (!previewStageScroll || previewScrollRestoreRef.current === null) {
+        return;
+      }
+
+      previewStageScroll.scrollTo({
+        top: previewScrollRestoreRef.current,
+        left: 0,
+        behavior: "auto",
+      });
+      previewScrollRestoreRef.current = null;
+    };
+
+    window.addEventListener("beforeprint", resetPreviewScrollForPrint);
+    window.addEventListener("afterprint", restorePreviewScrollAfterPrint);
+
+    return () => {
+      window.removeEventListener("beforeprint", resetPreviewScrollForPrint);
+      window.removeEventListener("afterprint", restorePreviewScrollAfterPrint);
+    };
+  }, []);
+
+  useEffect(() => {
     const restoreId = window.setTimeout(() => {
       try {
         const savedResume = window.localStorage.getItem(RESUME_STORAGE_KEY);
@@ -999,12 +1084,40 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
   }
 
   const SelectedTemplate = selectedTemplate.component;
+  const previewPageWidth = pageAwareness.firstPageHeight
+    ? pageAwareness.firstPageHeight / LETTER_PAGE_ASPECT_RATIO
+    : 816;
+  const previewPageHeight =
+    pageAwareness.firstPageHeight || previewPageWidth * LETTER_PAGE_ASPECT_RATIO;
+  const scaledPreviewPageWidth = previewPageWidth * previewScale;
+  const scaledPreviewPageHeight =
+    previewPageHeight * previewScale;
   const previewScaleStyle = {
-    zoom: previewScale,
+    width: `${previewPageWidth}px`,
+    minHeight: `${previewPageHeight}px`,
+    transform: `scale(${previewScale})`,
+    transformOrigin: "top left",
   } as CSSProperties;
 
   const handleExportPDF = () => {
-    window.print();
+    const previewStageScroll = previewStageScrollRef.current;
+
+    if (!previewStageScroll) {
+      window.print();
+      return;
+    }
+
+    if (previewScrollRestoreRef.current === null) {
+      previewScrollRestoreRef.current = previewStageScroll.scrollTop;
+    }
+
+    previewStageScroll.scrollTo({ top: 0, left: 0, behavior: "auto" });
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        window.print();
+      });
+    });
   };
 
   const handleReset = () => {
@@ -1138,6 +1251,9 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
     : pageAwareness.isNearLimit
       ? `Saved locally · ${pageFillPercent}% used`
       : "Saved locally";
+  const previewMeasurementDebugLine = previewMeasurementDebug
+    ? `scale ${previewMeasurementDebug.currentScale.toFixed(3)} · ${previewMeasurementDebug.measuredElement} · rect ${previewMeasurementDebug.rawMeasuredWidth.toFixed(2)}×${previewMeasurementDebug.rawMeasuredHeight.toFixed(2)} · unscaled ${previewMeasurementDebug.unscaledContentHeight.toFixed(2)} / page ${previewMeasurementDebug.calculatedFirstPageHeight.toFixed(2)} · overflow ${previewMeasurementDebug.overflowAmount.toFixed(2)} · pages ${previewMeasurementDebug.computedPageCount} · legacy ${previewMeasurementDebug.legacyHeight.toFixed(2)} / ${previewMeasurementDebug.legacyOverflowAmount.toFixed(2)} · ${previewMeasurementDebug.legacyPageCount}`
+    : null;
   const headerSectionSummary = truncateEditorSectionSummary(
     [
       resume.header.name.trim(),
@@ -2157,27 +2273,26 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
             <p className="resume-preview-stage-state">{previewStateLabel}</p>
           </div>
 
+          {process.env.NODE_ENV !== "production" && previewMeasurementDebugLine ? (
+            <p className="resume-preview-debug-line">{previewMeasurementDebugLine}</p>
+          ) : null}
+
           <div
             ref={previewStageScrollRef}
             className="resume-preview-stage-scroll"
           >
-            {pageAwareness.hasSecondPage ? (
-              <div
-                aria-hidden="true"
-                className="resume-page-break-guide pointer-events-none absolute z-10 flex -translate-y-1/2 items-center gap-2 text-[10px] font-medium text-slate-500"
-                style={{
-                  top: pageAwareness.markerTop,
-                  left: pageAwareness.markerLeft,
-                  width: pageAwareness.markerWidth,
-                }}
-              >
-                <span className="h-0 flex-1 border-t border-dashed border-slate-300" />
-                <span className="bg-white/85 px-1">Page 2 starts here</span>
-                <span className="h-0 w-10 border-t border-dashed border-slate-300" />
+            <div
+              className="resume-preview-scale-wrap"
+              style={{
+                width: `${scaledPreviewPageWidth}px`,
+                minHeight: `${scaledPreviewPageHeight}px`,
+              }}
+            >
+              <div className="resume-preview-page-surface">
+                <div className="resume-preview-scale-inner" style={previewScaleStyle}>
+                  <SelectedTemplate resume={renderResume} />
+                </div>
               </div>
-            ) : null}
-            <div className="resume-preview-scale-wrap" style={previewScaleStyle}>
-              <SelectedTemplate resume={renderResume} />
             </div>
           </div>
         </section>

@@ -291,6 +291,16 @@ body {
   text-align: right;
 }
 
+.resume-preview-debug-line {
+  margin: 8px 0 0;
+  color: var(--rs-text-muted);
+  font-size: 10px;
+  line-height: 1.35;
+  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: normal;
+  word-break: break-word;
+}
+
 .resume-preview-stage-scroll {
   min-height: 0;
   flex: 1 1 auto;
@@ -302,10 +312,22 @@ body {
 }
 
 .resume-preview-scale-wrap {
-  width: fit-content;
-  max-width: 100%;
+  display: grid;
+  justify-items: center;
   margin: 0 auto;
-  transform-origin: top center;
+}
+
+.resume-preview-page-surface {
+  width: 100%;
+  min-height: 100%;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid rgba(24, 28, 33, 0.14);
+  box-shadow: 0 1px 3px rgba(24, 28, 33, 0.05);
+}
+
+.resume-preview-scale-inner {
+  overflow: visible;
 }
 
 .resume-editor-stack,
@@ -868,8 +890,17 @@ body {
 
   .resume-preview-scale-wrap {
     width: auto;
-    max-width: none;
     margin: 0;
+  }
+
+  .resume-preview-page-surface {
+    min-height: auto;
+  }
+
+  .resume-preview-scale-inner {
+    width: auto !important;
+    min-height: 0 !important;
+    transform: none !important;
   }
 
   .rs-property-row {
@@ -970,12 +1001,24 @@ body {
   }
 
   .resume-preview-shell {
+    display: block !important;
     border: 0 !important;
     border-radius: 0 !important;
     box-shadow: none !important;
     margin: 0 !important;
     padding: 0 !important;
     background: #ffffff !important;
+    overflow: visible !important;
+  }
+
+  .resume-preview-stage-scroll {
+    display: block !important;
+    min-height: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    scrollbar-gutter: auto !important;
   }
 
   .resume-preview-shell article {
@@ -986,14 +1029,27 @@ body {
     box-sizing: border-box !important;
   }
 
-  .resume-preview-scale-wrap {
-    zoom: 1 !important;
+  .resume-preview-scale-wrap,
+  .resume-preview-page-surface,
+  .resume-preview-scale-inner {
+    display: block !important;
     width: auto !important;
-    max-width: none !important;
+    height: auto !important;
+    min-height: 0 !important;
     margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    overflow: visible !important;
+    transform: none !important;
   }
 
   .resume-preview-stage-head {
+    display: none !important;
+  }
+
+  .resume-preview-debug-line {
     display: none !important;
   }
 

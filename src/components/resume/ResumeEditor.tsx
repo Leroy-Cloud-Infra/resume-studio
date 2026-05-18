@@ -497,6 +497,12 @@ function truncateEditorSectionSummary(value: string, maxLength = 88) {
   return `${normalized.slice(0, maxLength - 1).trimEnd()}…`;
 }
 
+function formatExperienceGuidanceLine(bulletCount: number, isDense: boolean) {
+  const bulletLabel = `${bulletCount} ${bulletCount === 1 ? "bullet" : "bullets"}`;
+
+  return isDense ? `${bulletLabel} · dense role` : bulletLabel;
+}
+
 function EditorStackSection({
   title,
   summary,
@@ -1167,7 +1173,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
               </div>
 
               <button
-                className="resume-editor-head-action resume-editor-head-action--subtle"
+                className="resume-editor-head-action resume-editor-head-action--subtle resume-editor-head-action--utility"
                 type="button"
                 onClick={handleReset}
               >
@@ -1279,7 +1285,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
               <div className="space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className={UI_NOTE_CLASSES}>
-                    Expand a role to edit fields. Collapsed summaries update live as you type.
+                    Expand a role to edit details.
                   </p>
                   <button
                     className={BUTTON_PRIMARY_CLASSES}
@@ -1293,6 +1299,10 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                 {resume.experience.map((job, jobIndex) => {
                   const isExpanded = expandedExperienceIndex === jobIndex;
                   const bulletGuidance = analyzeExperienceBullets(job.bullets);
+                  const experienceGuidanceLine = formatExperienceGuidanceLine(
+                    bulletGuidance.bulletCount,
+                    bulletGuidance.density.status !== "balanced",
+                  );
                   return (
                     <div
                       key={jobIndex}
@@ -1314,27 +1324,9 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                           <p className={ITEM_SUMMARY_CLASSES}>
                             {formatExperienceCardSummary(job)}
                           </p>
-                          <div className="mt-2 flex max-w-full flex-wrap gap-1.5">
-                            <span className={bulletGuidance.className}>
-                              <span className="font-semibold">{bulletGuidance.label}</span>
-                              <span className="text-[11px] opacity-80">
-                                {bulletGuidance.bulletCount}{" "}
-                                {bulletGuidance.bulletCount === 1 ? "bullet" : "bullets"}
-                              </span>
-                              <span className="text-[11px] opacity-90">
-                                {bulletGuidance.message}
-                              </span>
-                            </span>
-                            <span className={bulletGuidance.density.className}>
-                              <span className="font-semibold">{bulletGuidance.density.label}</span>
-                              <span className="text-[11px] opacity-80">
-                                Avg {bulletGuidance.density.averageLength} chars
-                              </span>
-                              <span className="text-[11px] opacity-90">
-                                {bulletGuidance.density.message}
-                              </span>
-                            </span>
-                          </div>
+                          <p className="rs-experience-guidance-line mt-2">
+                            {experienceGuidanceLine}
+                          </p>
                         </button>
                         <div className="rs-experience-role-actions">
                           <button
@@ -1540,14 +1532,9 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
 
                           <div className="rs-bullet-composer">
                             <div className="rs-bullet-composer-head">
-                              <div>
-                                <p className={ITEM_INDEX_CLASSES}>
-                                  Bullets
-                                </p>
-                                <p className={UI_NOTE_CLASSES}>
-                                  {bulletGuidance.message} {bulletGuidance.density.message}
-                                </p>
-                              </div>
+                              <p className={ITEM_INDEX_CLASSES}>
+                                Bullets
+                              </p>
                               <button
                                 className="rs-bullet-add-action"
                                 type="button"

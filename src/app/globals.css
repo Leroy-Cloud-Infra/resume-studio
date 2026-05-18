@@ -54,9 +54,9 @@ body {
 }
 
 .resume-shell-toolbar {
-  margin: 0 0 18px;
+  margin: 0 0 12px;
   border-bottom: 1px solid var(--rs-line-soft);
-  padding: 0 0 6px;
+  padding: 0 0 4px;
 }
 
 .resume-shell-toolbar-rail {
@@ -64,7 +64,7 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  min-height: 24px;
+  min-height: 20px;
 }
 
 .resume-shell-toolbar-brand,
@@ -78,10 +78,11 @@ body {
 .resume-shell-toolbar-kicker {
   margin: 0;
   color: var(--foreground);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
+  font-size: 17px;
+  font-weight: 750;
+  letter-spacing: -0.015em;
+  line-height: 1.05;
+  text-transform: none;
 }
 
 .resume-shell-toolbar-actions {
@@ -478,6 +479,10 @@ body {
   border-top: 1px solid rgba(24, 28, 33, 0.05);
 }
 
+.rs-education-metadata {
+  border-top: 1px solid rgba(24, 28, 33, 0.05);
+}
+
 .rs-property-row {
   display: grid;
   grid-template-columns: 86px minmax(0, 1fr);
@@ -551,6 +556,11 @@ body {
   border-color: rgba(48, 72, 104, 0.28);
   background: rgba(255, 255, 255, 0.96);
   box-shadow: 0 0 0 2px rgba(48, 72, 104, 0.1);
+}
+
+.resume-editor-panel .rs-property-control--textarea {
+  min-height: 96px;
+  resize: vertical;
 }
 
 .rs-property-toggle {

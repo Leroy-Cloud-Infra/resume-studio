@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
 import { getResumeTemplate, type ResumeTemplateId } from "@/templates/resume-templates";
 import type {
@@ -795,6 +795,8 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
     markerWidth: 0,
   });
   const previewShellRef = useRef<HTMLElement | null>(null);
+  const previewStageScrollRef = useRef<HTMLDivElement | null>(null);
+  const previewScaleRef = useRef(1);
   const hasRestoredFromStorage = useRef(false);
   const fallbackTechnicalSkills = useRef(initialResume.technicalSkills);
   const initialResumeHash = useMemo(
@@ -814,12 +816,14 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
 
     const shellRect = previewShell.getBoundingClientRect();
     const articleRect = resumeArticle.getBoundingClientRect();
-    const firstPageHeight = articleRect.width * LETTER_PAGE_ASPECT_RATIO;
+    const currentScale = previewScaleRef.current || 1;
+    const naturalWidth = articleRect.width / currentScale;
+    const firstPageHeight = naturalWidth * LETTER_PAGE_ASPECT_RATIO;
     if (firstPageHeight <= 0) {
       return;
     }
 
-    const contentHeight = resumeArticle.scrollHeight;
+    const contentHeight = articleRect.height / currentScale;
     const measuredOverflowHeight = contentHeight - firstPageHeight;
     const isOverflowing = measuredOverflowHeight > PAGE_OVERFLOW_TOLERANCE_PX;
     const overflowHeight = isOverflowing ? measuredOverflowHeight : 0;
@@ -838,10 +842,38 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
       overflowHeight,
       firstPageHeight,
       contentHeight,
-      markerTop: articleRect.top - shellRect.top + firstPageHeight,
+      markerTop: articleRect.top - shellRect.top + firstPageHeight * currentScale,
       markerLeft: articleRect.left - shellRect.left,
       markerWidth: articleRect.width,
     });
+  }, []);
+
+  const [previewScale, setPreviewScale] = useState(1);
+
+  useEffect(() => {
+    previewScaleRef.current = previewScale;
+  }, [previewScale]);
+
+  const measurePreviewScale = useCallback(() => {
+    const previewStageScroll = previewStageScrollRef.current;
+    const resumeArticle = previewShellRef.current?.querySelector<HTMLElement>(".resume-document");
+
+    if (!previewStageScroll || !resumeArticle) {
+      return;
+    }
+
+    const availableWidth = previewStageScroll.clientWidth;
+    const renderedWidth = resumeArticle.getBoundingClientRect().width;
+
+    if (availableWidth <= 0 || renderedWidth <= 0) {
+      return;
+    }
+
+    const nextScale = Math.min(1, availableWidth / renderedWidth);
+
+    setPreviewScale((currentValue) =>
+      Math.abs(currentValue - nextScale) > 0.01 ? nextScale : currentValue,
+    );
   }, []);
 
   useEffect(() => {
@@ -867,6 +899,34 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
       window.removeEventListener("resize", measurePreviewPages);
     };
   }, [measurePreviewPages, renderResume]);
+
+  useEffect(() => {
+    measurePreviewPages();
+  }, [measurePreviewPages, previewScale]);
+
+  useEffect(() => {
+    const previewStageScroll = previewStageScrollRef.current;
+    const resumeArticle = previewShellRef.current?.querySelector<HTMLElement>(".resume-document");
+
+    if (!previewStageScroll || !resumeArticle) {
+      return;
+    }
+
+    measurePreviewScale();
+
+    const resizeObserver = new ResizeObserver(() => {
+      measurePreviewScale();
+    });
+
+    resizeObserver.observe(previewStageScroll);
+    resizeObserver.observe(resumeArticle);
+    window.addEventListener("resize", measurePreviewScale);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", measurePreviewScale);
+    };
+  }, [measurePreviewScale, renderResume]);
 
   useEffect(() => {
     const restoreId = window.setTimeout(() => {
@@ -939,6 +999,9 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
   }
 
   const SelectedTemplate = selectedTemplate.component;
+  const previewScaleStyle = {
+    zoom: previewScale,
+  } as CSSProperties;
 
   const handleExportPDF = () => {
     window.print();
@@ -1669,183 +1732,201 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
 
                       {isExpanded ? (
                         <div className="mt-3 border-t border-slate-200 pt-3">
-                          <label className="block text-sm">
-                            <span className="mb-1 block text-xs font-medium text-slate-600">School</span>
-                            <input
-                              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
-                              value={item.school}
-                              onChange={(event) =>
-                                updateEducation(itemIndex, (currentItem) => ({
-                                  ...currentItem,
-                                  school: event.target.value,
-                                }))
-                              }
-                            />
-                          </label>
-
-                          <label className="mt-2 block text-sm">
-                            <span className="mb-1 block text-xs font-medium text-slate-600">Degree</span>
-                            <input
-                              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
-                              value={item.degree}
-                              onChange={(event) =>
-                                updateEducation(itemIndex, (currentItem) => ({
-                                  ...currentItem,
-                                  degree: event.target.value,
-                                }))
-                              }
-                            />
-                          </label>
-
-                          <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                            <label className="block text-sm">
-                              <span className="mb-1 block text-xs font-medium text-slate-600">Start month</span>
-                              <select
-                                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
-                                value={item.dateRange.startMonth}
-                                onChange={(event) =>
-                                  updateEducation(itemIndex, (currentItem) => ({
-                                    ...currentItem,
-                                    dateRange: {
-                                      ...currentItem.dateRange,
-                                      startMonth: event.target.value,
-                                    },
-                                  }))
-                                }
-                              >
-                                {MONTH_OPTIONS.map((month) => (
-                                  <option key={month} value={month}>
-                                    {month}
-                                  </option>
-                                ))}
-                              </select>
-                            </label>
-                            <label className="block text-sm">
-                              <span className="mb-1 block text-xs font-medium text-slate-600">Start year</span>
-                              <select
-                                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
-                                value={item.dateRange.startYear}
-                                onChange={(event) =>
-                                  updateEducation(itemIndex, (currentItem) => ({
-                                    ...currentItem,
-                                    dateRange: {
-                                      ...currentItem.dateRange,
-                                      startYear: event.target.value,
-                                    },
-                                  }))
-                                }
-                              >
-                                {YEAR_OPTIONS.map((year) => (
-                                  <option key={year} value={year}>
-                                    {year}
-                                  </option>
-                                ))}
-                              </select>
-                            </label>
-                          </div>
-
-                          <label className="mt-2 flex items-center gap-2 text-sm text-slate-700">
-                            <input
-                              className="h-4 w-4 rounded border-slate-300"
-                              type="checkbox"
-                              checked={Boolean(item.dateRange.current)}
-                              onChange={(event) =>
-                                updateEducation(itemIndex, (currentItem) => ({
-                                  ...currentItem,
-                                  dateRange: {
-                                    ...currentItem.dateRange,
-                                    current: event.target.checked,
-                                    endMonth: event.target.checked
-                                      ? undefined
-                                      : currentItem.dateRange.endMonth ?? currentItem.dateRange.startMonth,
-                                    endYear: event.target.checked
-                                      ? undefined
-                                      : currentItem.dateRange.endYear ?? currentItem.dateRange.startYear,
-                                  },
-                                }))
-                              }
-                            />
-                            Currently enrolled
-                          </label>
-
-                          {!item.dateRange.current ? (
-                            <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                              <label className="block text-sm">
-                                <span className="mb-1 block text-xs font-medium text-slate-600">End month</span>
-                                <select
-                                  className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
-                                  value={item.dateRange.endMonth ?? MONTH_OPTIONS[0]}
+                          <div className="rs-education-metadata">
+                            <div className="rs-property-row">
+                              <div className="rs-property-label">School</div>
+                              <div className="rs-property-value">
+                                <input
+                                  className="rs-property-control"
+                                  value={item.school}
                                   onChange={(event) =>
                                     updateEducation(itemIndex, (currentItem) => ({
                                       ...currentItem,
-                                      dateRange: {
-                                        ...currentItem.dateRange,
-                                        endMonth: event.target.value,
-                                      },
+                                      school: event.target.value,
                                     }))
                                   }
-                                >
-                                  {MONTH_OPTIONS.map((month) => (
-                                    <option key={month} value={month}>
-                                      {month}
-                                    </option>
-                                  ))}
-                                </select>
-                              </label>
-                              <label className="block text-sm">
-                                <span className="mb-1 block text-xs font-medium text-slate-600">End year</span>
-                                <select
-                                  className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
-                                  value={item.dateRange.endYear ?? YEAR_OPTIONS[0]}
-                                  onChange={(event) =>
-                                    updateEducation(itemIndex, (currentItem) => ({
-                                      ...currentItem,
-                                      dateRange: {
-                                        ...currentItem.dateRange,
-                                        endYear: event.target.value,
-                                      },
-                                    }))
-                                  }
-                                >
-                                  {YEAR_OPTIONS.map((year) => (
-                                    <option key={year} value={year}>
-                                      {year}
-                                    </option>
-                                  ))}
-                                </select>
-                              </label>
+                                />
+                              </div>
                             </div>
-                          ) : null}
 
-                          <label className="mt-2 block text-sm">
-                            <span className="mb-1 block text-xs font-medium text-slate-600">Location</span>
-                            <input
-                              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
-                              value={item.location ?? ""}
-                              onChange={(event) =>
-                                updateEducation(itemIndex, (currentItem) => ({
-                                  ...currentItem,
-                                  location: event.target.value,
-                                }))
-                              }
-                            />
-                          </label>
+                            <div className="rs-property-row">
+                              <div className="rs-property-label">Degree</div>
+                              <div className="rs-property-value">
+                                <input
+                                  className="rs-property-control"
+                                  value={item.degree}
+                                  onChange={(event) =>
+                                    updateEducation(itemIndex, (currentItem) => ({
+                                      ...currentItem,
+                                      degree: event.target.value,
+                                    }))
+                                  }
+                                />
+                              </div>
+                            </div>
 
-                          <label className="mt-2 block text-sm">
-                            <span className="mb-1 block text-xs font-medium text-slate-600">
-                              Coursework (one per line)
-                            </span>
-                            <textarea
-                              className="h-24 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
-                              value={(item.coursework ?? []).join("\n")}
-                              onChange={(event) =>
-                                updateEducation(itemIndex, (currentItem) => ({
-                                  ...currentItem,
-                                  coursework: parseTextareaItems(event.target.value),
-                                }))
-                              }
-                            />
-                          </label>
+                            <div className="rs-property-row rs-property-row--dates">
+                              <div className="rs-property-label">Dates</div>
+                              <div className="rs-property-value">
+                                <div className="rs-property-grid">
+                                  <label className="rs-property-field">
+                                    <span className="rs-property-field-label">Start month</span>
+                                    <select
+                                      className="rs-property-control"
+                                      value={item.dateRange.startMonth}
+                                      onChange={(event) =>
+                                        updateEducation(itemIndex, (currentItem) => ({
+                                          ...currentItem,
+                                          dateRange: {
+                                            ...currentItem.dateRange,
+                                            startMonth: event.target.value,
+                                          },
+                                        }))
+                                      }
+                                    >
+                                      {MONTH_OPTIONS.map((month) => (
+                                        <option key={month} value={month}>
+                                          {month}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </label>
+
+                                  <label className="rs-property-field">
+                                    <span className="rs-property-field-label">Start year</span>
+                                    <select
+                                      className="rs-property-control"
+                                      value={item.dateRange.startYear}
+                                      onChange={(event) =>
+                                        updateEducation(itemIndex, (currentItem) => ({
+                                          ...currentItem,
+                                          dateRange: {
+                                            ...currentItem.dateRange,
+                                            startYear: event.target.value,
+                                          },
+                                        }))
+                                      }
+                                    >
+                                      {YEAR_OPTIONS.map((year) => (
+                                        <option key={year} value={year}>
+                                          {year}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </label>
+                                </div>
+
+                                <label className="rs-property-toggle">
+                                  <input
+                                    className="rs-checkbox"
+                                    type="checkbox"
+                                    checked={Boolean(item.dateRange.current)}
+                                    onChange={(event) =>
+                                      updateEducation(itemIndex, (currentItem) => ({
+                                        ...currentItem,
+                                        dateRange: {
+                                          ...currentItem.dateRange,
+                                          current: event.target.checked,
+                                          endMonth: event.target.checked
+                                            ? undefined
+                                            : currentItem.dateRange.endMonth ?? currentItem.dateRange.startMonth,
+                                          endYear: event.target.checked
+                                            ? undefined
+                                            : currentItem.dateRange.endYear ?? currentItem.dateRange.startYear,
+                                        },
+                                      }))
+                                    }
+                                  />
+                                  <span>Currently enrolled</span>
+                                </label>
+
+                                {!item.dateRange.current ? (
+                                  <div className="rs-property-grid rs-property-grid--end">
+                                    <label className="rs-property-field">
+                                      <span className="rs-property-field-label">End month</span>
+                                      <select
+                                        className="rs-property-control"
+                                        value={item.dateRange.endMonth ?? MONTH_OPTIONS[0]}
+                                        onChange={(event) =>
+                                          updateEducation(itemIndex, (currentItem) => ({
+                                            ...currentItem,
+                                            dateRange: {
+                                              ...currentItem.dateRange,
+                                              endMonth: event.target.value,
+                                            },
+                                          }))
+                                        }
+                                      >
+                                        {MONTH_OPTIONS.map((month) => (
+                                          <option key={month} value={month}>
+                                            {month}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </label>
+
+                                    <label className="rs-property-field">
+                                      <span className="rs-property-field-label">End year</span>
+                                      <select
+                                        className="rs-property-control"
+                                        value={item.dateRange.endYear ?? YEAR_OPTIONS[0]}
+                                        onChange={(event) =>
+                                          updateEducation(itemIndex, (currentItem) => ({
+                                            ...currentItem,
+                                            dateRange: {
+                                              ...currentItem.dateRange,
+                                              endYear: event.target.value,
+                                            },
+                                          }))
+                                        }
+                                      >
+                                        {YEAR_OPTIONS.map((year) => (
+                                          <option key={year} value={year}>
+                                            {year}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </label>
+                                  </div>
+                                ) : null}
+                              </div>
+                            </div>
+
+                            <div className="rs-property-row">
+                              <div className="rs-property-label">Location</div>
+                              <div className="rs-property-value">
+                                <input
+                                  className="rs-property-control"
+                                  value={item.location ?? ""}
+                                  onChange={(event) =>
+                                    updateEducation(itemIndex, (currentItem) => ({
+                                      ...currentItem,
+                                      location: event.target.value,
+                                    }))
+                                  }
+                                />
+                              </div>
+                            </div>
+
+                            <div className="rs-property-row">
+                              <div className="rs-property-label">Coursework</div>
+                              <div className="rs-property-value">
+                                <label className="rs-property-field">
+                                  <span className="rs-property-field-label">One line per item</span>
+                                  <textarea
+                                    className="rs-property-control rs-property-control--textarea"
+                                    value={(item.coursework ?? []).join("\n")}
+                                    onChange={(event) =>
+                                      updateEducation(itemIndex, (currentItem) => ({
+                                        ...currentItem,
+                                        coursework: parseTextareaItems(event.target.value),
+                                      }))
+                                    }
+                                  />
+                                </label>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       ) : null}
                     </div>
@@ -2076,7 +2157,10 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
             <p className="resume-preview-stage-state">{previewStateLabel}</p>
           </div>
 
-          <div className="resume-preview-stage-scroll">
+          <div
+            ref={previewStageScrollRef}
+            className="resume-preview-stage-scroll"
+          >
             {pageAwareness.hasSecondPage ? (
               <div
                 aria-hidden="true"
@@ -2092,7 +2176,9 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                 <span className="h-0 w-10 border-t border-dashed border-slate-300" />
               </div>
             ) : null}
-            <SelectedTemplate resume={renderResume} />
+            <div className="resume-preview-scale-wrap" style={previewScaleStyle}>
+              <SelectedTemplate resume={renderResume} />
+            </div>
           </div>
         </section>
       </div>

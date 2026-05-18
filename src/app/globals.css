@@ -294,10 +294,18 @@ body {
 .resume-preview-stage-scroll {
   min-height: 0;
   flex: 1 1 auto;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   overscroll-behavior: contain;
   scrollbar-gutter: stable both-edges;
   padding-top: 14px;
+}
+
+.resume-preview-scale-wrap {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
+  transform-origin: top center;
 }
 
 .resume-editor-stack,
@@ -858,6 +866,12 @@ body {
     scrollbar-gutter: auto;
   }
 
+  .resume-preview-scale-wrap {
+    width: auto;
+    max-width: none;
+    margin: 0;
+  }
+
   .rs-property-row {
     grid-template-columns: 1fr;
     gap: 7px;
@@ -970,6 +984,13 @@ body {
     max-width: 612pt !important;
     min-height: 0 !important;
     box-sizing: border-box !important;
+  }
+
+  .resume-preview-scale-wrap {
+    zoom: 1 !important;
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
   }
 
   .resume-preview-stage-head {

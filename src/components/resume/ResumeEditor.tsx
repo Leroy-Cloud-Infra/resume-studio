@@ -1371,64 +1371,74 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
             >
               <div className="space-y-3">
                 <p className={UI_NOTE_CLASSES}>
-                  Contact details shown at the top of the resume.
+                  Name and contact details shown in the resume header.
                 </p>
 
-                <label className="block text-sm">
-                  <span className="mb-1 block font-medium text-slate-700">Name</span>
-                  <input
-                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
-                    value={resume.header.name}
-                    onChange={(event) =>
-                      setResume((current) => ({
-                        ...current,
-                        header: { ...current.header, name: event.target.value },
-                      }))
-                    }
-                  />
-                </label>
+                <div className="rs-header-identity-block">
+                  <div className="rs-property-row">
+                    <div className="rs-property-label">Name</div>
+                    <div className="rs-property-value">
+                      <input
+                        className="rs-property-control rs-header-control"
+                        value={resume.header.name}
+                        onChange={(event) =>
+                          setResume((current) => ({
+                            ...current,
+                            header: { ...current.header, name: event.target.value },
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
 
-                <label className="block text-sm">
-                  <span className="mb-1 block font-medium text-slate-700">Email</span>
-                  <input
-                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
-                    value={resume.header.email}
-                    onChange={(event) =>
-                      setResume((current) => ({
-                        ...current,
-                        header: { ...current.header, email: event.target.value },
-                      }))
-                    }
-                  />
-                </label>
+                  <div className="rs-property-row">
+                    <div className="rs-property-label">Email</div>
+                    <div className="rs-property-value">
+                      <input
+                        className="rs-property-control rs-header-control"
+                        value={resume.header.email}
+                        onChange={(event) =>
+                          setResume((current) => ({
+                            ...current,
+                            header: { ...current.header, email: event.target.value },
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
 
-                <label className="block text-sm">
-                  <span className="mb-1 block font-medium text-slate-700">Phone</span>
-                  <input
-                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
-                    value={resume.header.phone}
-                    onChange={(event) =>
-                      setResume((current) => ({
-                        ...current,
-                        header: { ...current.header, phone: event.target.value },
-                      }))
-                    }
-                  />
-                </label>
+                  <div className="rs-property-row">
+                    <div className="rs-property-label">Phone</div>
+                    <div className="rs-property-value">
+                      <input
+                        className="rs-property-control rs-header-control"
+                        value={resume.header.phone}
+                        onChange={(event) =>
+                          setResume((current) => ({
+                            ...current,
+                            header: { ...current.header, phone: event.target.value },
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
 
-                <label className="block text-sm">
-                  <span className="mb-1 block font-medium text-slate-700">Location</span>
-                  <input
-                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
-                    value={resume.header.location}
-                    onChange={(event) =>
-                      setResume((current) => ({
-                        ...current,
-                        header: { ...current.header, location: event.target.value },
-                      }))
-                    }
-                  />
-                </label>
+                  <div className="rs-property-row">
+                    <div className="rs-property-label">Location</div>
+                    <div className="rs-property-value">
+                      <input
+                        className="rs-property-control rs-header-control"
+                        value={resume.header.location}
+                        onChange={(event) =>
+                          setResume((current) => ({
+                            ...current,
+                            header: { ...current.header, location: event.target.value },
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             </EditorStackSection>
 

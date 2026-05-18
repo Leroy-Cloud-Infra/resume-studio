@@ -556,6 +556,39 @@ body {
   padding-top: 8px;
 }
 
+.rs-header-identity-block {
+  border-top: 1px solid rgba(24, 28, 33, 0.06);
+  padding-top: 8px;
+}
+
+.rs-header-identity-block .rs-property-row {
+  gap: 10px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.rs-header-identity-block .rs-property-label {
+  padding-top: 6px;
+  color: #5f6974;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
+.resume-editor-panel .rs-header-control {
+  min-height: 30px;
+  border-color: rgba(24, 28, 33, 0.1);
+  background: rgba(252, 252, 251, 0.72);
+  padding: 5px 7px;
+}
+
+.resume-editor-panel .rs-header-control:focus {
+  border-color: rgba(48, 72, 104, 0.24);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 0 0 2px rgba(48, 72, 104, 0.08);
+}
+
 .rs-skill-section-title .rs-property-row,
 .rs-skill-group-fields .rs-property-row {
   gap: 10px;

@@ -1450,18 +1450,20 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
             >
               <div className="space-y-3">
                 <p className={UI_NOTE_CLASSES}>
-                  Keep this short and specific to your current target roles.
+                  Short professional summary shown below the header.
                 </p>
-                <label className="block text-sm">
-                  <span className="mb-1 block font-medium text-slate-700">Summary text</span>
-                  <textarea
-                    className="h-28 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
-                    value={resume.summary}
-                    onChange={(event) =>
-                      setResume((current) => ({ ...current, summary: event.target.value }))
-                    }
-                  />
-                </label>
+                <div className="rs-summary-block">
+                  <label className="rs-summary-field">
+                    <span className="rs-summary-label">Summary</span>
+                    <textarea
+                      className="rs-property-control rs-summary-control"
+                      value={resume.summary}
+                      onChange={(event) =>
+                        setResume((current) => ({ ...current, summary: event.target.value }))
+                      }
+                    />
+                  </label>
+                </div>
               </div>
             </EditorStackSection>
 

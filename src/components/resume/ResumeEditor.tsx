@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
 import { getResumeTemplate, type ResumeTemplateId } from "@/templates/resume-templates";
 import type {
@@ -114,6 +114,11 @@ type BulletGuidance = {
 type LegacyResumeSkillGroup = {
   category: string;
   items: string[];
+};
+
+type EditorTextareaAutosizeConfig = {
+  minHeight: number;
+  maxHeight: number;
 };
 
 type ResumeStoragePayload = {
@@ -810,6 +815,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
     markerWidth: 0,
   });
   const [previewMeasurementDebug, setPreviewMeasurementDebug] = useState<PreviewMeasurementDebug | null>(null);
+  const editorPanelRef = useRef<HTMLElement | null>(null);
   const previewShellRef = useRef<HTMLElement | null>(null);
   const previewStageScrollRef = useRef<HTMLDivElement | null>(null);
   const previewScaleRef = useRef(1);
@@ -823,6 +829,59 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
 
   const selectedTemplate = useMemo(() => getResumeTemplate(templateId), [templateId]);
   const renderResume = useMemo(() => normalizeResumeBullets(resume), [resume]);
+  const syncAutosizeTextarea = useCallback((textarea: HTMLTextAreaElement) => {
+    const minHeight = Number(textarea.dataset.autosizeMin ?? 0);
+    const maxHeight = Number(textarea.dataset.autosizeMax ?? 0);
+
+    textarea.style.height = "auto";
+
+    const nextHeight = Math.max(minHeight, textarea.scrollHeight);
+    const clampedHeight = maxHeight > 0 ? Math.min(nextHeight, maxHeight) : nextHeight;
+
+    textarea.style.height = `${clampedHeight}px`;
+    textarea.style.overflowY =
+      maxHeight > 0 && textarea.scrollHeight > maxHeight ? "auto" : "hidden";
+  }, []);
+
+  const autosizeTextareaProps = useCallback(
+    ({ minHeight, maxHeight }: EditorTextareaAutosizeConfig) => ({
+      "data-autosize": "true",
+      "data-autosize-min": String(minHeight),
+      "data-autosize-max": String(maxHeight),
+    }),
+    [],
+  );
+
+  const queueAutosizeTextarea = useCallback(
+    (textarea: HTMLTextAreaElement) => {
+      requestAnimationFrame(() => {
+        syncAutosizeTextarea(textarea);
+      });
+    },
+    [syncAutosizeTextarea],
+  );
+
+  useLayoutEffect(() => {
+    const editorPanel = editorPanelRef.current;
+
+    if (!editorPanel) {
+      return;
+    }
+
+    editorPanel
+      .querySelectorAll<HTMLTextAreaElement>("textarea[data-autosize='true']")
+      .forEach((textarea) => {
+        syncAutosizeTextarea(textarea);
+      });
+  }, [
+    expandedEducationIndex,
+    expandedExperienceIndex,
+    openEditorSection,
+    renderResume,
+    resume,
+    syncAutosizeTextarea,
+  ]);
+
   const measurePreviewPages = useCallback(() => {
     const previewShell = previewShellRef.current;
     const resumeArticle = previewShell?.querySelector<HTMLElement>(".resume-document");
@@ -1326,7 +1385,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
       </header>
 
       <div className="resume-workspace">
-        <section className="resume-editor-panel">
+        <section ref={editorPanelRef} className="resume-editor-panel">
           <div className="resume-editor-head">
             <div className="resume-editor-head-block">
               <p className="resume-editor-template-name">{templateLabel}</p>
@@ -1457,10 +1516,12 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                     <span className="rs-summary-label">Summary</span>
                     <textarea
                       className="rs-property-control rs-summary-control"
+                      {...autosizeTextareaProps({ minHeight: 120, maxHeight: 220 })}
                       value={resume.summary}
-                      onChange={(event) =>
-                        setResume((current) => ({ ...current, summary: event.target.value }))
-                      }
+                      onChange={(event) => {
+                        setResume((current) => ({ ...current, summary: event.target.value }));
+                        queueAutosizeTextarea(event.currentTarget);
+                      }}
                     />
                   </label>
                 </div>
@@ -1766,8 +1827,9 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                                   </div>
                                   <textarea
                                     className="rs-bullet-textarea"
+                                    {...autosizeTextareaProps({ minHeight: 72, maxHeight: 160 })}
                                     value={bullet}
-                                    onChange={(event) =>
+                                    onChange={(event) => {
                                       updateExperience(jobIndex, (currentJob) => ({
                                         ...currentJob,
                                         bullets: currentJob.bullets.map((currentBullet, currentBulletIndex) =>
@@ -1775,8 +1837,9 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                                             ? event.target.value
                                             : currentBullet,
                                         ),
-                                      }))
-                                    }
+                                      }));
+                                      queueAutosizeTextarea(event.currentTarget);
+                                    }}
                                   />
                                 </div>
                               );
@@ -2043,13 +2106,15 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                                   <span className="rs-property-field-label">One line per item</span>
                                   <textarea
                                     className="rs-property-control rs-property-control--textarea"
+                                    {...autosizeTextareaProps({ minHeight: 96, maxHeight: 180 })}
                                     value={(item.coursework ?? []).join("\n")}
-                                    onChange={(event) =>
+                                    onChange={(event) => {
                                       updateEducation(itemIndex, (currentItem) => ({
                                         ...currentItem,
                                         coursework: parseTextareaItems(event.target.value),
-                                      }))
-                                    }
+                                      }));
+                                      queueAutosizeTextarea(event.currentTarget);
+                                    }}
                                   />
                                 </label>
                               </div>
@@ -2174,13 +2239,15 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                                 ? " is-expanded"
                                 : ""
                             }`}
+                            {...autosizeTextareaProps({ minHeight: 64, maxHeight: 140 })}
                             value={category.value}
-                            onChange={(event) =>
+                            onChange={(event) => {
                               updateTechnicalSkillCategory(categoryIndex, (currentCategory) => ({
                                 ...currentCategory,
                                 value: event.target.value,
-                              }))
-                            }
+                              }));
+                              queueAutosizeTextarea(event.currentTarget);
+                            }}
                           />
                         </div>
                       </div>
@@ -2266,13 +2333,15 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                       </span>
                       <textarea
                         className="h-24 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
+                        {...autosizeTextareaProps({ minHeight: 96, maxHeight: 220 })}
                         value={section.lines.join("\n")}
-                        onChange={(event) =>
+                        onChange={(event) => {
                           updateCustomSection(sectionIndex, (currentSection) => ({
                             ...currentSection,
                             lines: parseTextareaItems(event.target.value),
-                          }))
-                        }
+                          }));
+                          queueAutosizeTextarea(event.currentTarget);
+                        }}
                       />
                     </label>
                   </div>

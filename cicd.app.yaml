@@ -4,7 +4,7 @@ kind: cicd.app
 app:
   name: resume-studio
   display_name: Resume Studio
-  repository: acesarhernandez/resume-studio
+  repository: Leroy-Cloud-Infra/resume-studio
   service: resume-studio
   role: frontend
 
@@ -25,7 +25,7 @@ build:
     - linux/amd64
   image:
     registry: ghcr.io
-    repository: acesarhernandez/resume-studio
+    repository: Leroy-Cloud-Infra/resume-studio
 
 deploy:
   strategy: docker-compose

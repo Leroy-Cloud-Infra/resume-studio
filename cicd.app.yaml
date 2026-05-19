@@ -1,23 +1,63 @@
+schema_version: "1"
+kind: cicd.app
+
 app:
   name: resume-studio
+  display_name: Resume Studio
+  repository: acesarhernandez/resume-studio
+  service: resume-studio
+  role: frontend
 
-profile: container-single
-role: frontend
+profile:
+  id: container-single
+  deployment_unit: image
+  runtime_family: docker
+  default_port: 3000
+
+deploy_modes:
+  primary: image
+  allow_source_deploy: false
 
 build:
-  dockerfile: Dockerfile
   context: .
+  dockerfile: Dockerfile
+  platforms:
+    - linux/amd64
+  image:
+    registry: ghcr.io
+    repository: acesarhernandez/resume-studio
 
 deploy:
-  mode: image
   strategy: docker-compose
+  target:
+    type: docker-compose-service
+    name: resume-studio
+  compose:
+    file: deploy/docker-compose.yaml
 
 verify:
   type: http
-  url: /api/health
-  expected_status: 200
+  name: health
+  method: GET
+  url: http://127.0.0.1:3000/api/health
+  expect:
+    status_codes: [200]
+    body_contains: '"status":"ok"'
 
 environments:
+  development:
+    deploy:
+      target:
+        name: resume-studio-development
+  staging:
+    deploy:
+      target:
+        name: resume-studio-staging
   production:
     deploy:
-      runtime_dir: /opt/resume-studio
+      target:
+        name: resume-studio-production
+
+metadata:
+  runtime_contract:
+    env_file: /opt/resume-studio/.env

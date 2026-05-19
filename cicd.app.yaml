@@ -1,0 +1,23 @@
+app:
+  name: resume-studio
+
+profile: container-single
+role: frontend
+
+build:
+  dockerfile: Dockerfile
+  context: .
+
+deploy:
+  mode: image
+  strategy: docker-compose
+
+verify:
+  type: http
+  url: /api/health
+  expected_status: 200
+
+environments:
+  production:
+    deploy:
+      runtime_dir: /opt/resume-studio

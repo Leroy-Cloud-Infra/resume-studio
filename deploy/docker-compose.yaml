@@ -1,0 +1,21 @@
+services:
+  resume-studio:
+    image: ${DEPLOY_IMAGE}
+    container_name: resume-studio
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+      HOSTNAME: 0.0.0.0
+      PORT: "3000"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.resume-studio.rule=Host(`resume-studio.leroy`)
+      - traefik.http.routers.resume-studio.entrypoints=web
+      - traefik.http.services.resume-studio.loadbalancer.server.port=3000
+    networks:
+      - traefik
+
+networks:
+  traefik:
+    external: true

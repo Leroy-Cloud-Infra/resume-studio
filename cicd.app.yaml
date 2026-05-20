@@ -60,4 +60,4 @@ environments:
 
 metadata:
   runtime_contract:
-    env_file: /opt/resume-studio/.env
+    env_file: /home/cesar/docker/resume-studio/.env

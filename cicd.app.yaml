@@ -39,7 +39,7 @@ verify:
   type: http
   name: health
   method: GET
-  url: http://127.0.0.1:3000/api/health
+  url: http://resume-studio.leroy/api/health
   expect:
     status_codes: [200]
     body_contains: '"status":"ok"'

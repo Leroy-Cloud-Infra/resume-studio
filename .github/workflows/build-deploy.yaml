@@ -50,7 +50,7 @@ jobs:
         shell: bash
         run: |
           release_id="${{ needs.build_publish.outputs.release_id }}"
-          target_dir="/opt/resume-studio/releases/${release_id}"
+          target_dir="/home/cesar/docker/resume-studio/releases/${release_id}"
           mkdir -p "$target_dir"
 
           manifest_file=$(find retained-manifest -maxdepth 1 -name '*.json' | head -n 1)

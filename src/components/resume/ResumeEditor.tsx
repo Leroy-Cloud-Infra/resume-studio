@@ -50,6 +50,8 @@ const ITEM_SUMMARY_CLASSES = "rs-item-summary";
 const LETTER_PAGE_ASPECT_RATIO = 11 / 8.5;
 const PAGE_LIMIT_WARNING_RATIO = 0.93;
 const PAGE_OVERFLOW_TOLERANCE_PX = 12;
+const PREVIEW_SCALE_MIN = 0.62;
+const PREVIEW_SCALE_FIT_BUFFER_PX = 2;
 const LONG_BULLET_LENGTH = 120;
 const VERY_LONG_BULLET_LENGTH = 180;
 
@@ -64,21 +66,6 @@ type PageAwarenessState = {
   markerTop: number;
   markerLeft: number;
   markerWidth: number;
-};
-
-type PreviewMeasurementDebug = {
-  currentScale: number;
-  measuredElement: string;
-  rawMeasuredWidth: number;
-  rawMeasuredHeight: number;
-  legacyWidth: number;
-  legacyHeight: number;
-  unscaledContentHeight: number;
-  calculatedFirstPageHeight: number;
-  overflowAmount: number;
-  computedPageCount: number;
-  legacyOverflowAmount: number;
-  legacyPageCount: number;
 };
 
 type BulletGuidanceStatus = "light" | "ideal" | "caution" | "warning";
@@ -131,6 +118,22 @@ type ResumeStoragePayload = {
 
 function createId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+}
+
+function readPixelValue(value: string) {
+  const parsedValue = Number.parseFloat(value);
+  return Number.isFinite(parsedValue) ? parsedValue : 0;
+}
+
+function getHorizontalBoxChrome(element: HTMLElement) {
+  const styles = window.getComputedStyle(element);
+
+  return (
+    readPixelValue(styles.borderLeftWidth) +
+    readPixelValue(styles.borderRightWidth) +
+    readPixelValue(styles.paddingLeft) +
+    readPixelValue(styles.paddingRight)
+  );
 }
 
 function parseTextareaItems(value: string) {
@@ -814,7 +817,6 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
     markerLeft: 0,
     markerWidth: 0,
   });
-  const [previewMeasurementDebug, setPreviewMeasurementDebug] = useState<PreviewMeasurementDebug | null>(null);
   const editorPanelRef = useRef<HTMLElement | null>(null);
   const previewShellRef = useRef<HTMLElement | null>(null);
   const previewStageScrollRef = useRef<HTMLDivElement | null>(null);
@@ -933,7 +935,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
     });
 
     if (process.env.NODE_ENV !== "production") {
-      const nextDebugState: PreviewMeasurementDebug = {
+      const nextDebugState = {
         currentScale,
         measuredElement,
         rawMeasuredWidth: articleRect.width,
@@ -948,12 +950,12 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
         legacyPageCount,
       };
 
-      setPreviewMeasurementDebug(nextDebugState);
       console.info("[resume-preview-measurement]", nextDebugState);
     }
   }, []);
 
   const [previewScale, setPreviewScale] = useState(1);
+  const [previewSurfaceChromeWidth, setPreviewSurfaceChromeWidth] = useState(0);
 
   useEffect(() => {
     previewScaleRef.current = previewScale;
@@ -961,20 +963,30 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
 
   const measurePreviewScale = useCallback(() => {
     const previewStageScroll = previewStageScrollRef.current;
-    const resumeArticle = previewShellRef.current?.querySelector<HTMLElement>(".resume-document");
+    const previewShell = previewShellRef.current;
+    const resumeArticle = previewShell?.querySelector<HTMLElement>(".resume-document");
+    const pageSurface = previewShell?.querySelector<HTMLElement>(".resume-preview-page-surface");
 
-    if (!previewStageScroll || !resumeArticle) {
+    if (!previewStageScroll || !resumeArticle || !pageSurface) {
       return;
     }
 
     const availableWidth = previewStageScroll.clientWidth;
-    const renderedWidth = resumeArticle.getBoundingClientRect().width;
+    const currentScale = previewScaleRef.current || 1;
+    const naturalPageWidth = resumeArticle.getBoundingClientRect().width / currentScale;
+    const surfaceChromeWidth = getHorizontalBoxChrome(pageSurface);
 
-    if (availableWidth <= 0 || renderedWidth <= 0) {
+    if (availableWidth <= 0 || naturalPageWidth <= 0) {
       return;
     }
 
-    const nextScale = Math.min(1, availableWidth / renderedWidth);
+    const fitWidth = availableWidth - surfaceChromeWidth - PREVIEW_SCALE_FIT_BUFFER_PX;
+    const fitScale = fitWidth / naturalPageWidth;
+    const nextScale = Math.min(1, Math.max(PREVIEW_SCALE_MIN, fitScale));
+
+    setPreviewSurfaceChromeWidth((currentValue) =>
+      Math.abs(currentValue - surfaceChromeWidth) > 0.5 ? surfaceChromeWidth : currentValue,
+    );
 
     setPreviewScale((currentValue) =>
       Math.abs(currentValue - nextScale) > 0.01 ? nextScale : currentValue,
@@ -1011,9 +1023,11 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
 
   useEffect(() => {
     const previewStageScroll = previewStageScrollRef.current;
-    const resumeArticle = previewShellRef.current?.querySelector<HTMLElement>(".resume-document");
+    const previewShell = previewShellRef.current;
+    const resumeArticle = previewShell?.querySelector<HTMLElement>(".resume-document");
+    const pageSurface = previewShell?.querySelector<HTMLElement>(".resume-preview-page-surface");
 
-    if (!previewStageScroll || !resumeArticle) {
+    if (!previewStageScroll || !resumeArticle || !pageSurface) {
       return;
     }
 
@@ -1025,6 +1039,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
 
     resizeObserver.observe(previewStageScroll);
     resizeObserver.observe(resumeArticle);
+    resizeObserver.observe(pageSurface);
     window.addEventListener("resize", measurePreviewScale);
 
     return () => {
@@ -1149,6 +1164,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
   const previewPageHeight =
     pageAwareness.firstPageHeight || previewPageWidth * LETTER_PAGE_ASPECT_RATIO;
   const scaledPreviewPageWidth = previewPageWidth * previewScale;
+  const scaledPreviewSurfaceWidth = scaledPreviewPageWidth + previewSurfaceChromeWidth;
   const scaledPreviewPageHeight =
     previewPageHeight * previewScale;
   const previewScaleStyle = {
@@ -1310,9 +1326,6 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
     : pageAwareness.isNearLimit
       ? `Saved locally · ${pageFillPercent}% used`
       : "Saved locally";
-  const previewMeasurementDebugLine = previewMeasurementDebug
-    ? `scale ${previewMeasurementDebug.currentScale.toFixed(3)} · ${previewMeasurementDebug.measuredElement} · rect ${previewMeasurementDebug.rawMeasuredWidth.toFixed(2)}×${previewMeasurementDebug.rawMeasuredHeight.toFixed(2)} · unscaled ${previewMeasurementDebug.unscaledContentHeight.toFixed(2)} / page ${previewMeasurementDebug.calculatedFirstPageHeight.toFixed(2)} · overflow ${previewMeasurementDebug.overflowAmount.toFixed(2)} · pages ${previewMeasurementDebug.computedPageCount} · legacy ${previewMeasurementDebug.legacyHeight.toFixed(2)} / ${previewMeasurementDebug.legacyOverflowAmount.toFixed(2)} · ${previewMeasurementDebug.legacyPageCount}`
-    : null;
   const headerSectionSummary = truncateEditorSectionSummary(
     [
       resume.header.name.trim(),
@@ -1898,9 +1911,9 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                             {formatEducationCardSummary(item)}
                           </p>
                         </button>
-                        <div className="flex items-center gap-1.5">
+                        <div className="rs-experience-role-actions">
                           <button
-                            className={BUTTON_SECONDARY_CLASSES}
+                            className={`${BUTTON_SECONDARY_CLASSES} rs-experience-role-action`}
                             type="button"
                             onClick={() =>
                               setExpandedEducationIndex((currentIndex) =>
@@ -1911,7 +1924,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                             {isExpanded ? "Collapse" : "Edit"}
                           </button>
                           <button
-                            className={BUTTON_DANGER_CLASSES}
+                            className={`${BUTTON_DANGER_CLASSES} rs-experience-role-action`}
                             type="button"
                             onClick={() => handleRemoveEducation(itemIndex)}
                             disabled={resume.education.length <= 1}
@@ -1956,10 +1969,10 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                               </div>
                             </div>
 
-                            <div className="rs-property-row rs-property-row--dates">
+                            <div className="rs-property-row rs-property-row--dates rs-education-dates-row">
                               <div className="rs-property-label">Dates</div>
-                              <div className="rs-property-value">
-                                <div className="rs-property-grid">
+                              <div className="rs-property-value rs-education-dates-value">
+                                <div className="rs-property-grid rs-education-dates-grid">
                                   <label className="rs-property-field">
                                     <span className="rs-property-field-label">Start month</span>
                                     <select
@@ -2007,7 +2020,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                                   </label>
                                 </div>
 
-                                <label className="rs-property-toggle">
+                                <label className="rs-property-toggle rs-education-date-toggle">
                                   <input
                                     className="rs-checkbox"
                                     type="checkbox"
@@ -2032,7 +2045,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                                 </label>
 
                                 {!item.dateRange.current ? (
-                                  <div className="rs-property-grid rs-property-grid--end">
+                                  <div className="rs-property-grid rs-property-grid--end rs-education-dates-grid rs-education-dates-grid--end">
                                     <label className="rs-property-field">
                                       <span className="rs-property-field-label">End month</span>
                                       <select
@@ -2099,13 +2112,13 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                               </div>
                             </div>
 
-                            <div className="rs-property-row">
-                              <div className="rs-property-label">Coursework</div>
-                              <div className="rs-property-value">
+                            <div className="rs-property-row rs-education-coursework-row">
+                              <div className="rs-property-label">Relevant Coursework</div>
+                              <div className="rs-property-value rs-education-coursework-value">
                                 <label className="rs-property-field">
                                   <span className="rs-property-field-label">One line per item</span>
                                   <textarea
-                                    className="rs-property-control rs-property-control--textarea"
+                                    className="rs-property-control rs-property-control--textarea rs-education-coursework-textarea"
                                     {...autosizeTextareaProps({ minHeight: 96, maxHeight: 180 })}
                                     value={(item.coursework ?? []).join("\n")}
                                     onChange={(event) => {
@@ -2365,10 +2378,6 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
             <p className="resume-preview-stage-state">{previewStateLabel}</p>
           </div>
 
-          {process.env.NODE_ENV !== "production" && previewMeasurementDebugLine ? (
-            <p className="resume-preview-debug-line">{previewMeasurementDebugLine}</p>
-          ) : null}
-
           <div
             ref={previewStageScrollRef}
             className="resume-preview-stage-scroll"
@@ -2376,7 +2385,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
             <div
               className="resume-preview-scale-wrap"
               style={{
-                width: `${scaledPreviewPageWidth}px`,
+                width: `${scaledPreviewSurfaceWidth}px`,
                 minHeight: `${scaledPreviewPageHeight}px`,
               }}
             >

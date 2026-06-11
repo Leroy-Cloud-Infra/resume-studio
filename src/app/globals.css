@@ -305,10 +305,11 @@ body {
   min-height: 0;
   flex: 1 1 auto;
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: auto;
   overscroll-behavior: contain;
   scrollbar-gutter: stable both-edges;
   padding-top: 14px;
+  padding-bottom: 4px;
 }
 
 .resume-preview-scale-wrap {
@@ -319,6 +320,7 @@ body {
 
 .resume-preview-page-surface {
   width: 100%;
+  box-sizing: border-box;
   min-height: 100%;
   overflow: hidden;
   background: #ffffff;
@@ -676,6 +678,69 @@ body {
 
 .rs-education-metadata {
   border-top: 1px solid rgba(24, 28, 33, 0.05);
+}
+
+.rs-education-metadata .rs-property-row {
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+
+.rs-education-metadata .rs-property-label {
+  padding-top: 6px;
+  color: #5e6873;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
+.rs-education-dates-value {
+  padding-top: 1px;
+}
+
+.rs-education-dates-grid {
+  gap: 7px;
+}
+
+.rs-education-date-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 7px;
+  border: 1px solid rgba(24, 28, 33, 0.08);
+  border-radius: 5px;
+  background: rgba(248, 249, 247, 0.72);
+  padding: 5px 8px;
+  color: #56606a;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.rs-education-dates-grid--end {
+  margin-top: 7px;
+  padding-top: 7px;
+}
+
+.rs-education-coursework-row {
+  padding-top: 6px;
+  padding-bottom: 2px;
+}
+
+.rs-education-coursework-value {
+  padding-bottom: 2px;
+}
+
+.resume-editor-panel .rs-education-coursework-textarea {
+  border-color: rgba(24, 28, 33, 0.1);
+  background: rgba(252, 252, 251, 0.74);
+  padding: 7px 8px;
+  box-shadow: none;
+}
+
+.resume-editor-panel .rs-education-coursework-textarea:focus {
+  border-color: rgba(48, 72, 104, 0.24);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 0 2px rgba(48, 72, 104, 0.08);
 }
 
 .rs-property-row {
@@ -1127,6 +1192,7 @@ body {
 }
 
 @media print {
+  /* Safari/browser headers and footers are controlled by the print dialog, not reliably by page CSS. */
   :root {
     --background: #ffffff;
     --foreground: #000000;

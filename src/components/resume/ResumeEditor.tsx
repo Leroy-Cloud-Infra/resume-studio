@@ -805,6 +805,8 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
   const [openEditorSection, setOpenEditorSection] = useState<EditorSectionId | null>("experience");
   const [expandedExperienceIndex, setExpandedExperienceIndex] = useState<number | null>(0);
   const [expandedEducationIndex, setExpandedEducationIndex] = useState<number | null>(0);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [exportPdfError, setExportPdfError] = useState<string | null>(null);
   const [pageAwareness, setPageAwareness] = useState<PageAwarenessState>({
     pageCount: 1,
     isOverflowing: false,
@@ -1174,25 +1176,45 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
     transformOrigin: "top left",
   } as CSSProperties;
 
-  const handleExportPDF = () => {
-    const previewStageScroll = previewStageScrollRef.current;
+  const handleExportPDF = async () => {
+    setExportPdfError(null);
+    setIsExportingPdf(true);
 
-    if (!previewStageScroll) {
-      window.print();
-      return;
-    }
-
-    if (previewScrollRestoreRef.current === null) {
-      previewScrollRestoreRef.current = previewStageScroll.scrollTop;
-    }
-
-    previewStageScroll.scrollTo({ top: 0, left: 0, behavior: "auto" });
-
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        window.print();
+    try {
+      const response = await fetch("/api/export/pdf", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          resume: renderResume,
+          templateId,
+        }),
       });
-    });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      const pdfBlob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(pdfBlob);
+      const disposition = response.headers.get("Content-Disposition");
+      const filenameMatch = disposition?.match(/filename="([^"]+)"/);
+      const filename = filenameMatch?.[1] ?? "resume.pdf";
+      const downloadLink = document.createElement("a");
+
+      downloadLink.href = downloadUrl;
+      downloadLink.download = filename;
+      document.body.append(downloadLink);
+      downloadLink.click();
+      downloadLink.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error("PDF export failed", error);
+      setExportPdfError("PDF export failed. Try again.");
+    } finally {
+      setIsExportingPdf(false);
+    }
   };
 
   const handleReset = () => {
@@ -1390,9 +1412,15 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
               className="resume-shell-toolbar-button resume-shell-toolbar-button--export"
               type="button"
               onClick={handleExportPDF}
+              disabled={isExportingPdf}
             >
-              Export PDF
+              {isExportingPdf ? "Exporting..." : "Export PDF"}
             </button>
+            {exportPdfError ? (
+              <p className="resume-shell-toolbar-status" role="status">
+                {exportPdfError}
+              </p>
+            ) : null}
           </div>
         </div>
       </header>

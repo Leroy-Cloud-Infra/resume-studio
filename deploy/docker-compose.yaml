@@ -2,6 +2,7 @@ services:
   resume-studio:
     image: ${DEPLOY_IMAGE}
     container_name: resume-studio
+    init: true
     restart: unless-stopped
     environment:
       NODE_ENV: production

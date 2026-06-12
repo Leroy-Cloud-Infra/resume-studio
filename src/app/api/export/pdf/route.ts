@@ -1,3 +1,6 @@
+import path from "node:path";
+import { pathToFileURL } from "node:url";
+
 import { NextResponse } from "next/server";
 import { chromium } from "playwright";
 import { createElement } from "react";
@@ -54,12 +57,32 @@ function sanitizeFilenamePart(value: string) {
 async function createResumePdfHtml(resume: Resume) {
   const { renderToStaticMarkup } = await import("react-dom/server");
   const resumeMarkup = renderToStaticMarkup(createElement(ClassicTemplate, { resume }));
+  const regularFontUrl = pathToFileURL(
+    path.resolve(process.cwd(), "public/fonts/LiberationSerif-Regular.ttf"),
+  ).href;
+  const boldFontUrl = pathToFileURL(
+    path.resolve(process.cwd(), "public/fonts/LiberationSerif-Bold.ttf"),
+  ).href;
 
   return `<!doctype html>
 <html>
   <head>
     <meta charset="utf-8" />
     <style>
+      @font-face {
+        font-family: "Resume Serif";
+        src: url("${regularFontUrl}") format("truetype");
+        font-weight: 400;
+        font-style: normal;
+      }
+
+      @font-face {
+        font-family: "Resume Serif";
+        src: url("${boldFontUrl}") format("truetype");
+        font-weight: 700;
+        font-style: normal;
+      }
+
       @page {
         size: Letter;
         margin: 0;
@@ -73,7 +96,7 @@ async function createResumePdfHtml(resume: Resume) {
         min-height: 11in;
         background: #ffffff;
         color: #000000;
-        font-family: "Times New Roman", Times, serif;
+        font-family: "Resume Serif", "Times New Roman", Times, serif;
       }
 
       *,
@@ -90,6 +113,7 @@ async function createResumePdfHtml(resume: Resume) {
       .resume-document {
         margin: 0 !important;
         overflow: visible;
+        font-family: "Resume Serif", "Times New Roman", Times, serif !important;
         print-color-adjust: exact;
         -webkit-print-color-adjust: exact;
       }
@@ -123,8 +147,16 @@ async function createResumePdfHtml(resume: Resume) {
         font-weight: 600;
       }
 
+      .min-w-0 {
+        min-width: 0;
+      }
+
       .uppercase {
         text-transform: uppercase;
+      }
+
+      .tracking-\\[0\\.01em\\] {
+        letter-spacing: 0.01em;
       }
 
       .tracking-\\[0\\.04em\\] {
@@ -157,8 +189,16 @@ async function createResumePdfHtml(resume: Resume) {
         margin-top: 2pt;
       }
 
+      .mt-\\[3pt\\] {
+        margin-top: 3pt;
+      }
+
       .mt-\\[4pt\\] {
         margin-top: 4pt;
+      }
+
+      .mt-\\[5pt\\] {
+        margin-top: 5pt;
       }
 
       .mt-\\[6pt\\] {
@@ -249,6 +289,9 @@ export async function POST(request: Request) {
     await page.setContent(await createResumePdfHtml(payload.resume), {
       waitUntil: "load",
     });
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+    });
 
     const pdf = await page.pdf({
       format: "Letter",
@@ -260,6 +303,7 @@ export async function POST(request: Request) {
       },
       printBackground: true,
       preferCSSPageSize: true,
+      scale: 0.96,
     });
     const filename = `${sanitizeFilenamePart(payload.resume.header.name)}-resume.pdf`;
 

@@ -11,7 +11,7 @@ services:
       PORT: "3000"
     labels:
       - traefik.enable=true
-      - traefik.http.routers.resume-studio.rule=Host(`resume-studio.leroy`)
+      - traefik.http.routers.resume-studio.rule=Host(`resume-studio.leroy`) || Host(`resumestudio.leroy`)
       - traefik.http.routers.resume-studio.entrypoints=web
       - traefik.http.services.resume-studio.loadbalancer.server.port=3000
     networks:

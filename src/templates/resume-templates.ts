@@ -1,7 +1,7 @@
 import type { ComponentType } from "react";
 
 import { ClassicTemplate } from "@/components/resume/ClassicTemplate";
-import type { Resume } from "@/types/resume";
+import type { ResumeDocument } from "@/types/resume";
 
 export type ResumeTemplateId = "classic";
 
@@ -9,7 +9,7 @@ export type ResumeTemplateDefinition = {
   id: ResumeTemplateId;
   name: string;
   description: string;
-  component: ComponentType<{ resume: Resume }>;
+  component: ComponentType<{ document: ResumeDocument }>;
 };
 
 export const resumeTemplates: ResumeTemplateDefinition[] = [

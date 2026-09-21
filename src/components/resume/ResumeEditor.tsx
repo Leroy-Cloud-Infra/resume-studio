@@ -1,23 +1,48 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, type CSSProperties } from "react";
 
 import { getResumeTemplate, type ResumeTemplateId } from "@/templates/resume-templates";
+import {
+  createStableId,
+  mergeLegacyResume,
+  migrateLegacyResume,
+  toLegacyResume,
+} from "@/lib/resume-migrations";
+import {
+  loadResumeLibrary,
+  saveResumeLibrary,
+} from "@/lib/resume-library";
+import { getSection, type DocumentAction } from "@/lib/resume-actions";
+import { createWorkspaceState, workspaceReducer } from "@/lib/resume-workspace";
+import { parseCourseworkLines, parseCustomSectionLines } from "@/lib/resume-text";
+import { getPreviewStatusLabel } from "@/lib/resume-preview-status";
+import {
+  calculatePrintedPageMetrics,
+  LETTER_PAGE_ASPECT_RATIO,
+} from "@/lib/resume-print-layout";
+import { calculateTextareaHeight, measureTextareaContentHeight } from "@/lib/textarea-autosize";
+import {
+  getReorderInsertionPosition,
+  getSectionDragScrollDirection,
+  hasPointerMovedBeyondThreshold,
+  POINTER_REORDER_THRESHOLD_PX,
+  resolveReorderInsertionIndex,
+  type ReorderDragPayload,
+} from "@/lib/section-drag";
+import { readLastOpenSectionId, resolveLastOpenSectionId, writeLastOpenSectionId } from "@/lib/resume-preferences";
 import type {
+  ProjectEntry,
   Resume,
-  ResumeCustomSection,
   ResumeDateRange,
   ResumeSkillCategory,
+  ResumeSection,
 } from "@/types/resume";
 
 type ResumeEditorProps = {
   initialResume: Resume;
   templateId: ResumeTemplateId;
 };
-
-const RESUME_STORAGE_KEY = "resume-studio.current-resume";
-const RESUME_STORAGE_VERSION = 3;
-const RESUME_SEED_VERSION = "2026-05-11-structured-editor-v1";
 
 const MONTH_OPTIONS = [
   "Jan",
@@ -41,15 +66,12 @@ const YEAR_OPTIONS = Array.from({ length: CURRENT_YEAR - 1979 + 4 }, (_, index) 
 
 const BUTTON_BASE_CLASSES = "rs-button";
 const BUTTON_SECONDARY_CLASSES = `${BUTTON_BASE_CLASSES} rs-button--secondary`;
-const BUTTON_PRIMARY_CLASSES = `${BUTTON_BASE_CLASSES} rs-button--primary`;
 const BUTTON_DANGER_CLASSES = `${BUTTON_BASE_CLASSES} rs-button--danger`;
 const UI_NOTE_CLASSES = "rs-ui-note";
 const ITEM_SURFACE_CLASSES = "rs-section-item";
 const ITEM_INDEX_CLASSES = "rs-item-index";
 const ITEM_SUMMARY_CLASSES = "rs-item-summary";
-const LETTER_PAGE_ASPECT_RATIO = 11 / 8.5;
 const PAGE_LIMIT_WARNING_RATIO = 0.93;
-const PAGE_OVERFLOW_TOLERANCE_PX = 12;
 const PREVIEW_SCALE_MIN = 0.62;
 const PREVIEW_SCALE_FIT_BUFFER_PX = 2;
 const LONG_BULLET_LENGTH = 120;
@@ -66,6 +88,33 @@ type PageAwarenessState = {
   markerTop: number;
   markerLeft: number;
   markerWidth: number;
+};
+
+type ReorderContainer = {
+  key: string;
+  kind: ReorderDragPayload["kind"];
+  sectionId?: string;
+  entryId?: string;
+};
+
+type ReorderDropTarget = {
+  containerKey: string;
+  position: number;
+  top: number;
+  left: number;
+  width: number;
+};
+
+type PointerReorderSession = {
+  payload: ReorderDragPayload;
+  pointerId: number;
+  startX: number;
+  startY: number;
+  clientX: number;
+  clientY: number;
+  active: boolean;
+  container: ReorderContainer | null;
+  position: number | null;
 };
 
 type BulletGuidanceStatus = "light" | "ideal" | "caution" | "warning";
@@ -98,26 +147,13 @@ type BulletGuidance = {
   bulletMetrics: BulletMetric[];
 };
 
-type LegacyResumeSkillGroup = {
-  category: string;
-  items: string[];
-};
-
 type EditorTextareaAutosizeConfig = {
   minHeight: number;
   maxHeight: number;
 };
 
-type ResumeStoragePayload = {
-  version: number;
-  seedVersion: string;
-  baseResumeHash: string;
-  dirty: boolean;
-  resume: Resume;
-};
-
 function createId(prefix: string) {
-  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+  return `${prefix}-${createStableId()}`;
 }
 
 function readPixelValue(value: string) {
@@ -136,168 +172,15 @@ function getHorizontalBoxChrome(element: HTMLElement) {
   );
 }
 
-function parseTextareaItems(value: string) {
-  return value
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
-}
+function getVerticalBoxChrome(element: HTMLElement) {
+  const styles = window.getComputedStyle(element);
 
-function isStringArray(value: unknown): value is string[] {
-  return Array.isArray(value) && value.every((item) => typeof item === "string");
-}
-
-function isDefined<T>(value: T | null | undefined): value is T {
-  return value !== null && value !== undefined;
-}
-
-function isLegacySkillGroupArray(value: unknown): value is LegacyResumeSkillGroup[] {
   return (
-    Array.isArray(value) &&
-    value.every(
-      (item) =>
-        !!item &&
-        typeof item === "object" &&
-        typeof item.category === "string" &&
-        isStringArray(item.items),
-    )
+    readPixelValue(styles.borderTopWidth) +
+    readPixelValue(styles.borderBottomWidth) +
+    readPixelValue(styles.paddingTop) +
+    readPixelValue(styles.paddingBottom)
   );
-}
-
-function normalizeMonth(value: string) {
-  const normalized = value.trim().toLowerCase();
-  const monthMap: Record<string, string> = {
-    jan: "Jan",
-    january: "Jan",
-    feb: "Feb",
-    february: "Feb",
-    mar: "Mar",
-    march: "Mar",
-    apr: "Apr",
-    april: "Apr",
-    may: "May",
-    jun: "Jun",
-    june: "Jun",
-    jul: "Jul",
-    july: "Jul",
-    aug: "Aug",
-    august: "Aug",
-    sep: "Sept",
-    sept: "Sept",
-    september: "Sept",
-    oct: "Oct",
-    october: "Oct",
-    nov: "Nov",
-    november: "Nov",
-    dec: "Dec",
-    december: "Dec",
-  };
-
-  return monthMap[normalized] ?? value;
-}
-
-function parseDateRangeFromString(dates: string): ResumeDateRange | null {
-  const normalizedDates = dates.replace(/\u00A0/g, " ").replace(/\s+/g, " ").trim();
-  const match = normalizedDates.match(
-    /^([A-Za-z]+)\s+(\d{4})\s*[—-]\s*(Present|([A-Za-z]+)\s+(\d{4}))$/i,
-  );
-
-  if (!match) {
-    return null;
-  }
-
-  const startMonth = normalizeMonth(match[1]);
-  const startYear = match[2];
-
-  if (/^present$/i.test(match[3])) {
-    return {
-      startMonth,
-      startYear,
-      current: true,
-    };
-  }
-
-  return {
-    startMonth,
-    startYear,
-    endMonth: normalizeMonth(match[4]),
-    endYear: match[5],
-    current: false,
-  };
-}
-
-function normalizeDateRange(value: unknown): ResumeDateRange | null {
-  if (!value || typeof value !== "object") {
-    return null;
-  }
-
-  const candidate = value as Partial<ResumeDateRange>;
-
-  if (typeof candidate.startMonth !== "string" || typeof candidate.startYear !== "string") {
-    return null;
-  }
-
-  const current = Boolean(candidate.current);
-  const normalized: ResumeDateRange = {
-    startMonth: normalizeMonth(candidate.startMonth),
-    startYear: candidate.startYear,
-    current,
-  };
-
-  if (!current && typeof candidate.endMonth === "string" && typeof candidate.endYear === "string") {
-    normalized.endMonth = normalizeMonth(candidate.endMonth);
-    normalized.endYear = candidate.endYear;
-  }
-
-  return normalized;
-}
-
-function normalizeSkillCategories(value: unknown): ResumeSkillCategory[] | null {
-  if (!Array.isArray(value)) {
-    return null;
-  }
-
-  const categories: ResumeSkillCategory[] = [];
-
-  for (const item of value) {
-    if (!item || typeof item !== "object") {
-      continue;
-    }
-
-    const candidate = item as Partial<ResumeSkillCategory>;
-
-    if (typeof candidate.label !== "string" || typeof candidate.value !== "string") {
-      continue;
-    }
-
-    categories.push({
-      id: typeof candidate.id === "string" ? candidate.id : createId("skill"),
-      label: candidate.label,
-      value: candidate.value,
-    });
-  }
-
-  return categories.length > 0 ? categories : null;
-}
-
-function linesToSkillCategories(lines: string[]) {
-  return lines.map((line) => {
-    const colonIndex = line.indexOf(":");
-
-    if (colonIndex === -1) {
-      return {
-        id: createId("skill"),
-        label: line,
-        value: "",
-      };
-    }
-
-    return {
-      id: createId("skill"),
-      label: line.slice(0, colonIndex).trim(),
-      value: line.slice(colonIndex + 1).trim(),
-    };
-  });
 }
 
 function formatDateRange(dateRange: ResumeDateRange) {
@@ -311,6 +194,7 @@ function formatDateRange(dateRange: ResumeDateRange) {
 
 function createEmptyExperience(): Resume["experience"][number] {
   return {
+    id: createId("experience"),
     company: "",
     title: "",
     location: "",
@@ -325,6 +209,7 @@ function createEmptyExperience(): Resume["experience"][number] {
 
 function createEmptyEducation(): Resume["education"][number] {
   return {
+    id: createId("education"),
     school: "",
     degree: "",
     dateRange: {
@@ -336,6 +221,19 @@ function createEmptyEducation(): Resume["education"][number] {
     },
     location: "",
     coursework: [],
+  };
+}
+
+function createEmptyProject(): ProjectEntry {
+  return {
+    id: createId("project"),
+    included: true,
+    name: "",
+    description: "",
+    date: "",
+    technologies: "",
+    url: "",
+    bullets: [{ id: createId("bullet"), text: "", included: true }],
   };
 }
 
@@ -462,20 +360,6 @@ function analyzeExperienceBullets(bullets: string[]): BulletGuidance {
   };
 }
 
-function normalizeResumeBullets(resume: Resume): Resume {
-  return {
-    ...resume,
-    experience: resume.experience.map((item) => ({
-      ...item,
-      bullets: removeEmptyBullets(item.bullets),
-    })),
-    projects: resume.projects.map((project) => ({
-      ...project,
-      bullets: removeEmptyBullets(project.bullets),
-    })),
-  };
-}
-
 function formatExperienceCardSummary(item: Resume["experience"][number]) {
   const parts = [
     item.title.trim() || "Untitled role",
@@ -498,14 +382,6 @@ function formatEducationCardSummary(item: Resume["education"][number]) {
   ].join(" · ");
 }
 
-type EditorSectionId =
-  | "header"
-  | "summary"
-  | "experience"
-  | "education"
-  | "skills"
-  | "customSections";
-
 function truncateEditorSectionSummary(value: string, maxLength = 88) {
   const normalized = value.replace(/\s+/g, " ").trim();
 
@@ -520,10 +396,125 @@ function truncateEditorSectionSummary(value: string, maxLength = 88) {
   return `${normalized.slice(0, maxLength - 1).trimEnd()}…`;
 }
 
+function VisibilityIcon({ included }: { included: boolean }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 20 20"
+      width="15"
+      height="15"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.35"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M2.2 10s2.7-4.2 7.8-4.2 7.8 4.2 7.8 4.2-2.7 4.2-7.8 4.2S2.2 10 2.2 10Z" />
+      <circle cx="10" cy="10" r="2" />
+      {!included ? <path d="M3.2 3.2 16.8 16.8" /> : null}
+    </svg>
+  );
+}
+
 function formatExperienceGuidanceLine(bulletCount: number, isDense: boolean) {
   const bulletLabel = `${bulletCount} ${bulletCount === 1 ? "bullet" : "bullets"}`;
 
   return isDense ? `${bulletLabel} · dense role` : bulletLabel;
+}
+
+function isPayloadForContainer(payload: ReorderDragPayload, container: ReorderContainer) {
+  if (payload.kind !== container.kind) return false;
+  if (payload.kind === "section") return true;
+  if (payload.kind === "experience" || payload.kind === "project" || payload.kind === "education") return payload.sectionId === container.sectionId;
+  return payload.sectionId === container.sectionId && payload.entryId === container.entryId;
+}
+
+function ReorderHandle({
+  label,
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+  onPointerCancel,
+  onLostPointerCapture,
+}: {
+  label: string;
+  onPointerDown: (event: React.PointerEvent<HTMLButtonElement>) => void;
+  onPointerMove: (event: React.PointerEvent<HTMLButtonElement>) => void;
+  onPointerUp: (event: React.PointerEvent<HTMLButtonElement>) => void;
+  onPointerCancel: (event: React.PointerEvent<HTMLButtonElement>) => void;
+  onLostPointerCapture: (event: React.PointerEvent<HTMLButtonElement>) => void;
+}) {
+  return (
+    <button
+      className="rs-reorder-handle"
+      type="button"
+      aria-label={label}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
+      onLostPointerCapture={onLostPointerCapture}
+    >
+      <svg className="rs-reorder-handle-mark" aria-hidden="true" viewBox="0 0 10 9" width="10" height="9" focusable="false">
+        <line x1="0.75" y1="1" x2="9.25" y2="1" stroke="#6f7882" strokeWidth="1.1" />
+        <line x1="0.75" y1="4.5" x2="9.25" y2="4.5" stroke="#6f7882" strokeWidth="1.1" />
+        <line x1="0.75" y1="8" x2="9.25" y2="8" stroke="#6f7882" strokeWidth="1.1" />
+      </svg>
+    </button>
+  );
+}
+
+function ReorderInsertionIndicator({
+  target,
+  containerKey,
+}: {
+  target: ReorderDropTarget | null;
+  containerKey: string;
+}) {
+  if (!target || target.containerKey !== containerKey) return null;
+
+  return (
+    <div
+      className="rs-reorder-insertion-indicator"
+      aria-hidden="true"
+      style={{ top: target.top, left: target.left, width: target.width }}
+    />
+  );
+}
+
+function SectionDisclosureMark({ isOpen }: { isOpen: boolean }) {
+  return (
+    <svg
+      className="rs-editor-section-disclosure-mark"
+      aria-hidden="true"
+      viewBox="0 0 18 18"
+      focusable="false"
+    >
+      <line x1="5" y1="9" x2="13" y2="9" />
+      {!isOpen ? <line x1="9" y1="5" x2="9" y2="13" /> : null}
+    </svg>
+  );
+}
+
+function EntryDisclosureMark({ isOpen }: { isOpen: boolean }) {
+  return (
+    <svg
+      className="rs-entry-disclosure-mark-icon"
+      aria-hidden="true"
+      viewBox="0 0 12 12"
+      focusable="false"
+    >
+      <polyline points={isOpen ? "2.5,4 6,8 9.5,4" : "4,2.5 8,6 4,9.5"} />
+    </svg>
+  );
+}
+
+function RemoveButton({ label, onClick, disabled = false, variant = "text" }: { label: string; onClick: () => void; disabled?: boolean; variant?: "text" | "entry" }) {
+  return (
+    <button className={variant === "entry" ? "rs-structural-remove-control" : "rs-remove-control"} type="button" aria-label={label} disabled={disabled} onClick={onClick}>
+      Remove
+    </button>
+  );
 }
 
 function EditorStackSection({
@@ -531,282 +522,120 @@ function EditorStackSection({
   summary,
   isOpen,
   onToggle,
+  included,
+  onToggleIncluded,
+  canMoveUp,
+  canMoveDown,
+  onMoveUp,
+  onMoveDown,
+  reorderHandle,
+  reorderItemId,
+  isDragging = false,
   children,
 }: {
   title: string;
   summary: string;
   isOpen: boolean;
   onToggle: () => void;
+  included?: boolean;
+  onToggleIncluded?: () => void;
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  reorderHandle?: React.ReactNode;
+  reorderItemId?: string;
+  isDragging?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <section className="rs-editor-section">
-      <button
-        className="rs-editor-section-toggle"
-        type="button"
-        onClick={onToggle}
-      >
-        <span className="rs-editor-section-disclosure">
-          {isOpen ? "−" : "+"}
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="rs-editor-section-title">
-            {title}
+    <section
+      className={`rs-editor-section${included === false ? " is-excluded" : ""}${isDragging ? " is-dragging" : ""}`}
+      data-reorder-item={reorderItemId ? "true" : undefined}
+    >
+      <div className={`rs-editor-section-head${reorderHandle ? " has-reorder-handle" : ""}`}>
+        {reorderHandle}
+        <button
+          className="rs-editor-section-toggle"
+          type="button"
+          onClick={onToggle}
+          aria-expanded={isOpen}
+        >
+          <span className="rs-editor-section-disclosure">
+            <SectionDisclosureMark isOpen={isOpen} />
           </span>
-          <span className="rs-editor-section-summary">
-            {summary}
+          <span className="min-w-0 flex-1">
+            <span className="rs-editor-section-title">
+              {title}
+            </span>
+            <span className="rs-editor-section-summary">
+              {summary}
+            </span>
           </span>
-        </span>
-      </button>
+        </button>
+
+        {onToggleIncluded || onMoveUp || onMoveDown ? (
+          <div className="rs-editor-section-actions">
+            {onMoveUp ? (
+              <button
+                className="rs-editor-section-action rs-editor-section-action--move"
+                type="button"
+                onClick={onMoveUp}
+                disabled={!canMoveUp}
+                aria-label={`Move ${title} up`}
+              >
+                Move up
+              </button>
+            ) : null}
+            {onMoveDown ? (
+              <button
+                className="rs-editor-section-action rs-editor-section-action--move"
+                type="button"
+                onClick={onMoveDown}
+                disabled={!canMoveDown}
+                aria-label={`Move ${title} down`}
+              >
+                Move down
+              </button>
+            ) : null}
+            {onToggleIncluded ? (
+              <button
+                className="rs-editor-section-visibility"
+                type="button"
+                aria-label={included ? `Hide ${title} from resume` : `Show ${title} in resume`}
+                aria-pressed={included}
+                title={included ? `Hide ${title} from resume` : `Show ${title} in resume`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onToggleIncluded();
+                }}
+                onPointerDown={(event) => event.stopPropagation()}
+              >
+                <VisibilityIcon included={included !== false} />
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
 
       {isOpen ? <div className="rs-editor-section-body">{children}</div> : null}
     </section>
   );
 }
 
-function normalizeCustomSections(value: unknown): ResumeCustomSection[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value
-    .map((item) => {
-      if (!item || typeof item !== "object") {
-        return null;
-      }
-
-      const candidate = item as Partial<ResumeCustomSection>;
-      if (typeof candidate.title !== "string" || !isStringArray(candidate.lines)) {
-        return null;
-      }
-
-      return {
-        id: typeof candidate.id === "string" ? candidate.id : createId("section"),
-        title: candidate.title,
-        lines: candidate.lines,
-      };
-    })
-    .filter((item): item is ResumeCustomSection => !!item);
-}
-
-function normalizeStoredResume(
-  value: unknown,
-  fallbackTechnicalSkills: Resume["technicalSkills"],
-): Resume | null {
-  if (!value || typeof value !== "object") {
-    return null;
-  }
-
-  const candidate = value as Partial<Resume> & {
-    skills?: unknown;
-    skillsSection?: unknown;
-    technicalSkills?: unknown;
-    customSections?: unknown;
-    experience?: unknown;
-    education?: unknown;
-    projects?: unknown;
-  };
-
-  if (
-    typeof candidate.title !== "string" ||
-    typeof candidate.summary !== "string" ||
-    typeof candidate.header?.name !== "string" ||
-    typeof candidate.header?.email !== "string" ||
-    typeof candidate.header?.phone !== "string" ||
-    typeof candidate.header?.location !== "string" ||
-    !Array.isArray(candidate.experience) ||
-    !Array.isArray(candidate.education)
-  ) {
-    return null;
-  }
-
-  const experience = candidate.experience
-    .map((item) => {
-      if (!item || typeof item !== "object") {
-        return null;
-      }
-
-      const experienceItem = item as {
-        company?: unknown;
-        title?: unknown;
-        location?: unknown;
-        dateRange?: unknown;
-        dates?: unknown;
-        bullets?: unknown;
-      };
-
-      if (
-        typeof experienceItem.company !== "string" ||
-        typeof experienceItem.title !== "string" ||
-        typeof experienceItem.location !== "string" ||
-        !isStringArray(experienceItem.bullets)
-      ) {
-        return null;
-      }
-
-      const structuredDateRange = normalizeDateRange(experienceItem.dateRange);
-      const parsedLegacyDateRange =
-        typeof experienceItem.dates === "string"
-          ? parseDateRangeFromString(experienceItem.dates)
-          : null;
-
-      const dateRange = structuredDateRange ?? parsedLegacyDateRange;
-      if (!dateRange) {
-        return null;
-      }
-
-      return {
-        company: experienceItem.company,
-        title: experienceItem.title,
-        location: experienceItem.location,
-        dateRange,
-        bullets: removeEmptyBullets(experienceItem.bullets),
-      };
-    })
-    .filter(isDefined);
-
-  const education = candidate.education
-    .map((item) => {
-      if (!item || typeof item !== "object") {
-        return null;
-      }
-
-      const educationItem = item as {
-        school?: unknown;
-        degree?: unknown;
-        location?: unknown;
-        dateRange?: unknown;
-        dates?: unknown;
-        coursework?: unknown;
-      };
-
-      if (typeof educationItem.school !== "string" || typeof educationItem.degree !== "string") {
-        return null;
-      }
-
-      const structuredDateRange = normalizeDateRange(educationItem.dateRange);
-      const parsedLegacyDateRange =
-        typeof educationItem.dates === "string"
-          ? parseDateRangeFromString(educationItem.dates)
-          : null;
-      const dateRange = structuredDateRange ?? parsedLegacyDateRange;
-      if (!dateRange) {
-        return null;
-      }
-
-      return {
-        school: educationItem.school,
-        degree: educationItem.degree,
-        location: typeof educationItem.location === "string" ? educationItem.location : "",
-        dateRange,
-        coursework: isStringArray(educationItem.coursework) ? educationItem.coursework : [],
-      };
-    })
-    .filter(isDefined);
-
-  if (experience.length === 0 || education.length === 0) {
-    return null;
-  }
-
-  let technicalSkills = fallbackTechnicalSkills;
-  const rawTechnicalSkills = candidate.technicalSkills as
-    | { title?: unknown; categories?: unknown }
-    | undefined;
-
-  if (
-    rawTechnicalSkills &&
-    typeof rawTechnicalSkills.title === "string" &&
-    rawTechnicalSkills.categories
-  ) {
-    const categories = normalizeSkillCategories(rawTechnicalSkills.categories);
-    if (categories) {
-      technicalSkills = {
-        title: rawTechnicalSkills.title,
-        categories,
-      };
-    }
-  } else {
-    const rawSkillsSection = candidate.skillsSection as
-      | { title?: unknown; lines?: unknown }
-      | undefined;
-
-    if (
-      rawSkillsSection &&
-      typeof rawSkillsSection.title === "string" &&
-      isStringArray(rawSkillsSection.lines)
-    ) {
-      technicalSkills = {
-        title: rawSkillsSection.title,
-        categories: linesToSkillCategories(rawSkillsSection.lines),
-      };
-    } else if (isLegacySkillGroupArray(candidate.skills)) {
-      technicalSkills = {
-        title: "Technical Skills",
-        categories: candidate.skills.map((group) => ({
-          id: createId("skill"),
-          label: group.category,
-          value: group.items.join(", "),
-        })),
-      };
-    }
-  }
-
-  const projects = Array.isArray(candidate.projects)
-    ? candidate.projects.filter(
-        (project): project is Resume["projects"][number] =>
-          !!project &&
-          typeof project === "object" &&
-          typeof (project as Resume["projects"][number]).name === "string" &&
-          typeof (project as Resume["projects"][number]).description === "string" &&
-          isStringArray((project as Resume["projects"][number]).bullets),
-      ).map((project) => ({
-        ...project,
-        bullets: removeEmptyBullets(project.bullets),
-      }))
-    : [];
-
-  return {
-    title: candidate.title,
-    header: {
-      name: candidate.header.name,
-      email: candidate.header.email,
-      phone: candidate.header.phone,
-      location: candidate.header.location,
-      links: Array.isArray(candidate.header.links)
-        ? candidate.header.links.filter((link): link is string => typeof link === "string")
-        : [],
-    },
-    summary: candidate.summary,
-    technicalSkills,
-    experience,
-    education,
-    projects,
-    customSections: normalizeCustomSections(candidate.customSections),
-  };
-}
-
-function isResumeStoragePayload(value: unknown): value is ResumeStoragePayload {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-
-  const candidate = value as Partial<ResumeStoragePayload>;
-  return (
-    typeof candidate.version === "number" &&
-    typeof candidate.seedVersion === "string" &&
-    typeof candidate.baseResumeHash === "string" &&
-    typeof candidate.dirty === "boolean" &&
-    !!candidate.resume
-  );
-}
-
 export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
-  const [resume, setResume] = useState<Resume>(initialResume);
-  const [openEditorSection, setOpenEditorSection] = useState<EditorSectionId | null>("experience");
-  const [expandedExperienceIndex, setExpandedExperienceIndex] = useState<number | null>(0);
-  const [expandedEducationIndex, setExpandedEducationIndex] = useState<number | null>(0);
+  const initialDocument = useMemo(() => migrateLegacyResume(initialResume, { templateId }), [initialResume, templateId]);
+  const [workspace, dispatchWorkspace] = useReducer(workspaceReducer, initialDocument, (document) => createWorkspaceState({ schemaVersion: 4, activeResumeId: document.id, resumes: [document] }));
+  const [openSectionId, setOpenSectionId] = useState<string | null>(null);
+  const [expandedExperienceId, setExpandedExperienceId] = useState<string | null>(() => getSection(initialDocument, "experience")?.content.entries[0]?.id ?? null);
+  const [isExperienceExpansionExplicitlyCollapsed, setIsExperienceExpansionExplicitlyCollapsed] = useState(false);
+  const [expandedProjectId, setExpandedProjectId] = useState<string | null>(null);
+  const [expandedEducationId, setExpandedEducationId] = useState<string | null>(() => getSection(initialDocument, "education")?.content.entries[0]?.id ?? null);
+  const [pointerReorder, setPointerReorder] = useState<PointerReorderSession | null>(null);
+  const [reorderDropTarget, setReorderDropTarget] = useState<ReorderDropTarget | null>(null);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [exportPdfError, setExportPdfError] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<"saving" | "saved" | "error">("saving");
   const [pageAwareness, setPageAwareness] = useState<PageAwarenessState>({
     pageCount: 1,
     isOverflowing: false,
@@ -820,31 +649,116 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
     markerWidth: 0,
   });
   const editorPanelRef = useRef<HTMLElement | null>(null);
+  const editorScrollRef = useRef<HTMLDivElement | null>(null);
+  const pendingAutosizeTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const projectNameRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const previewShellRef = useRef<HTMLElement | null>(null);
   const previewStageScrollRef = useRef<HTMLDivElement | null>(null);
   const previewScaleRef = useRef(1);
   const previewScrollRestoreRef = useRef<number | null>(null);
-  const hasRestoredFromStorage = useRef(false);
-  const fallbackTechnicalSkills = useRef(initialResume.technicalSkills);
-  const initialResumeHash = useMemo(
-    () => JSON.stringify(initialResume),
-    [initialResume],
-  );
+  const hasLoadedLibrary = useRef(false);
+  const textTimerRef = useRef<number | null>(null);
+  const autoScrollFrameRef = useRef<number | null>(null);
+  const autoScrollDirectionRef = useRef(0);
+  const pointerReorderSessionRef = useRef<PointerReorderSession | null>(null);
+  const updatePointerReorderTargetRef = useRef<((clientX: number, clientY: number) => void) | null>(null);
 
   const selectedTemplate = useMemo(() => getResumeTemplate(templateId), [templateId]);
-  const renderResume = useMemo(() => normalizeResumeBullets(resume), [resume]);
+  const activeDocument = workspace.library.resumes.find((document) => document.id === workspace.library.activeResumeId) ?? null;
+  const resume = useMemo(() => activeDocument ? toLegacyResume(activeDocument) : initialResume, [activeDocument, initialResume]);
+  const renderDocument = activeDocument ?? initialDocument;
+  const experienceEntries = activeDocument ? getSection(activeDocument, "experience")?.content.entries ?? [] : [];
+  const resolvedExpandedExperienceId = expandedExperienceId && experienceEntries.some((entry) => entry.id === expandedExperienceId)
+    ? expandedExperienceId
+    : isExperienceExpansionExplicitlyCollapsed
+      ? null
+      : experienceEntries[0]?.id ?? null;
+  const resolvedOpenSectionId = openSectionId && renderDocument.sections.some((section) => section.id === openSectionId)
+    ? openSectionId
+    : null;
+
+  const stopSectionAutoScroll = useCallback(() => {
+    autoScrollDirectionRef.current = 0;
+    if (autoScrollFrameRef.current !== null) {
+      window.cancelAnimationFrame(autoScrollFrameRef.current);
+      autoScrollFrameRef.current = null;
+    }
+  }, []);
+
+  const scheduleSectionAutoScroll = useCallback(() => {
+    if (autoScrollFrameRef.current !== null) return;
+    const tick = () => {
+      autoScrollFrameRef.current = null;
+      const scrollContainer = editorScrollRef.current;
+      const direction = autoScrollDirectionRef.current;
+      if (!scrollContainer || !pointerReorderSessionRef.current?.active || direction === 0) return;
+      const previousScrollTop = scrollContainer.scrollTop;
+      scrollContainer.scrollTop += direction * 10;
+      if (scrollContainer.scrollTop !== previousScrollTop) {
+        const session = pointerReorderSessionRef.current;
+        if (session) updatePointerReorderTargetRef.current?.(session.clientX, session.clientY);
+        autoScrollFrameRef.current = window.requestAnimationFrame(tick);
+      } else {
+        autoScrollDirectionRef.current = 0;
+      }
+    };
+    autoScrollFrameRef.current = window.requestAnimationFrame(tick);
+  }, []);
+
+  const updateSectionAutoScroll = useCallback((clientY: number) => {
+    const scrollContainer = editorScrollRef.current;
+    if (!scrollContainer || !pointerReorderSessionRef.current?.active) return;
+    const bounds = scrollContainer.getBoundingClientRect();
+    autoScrollDirectionRef.current = getSectionDragScrollDirection(clientY, bounds.top, bounds.bottom);
+    if (autoScrollDirectionRef.current === 0) {
+      stopSectionAutoScroll();
+    } else {
+      scheduleSectionAutoScroll();
+    }
+  }, [scheduleSectionAutoScroll, stopSectionAutoScroll]);
+
+  useEffect(() => stopSectionAutoScroll, [stopSectionAutoScroll]);
+
+  const flushTextHistory = useCallback(() => {
+    if (textTimerRef.current !== null) {
+      window.clearTimeout(textTimerRef.current);
+      textTimerRef.current = null;
+    }
+    dispatchWorkspace({ type: "commit-text-history" });
+  }, []);
+
+  const dispatchDocument = useCallback((action: DocumentAction, options: { text?: boolean; key?: string } = {}) => {
+    setSaveStatus("saving");
+    if (!options.text) flushTextHistory();
+    dispatchWorkspace({ type: "document-action", action, historyMode: options.text ? "text" : "record", coalesceKey: options.key });
+    if (options.text) {
+      if (textTimerRef.current !== null) window.clearTimeout(textTimerRef.current);
+      textTimerRef.current = window.setTimeout(() => {
+        textTimerRef.current = null;
+        dispatchWorkspace({ type: "commit-text-history" });
+      }, 650);
+    }
+  }, [flushTextHistory]);
+
+  const persistLibrary = useCallback((library: ReturnType<typeof createWorkspaceState>["library"]) => {
+    setSaveStatus("saving");
+    const result = saveResumeLibrary(library);
+    if (result.ok) {
+      setSaveStatus("saved");
+    } else {
+      setSaveStatus("error");
+    }
+    return result;
+  }, []);
   const syncAutosizeTextarea = useCallback((textarea: HTMLTextAreaElement) => {
     const minHeight = Number(textarea.dataset.autosizeMin ?? 0);
     const maxHeight = Number(textarea.dataset.autosizeMax ?? 0);
-
-    textarea.style.height = "auto";
-
-    const nextHeight = Math.max(minHeight, textarea.scrollHeight);
-    const clampedHeight = maxHeight > 0 ? Math.min(nextHeight, maxHeight) : nextHeight;
+    const contentHeight = measureTextareaContentHeight(textarea);
+    const clampedHeight = calculateTextareaHeight(contentHeight, minHeight, maxHeight);
 
     textarea.style.height = `${clampedHeight}px`;
     textarea.style.overflowY =
-      maxHeight > 0 && textarea.scrollHeight > maxHeight ? "auto" : "hidden";
+      maxHeight > 0 && contentHeight > maxHeight ? "auto" : "hidden";
   }, []);
 
   const autosizeTextareaProps = useCallback(
@@ -858,8 +772,12 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
 
   const queueAutosizeTextarea = useCallback(
     (textarea: HTMLTextAreaElement) => {
+      pendingAutosizeTextareaRef.current = textarea;
       requestAnimationFrame(() => {
         syncAutosizeTextarea(textarea);
+        if (pendingAutosizeTextareaRef.current === textarea) {
+          pendingAutosizeTextareaRef.current = null;
+        }
       });
     },
     [syncAutosizeTextarea],
@@ -872,16 +790,26 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
       return;
     }
 
+    // Textarea change handlers already resize their focused field on the next
+    // animation frame. Skip the editor-wide pass for that same render so
+    // Safari does not see two consecutive height mutations while typing. If
+    // the pending textarea was removed by an intervening document change,
+    // keep the editor-wide pass available for the new layout.
+    if (pendingAutosizeTextareaRef.current?.isConnected) {
+      return;
+    }
+
     editorPanel
       .querySelectorAll<HTMLTextAreaElement>("textarea[data-autosize='true']")
       .forEach((textarea) => {
         syncAutosizeTextarea(textarea);
       });
   }, [
-    expandedEducationIndex,
-    expandedExperienceIndex,
-    openEditorSection,
-    renderResume,
+    expandedEducationId,
+    expandedExperienceId,
+    expandedProjectId,
+    openSectionId,
+    renderDocument,
     resume,
     syncAutosizeTextarea,
   ]);
@@ -897,32 +825,21 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
     const shellRect = previewShell.getBoundingClientRect();
     const articleRect = resumeArticle.getBoundingClientRect();
     const currentScale = previewScaleRef.current || 1;
-    const measuredElement = `${resumeArticle.tagName.toLowerCase()}.${Array.from(resumeArticle.classList).join(".")}`;
     const naturalWidth = articleRect.width / currentScale;
     const firstPageHeight = naturalWidth * LETTER_PAGE_ASPECT_RATIO;
     if (firstPageHeight <= 0) {
       return;
     }
 
-    const legacyWidth = resumeArticle.offsetWidth;
-    const legacyContentHeight = Math.max(resumeArticle.scrollHeight, resumeArticle.offsetHeight);
-    const legacyFirstPageHeight = legacyWidth * LETTER_PAGE_ASPECT_RATIO;
     const unscaledContentHeight = articleRect.height / currentScale;
     const contentHeight = unscaledContentHeight;
-    const measuredOverflowHeight = contentHeight - firstPageHeight;
-    const isOverflowing = measuredOverflowHeight > PAGE_OVERFLOW_TOLERANCE_PX;
-    const overflowHeight = isOverflowing ? measuredOverflowHeight : 0;
+    const printedMetrics = calculatePrintedPageMetrics(contentHeight, firstPageHeight);
+    const isOverflowing = printedMetrics.isOverflowing;
+    const overflowHeight = printedMetrics.overflowHeight;
     const hasSecondPage = isOverflowing;
-    const pageCount = isOverflowing
-      ? Math.max(2, Math.ceil(contentHeight / firstPageHeight))
-      : 1;
+    const pageCount = printedMetrics.pageCount;
     const isNearLimit =
-      !isOverflowing && contentHeight / firstPageHeight >= PAGE_LIMIT_WARNING_RATIO;
-    const legacyOverflowAmount = legacyContentHeight - legacyFirstPageHeight;
-    const legacyPageCount = legacyOverflowAmount > PAGE_OVERFLOW_TOLERANCE_PX
-      ? Math.max(2, Math.ceil(legacyContentHeight / legacyFirstPageHeight))
-      : 1;
-
+      !isOverflowing && printedMetrics.pageFillRatio >= PAGE_LIMIT_WARNING_RATIO;
     setPageAwareness({
       pageCount,
       isOverflowing,
@@ -936,28 +853,11 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
       markerWidth: articleRect.width,
     });
 
-    if (process.env.NODE_ENV !== "production") {
-      const nextDebugState = {
-        currentScale,
-        measuredElement,
-        rawMeasuredWidth: articleRect.width,
-        rawMeasuredHeight: articleRect.height,
-        legacyWidth,
-        legacyHeight: legacyContentHeight,
-        unscaledContentHeight,
-        calculatedFirstPageHeight: firstPageHeight,
-        overflowAmount: measuredOverflowHeight,
-        computedPageCount: pageCount,
-        legacyOverflowAmount,
-        legacyPageCount,
-      };
-
-      console.info("[resume-preview-measurement]", nextDebugState);
-    }
   }, []);
 
   const [previewScale, setPreviewScale] = useState(1);
   const [previewSurfaceChromeWidth, setPreviewSurfaceChromeWidth] = useState(0);
+  const [previewSurfaceChromeHeight, setPreviewSurfaceChromeHeight] = useState(0);
 
   useEffect(() => {
     previewScaleRef.current = previewScale;
@@ -977,6 +877,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
     const currentScale = previewScaleRef.current || 1;
     const naturalPageWidth = resumeArticle.getBoundingClientRect().width / currentScale;
     const surfaceChromeWidth = getHorizontalBoxChrome(pageSurface);
+    const surfaceChromeHeight = getVerticalBoxChrome(pageSurface);
 
     if (availableWidth <= 0 || naturalPageWidth <= 0) {
       return;
@@ -988,6 +889,9 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
 
     setPreviewSurfaceChromeWidth((currentValue) =>
       Math.abs(currentValue - surfaceChromeWidth) > 0.5 ? surfaceChromeWidth : currentValue,
+    );
+    setPreviewSurfaceChromeHeight((currentValue) =>
+      Math.abs(currentValue - surfaceChromeHeight) > 0.5 ? surfaceChromeHeight : currentValue,
     );
 
     setPreviewScale((currentValue) =>
@@ -1017,11 +921,25 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
       resizeObserver.disconnect();
       window.removeEventListener("resize", measurePreviewPages);
     };
-  }, [measurePreviewPages, renderResume]);
+  }, [measurePreviewPages, renderDocument]);
 
   useEffect(() => {
     measurePreviewPages();
   }, [measurePreviewPages, previewScale]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void document.fonts?.ready.then(() => {
+      if (!cancelled) {
+        measurePreviewPages();
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [measurePreviewPages, renderDocument]);
 
   useEffect(() => {
     const previewStageScroll = previewStageScrollRef.current;
@@ -1048,7 +966,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
       resizeObserver.disconnect();
       window.removeEventListener("resize", measurePreviewScale);
     };
-  }, [measurePreviewScale, renderResume]);
+  }, [measurePreviewScale, renderDocument]);
 
   useEffect(() => {
     const resetPreviewScrollForPrint = () => {
@@ -1092,74 +1010,37 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
   useEffect(() => {
     const restoreId = window.setTimeout(() => {
       try {
-        const savedResume = window.localStorage.getItem(RESUME_STORAGE_KEY);
-        if (!savedResume) {
-          return;
+        const result = loadResumeLibrary(initialResume, undefined, { templateId });
+        if (result.library) {
+          const library = result.library;
+          dispatchWorkspace({ type: "hydrate-library", library });
+          const hydratedDocument = library.resumes.find((document) => document.id === library.activeResumeId);
+          if (hydratedDocument) {
+            setOpenSectionId(resolveLastOpenSectionId(hydratedDocument, readLastOpenSectionId(hydratedDocument.id)));
+            setExpandedEducationId(getSection(hydratedDocument, "education")?.content.entries[0]?.id ?? null);
+          }
+          setSaveStatus("saved");
+        } else if (!result.ok) {
+          setSaveStatus("error");
         }
-
-        const parsedResume: unknown = JSON.parse(savedResume);
-
-        if (!isResumeStoragePayload(parsedResume)) {
-          window.localStorage.removeItem(RESUME_STORAGE_KEY);
-          return;
-        }
-
-        if (
-          parsedResume.version !== RESUME_STORAGE_VERSION ||
-          parsedResume.seedVersion !== RESUME_SEED_VERSION
-        ) {
-          window.localStorage.removeItem(RESUME_STORAGE_KEY);
-          return;
-        }
-
-        const normalizedResume = normalizeStoredResume(
-          parsedResume.resume,
-          fallbackTechnicalSkills.current,
-        );
-        if (!normalizedResume) {
-          window.localStorage.removeItem(RESUME_STORAGE_KEY);
-          return;
-        }
-
-        if (parsedResume.baseResumeHash !== initialResumeHash) {
-          window.localStorage.removeItem(RESUME_STORAGE_KEY);
-          return;
-        }
-
-        setResume(normalizedResume);
       } catch {
-        window.localStorage.removeItem(RESUME_STORAGE_KEY);
+        // Persistence failures are intentionally recoverable; keep the in-memory sample/document.
+        setSaveStatus("error");
       } finally {
-        hasRestoredFromStorage.current = true;
+        hasLoadedLibrary.current = true;
       }
     }, 0);
 
     return () => window.clearTimeout(restoreId);
-  }, [initialResumeHash]);
+  }, [initialResume, templateId]);
 
   useEffect(() => {
-    if (!hasRestoredFromStorage.current) {
+    if (!hasLoadedLibrary.current) {
       return;
     }
+    persistLibrary(workspace.library);
+  }, [persistLibrary, workspace.library]);
 
-    const normalizedResume = normalizeResumeBullets(resume);
-    const serializedResume = JSON.stringify(normalizedResume);
-    const payload: ResumeStoragePayload = {
-      version: RESUME_STORAGE_VERSION,
-      seedVersion: RESUME_SEED_VERSION,
-      baseResumeHash: initialResumeHash,
-      dirty: serializedResume !== initialResumeHash,
-      resume: normalizedResume,
-    };
-
-    window.localStorage.setItem(RESUME_STORAGE_KEY, JSON.stringify(payload));
-  }, [resume, initialResumeHash]);
-
-  if (!selectedTemplate) {
-    return null;
-  }
-
-  const SelectedTemplate = selectedTemplate.component;
   const previewPageWidth = pageAwareness.firstPageHeight
     ? pageAwareness.firstPageHeight / LETTER_PAGE_ASPECT_RATIO
     : 816;
@@ -1169,6 +1050,9 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
   const scaledPreviewSurfaceWidth = scaledPreviewPageWidth + previewSurfaceChromeWidth;
   const scaledPreviewPageHeight =
     previewPageHeight * previewScale;
+  const previewDocumentHeight = Math.max(previewPageHeight, pageAwareness.contentHeight);
+  const scaledPreviewDocumentHeight = previewDocumentHeight * previewScale;
+  const scaledPreviewSurfaceHeight = scaledPreviewDocumentHeight + previewSurfaceChromeHeight;
   const previewScaleStyle = {
     width: `${previewPageWidth}px`,
     minHeight: `${previewPageHeight}px`,
@@ -1177,6 +1061,12 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
   } as CSSProperties;
 
   const handleExportPDF = async () => {
+    flushTextHistory();
+    const saveResult = persistLibrary(workspace.library);
+    if (!saveResult.ok) {
+      setExportPdfError("Resume could not be saved before export.");
+      return;
+    }
     setExportPdfError(null);
     setIsExportingPdf(true);
 
@@ -1187,7 +1077,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          resume: renderResume,
+          document: renderDocument,
           templateId,
         }),
       });
@@ -1217,137 +1107,424 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
     }
   };
 
-  const handleReset = () => {
-    window.localStorage.removeItem(RESUME_STORAGE_KEY);
-    setResume(initialResume);
-    setOpenEditorSection("experience");
-    setExpandedExperienceIndex(0);
-    setExpandedEducationIndex(0);
+  const activeHistory = activeDocument ? workspace.histories[activeDocument.id] : undefined;
+  const canUndo = Boolean(activeHistory?.past.length);
+  const canRedo = Boolean(activeHistory?.future.length);
+  const handleUndo = () => {
+    setSaveStatus("saving");
+    flushTextHistory();
+    dispatchWorkspace({ type: "undo" });
+  };
+  const handleRedo = () => {
+    setSaveStatus("saving");
+    flushTextHistory();
+    dispatchWorkspace({ type: "redo" });
   };
 
   const updateExperience = (
-    experienceIndex: number,
+    experienceId: string | number,
     updater: (item: Resume["experience"][number]) => Resume["experience"][number],
   ) => {
-    setResume((current) => ({
-      ...current,
-      experience: current.experience.map((item, index) =>
-        index === experienceIndex ? updater(item) : item,
-      ),
-    }));
+    dispatchDocument({ type: "legacy-update", update: (document) => {
+      const projection = toLegacyResume(document);
+      const resolvedId = typeof experienceId === "number" ? projection.experience[experienceId]?.id : experienceId;
+      return mergeLegacyResume(document, { ...projection, experience: projection.experience.map((item) => item.id === resolvedId ? updater(item) : item) }, templateId);
+    } }, { text: true, key: `experience:${experienceId}` });
+  };
+
+  const updateExperienceBullet = (experienceId: string, bulletId: string, text: string) => {
+    const section = getSection(activeDocument ?? initialDocument, "experience");
+    const entry = section?.type === "experience" ? section.content.entries.find((item) => item.id === experienceId) : undefined;
+    const bullet = entry?.bullets.find((item) => item.id === bulletId);
+    if (!section || section.type !== "experience" || !bullet) return;
+    dispatchDocument({ type: "set-experience-bullet", sectionId: section.id, entryId: experienceId, bulletId, bullet: { ...bullet, text } }, { text: true, key: `bullet:${bulletId}` });
+  };
+
+  const updateProject = (
+    projectId: string,
+    updater: (project: ProjectEntry) => ProjectEntry,
+    historyKey?: string,
+  ) => {
+    const section = getSection(activeDocument ?? initialDocument, "projects");
+    const project = section?.type === "projects"
+      ? section.content.entries.find((entry) => entry.id === projectId)
+      : undefined;
+    if (!section || section.type !== "projects" || !project) return;
+    dispatchDocument({
+      type: "set-project-entry",
+      sectionId: section.id,
+      entryId: projectId,
+      entry: updater(project),
+    }, historyKey ? { text: true, key: historyKey } : undefined);
+  };
+
+  const updateProjectBullet = (projectId: string, bulletId: string, text: string) => {
+    const section = getSection(activeDocument ?? initialDocument, "projects");
+    const project = section?.type === "projects"
+      ? section.content.entries.find((entry) => entry.id === projectId)
+      : undefined;
+    const bullet = project?.bullets.find((item) => item.id === bulletId);
+    if (!section || section.type !== "projects" || !project || !bullet) return;
+    dispatchDocument({
+      type: "set-project-bullet",
+      sectionId: section.id,
+      entryId: projectId,
+      bulletId,
+      bullet: { ...bullet, text },
+    }, { text: true, key: `project-bullet:${bulletId}` });
+  };
+
+  const handleAddProject = () => {
+    const section = getSection(activeDocument ?? initialDocument, "projects");
+    if (!section || section.type !== "projects") return;
+    const project = createEmptyProject();
+    dispatchDocument({ type: "add-project-entry", sectionId: section.id, entry: project });
+    setExpandedProjectId(project.id);
+    window.requestAnimationFrame(() => projectNameRefs.current[project.id]?.focus());
+  };
+
+  const handleRemoveProject = (projectId: string) => {
+    const section = getSection(activeDocument ?? initialDocument, "projects");
+    if (!section || section.type !== "projects") return;
+    dispatchDocument({ type: "delete-project-entry", sectionId: section.id, entryId: projectId });
+    setExpandedProjectId((currentId) => currentId === projectId ? null : currentId);
+  };
+
+  const handleAddProjectBullet = (projectId: string) => {
+    const section = getSection(activeDocument ?? initialDocument, "projects");
+    if (!section || section.type !== "projects") return;
+    dispatchDocument({
+      type: "add-project-bullet",
+      sectionId: section.id,
+      entryId: projectId,
+      bullet: { id: createId("bullet"), text: "", included: true },
+    });
+  };
+
+  const handleRemoveProjectBullet = (projectId: string, bulletId: string) => {
+    const section = getSection(activeDocument ?? initialDocument, "projects");
+    if (!section || section.type !== "projects") return;
+    dispatchDocument({ type: "delete-project-bullet", sectionId: section.id, entryId: projectId, bulletId });
   };
 
   const updateEducation = (
-    educationIndex: number,
+    educationId: string | number,
     updater: (item: Resume["education"][number]) => Resume["education"][number],
   ) => {
-    setResume((current) => ({
-      ...current,
-      education: current.education.map((item, index) =>
-        index === educationIndex ? updater(item) : item,
-      ),
-    }));
+    dispatchDocument({ type: "legacy-update", update: (document) => {
+      const projection = toLegacyResume(document);
+      const resolvedId = typeof educationId === "number" ? projection.education[educationId]?.id : educationId;
+      return mergeLegacyResume(document, { ...projection, education: projection.education.map((item) => item.id === resolvedId ? updater(item) : item) }, templateId);
+    } }, { text: true, key: `education:${educationId}` });
   };
 
   const updateTechnicalSkillCategory = (
-    categoryIndex: number,
+    categoryId: string | number,
     updater: (category: ResumeSkillCategory) => ResumeSkillCategory,
   ) => {
-    setResume((current) => ({
-      ...current,
-      technicalSkills: {
-        ...current.technicalSkills,
-        categories: current.technicalSkills.categories.map((category, index) =>
-          index === categoryIndex ? updater(category) : category,
-        ),
-      },
-    }));
-  };
-
-  const updateCustomSection = (
-    sectionIndex: number,
-    updater: (section: ResumeCustomSection) => ResumeCustomSection,
-  ) => {
-    setResume((current) => ({
-      ...current,
-      customSections: current.customSections.map((section, index) =>
-        index === sectionIndex ? updater(section) : section,
-      ),
-    }));
+    dispatchDocument({ type: "legacy-update", update: (document) => {
+      const projection = toLegacyResume(document);
+      const resolvedId = typeof categoryId === "number" ? projection.technicalSkills.categories[categoryId]?.id : categoryId;
+      return mergeLegacyResume(document, { ...projection, technicalSkills: { ...projection.technicalSkills, categories: projection.technicalSkills.categories.map((category) => category.id === resolvedId ? updater(category) : category) } }, templateId);
+    } }, { text: true, key: `skills:${categoryId}` });
   };
 
   const handleAddExperience = () => {
-    setResume((current) => ({
-      ...current,
-      experience: [...current.experience, createEmptyExperience()],
-    }));
-    setExpandedExperienceIndex(resume.experience.length);
+    const experience = createEmptyExperience();
+    dispatchDocument({ type: "legacy-update", update: (document) => {
+      const projection = toLegacyResume(document);
+      return mergeLegacyResume(document, { ...projection, experience: [...projection.experience, experience] }, templateId);
+    } });
+    setExpandedExperienceId(experience.id ?? null);
+    setIsExperienceExpansionExplicitlyCollapsed(false);
   };
 
-  const handleRemoveExperience = (experienceIndex: number) => {
-    setResume((current) => ({
-      ...current,
-      experience: current.experience.filter((_, index) => index !== experienceIndex),
-    }));
-    setExpandedExperienceIndex((currentExpandedIndex) => {
-      if (currentExpandedIndex === null) {
-        return null;
-      }
-
-      if (currentExpandedIndex === experienceIndex) {
-        const nextLength = resume.experience.length - 1;
-        return nextLength > 0 ? Math.max(0, experienceIndex - 1) : null;
-      }
-
-      return currentExpandedIndex > experienceIndex
-        ? currentExpandedIndex - 1
-        : currentExpandedIndex;
+  const handleRemoveExperience = (experienceId: string | number) => {
+    dispatchDocument({ type: "legacy-update", update: (document) => {
+      const projection = toLegacyResume(document);
+      const resolvedId = typeof experienceId === "number" ? projection.experience[experienceId]?.id : experienceId;
+      return mergeLegacyResume(document, { ...projection, experience: projection.experience.filter((item) => item.id !== resolvedId) }, templateId);
+    } });
+    const resolvedId = typeof experienceId === "number" ? resume.experience[experienceId]?.id : experienceId;
+    setExpandedExperienceId((currentExpandedId) => {
+      if (currentExpandedId !== resolvedId) return currentExpandedId;
+      const resolvedIndex = resume.experience.findIndex((item) => item.id === resolvedId);
+      const nextEntry = resume.experience[resolvedIndex + 1] ?? resume.experience[resolvedIndex - 1];
+      return nextEntry?.id ?? null;
     });
   };
 
   const handleAddEducation = () => {
-    setResume((current) => ({
-      ...current,
-      education: [...current.education, createEmptyEducation()],
-    }));
-    setExpandedEducationIndex(resume.education.length);
+    const education = createEmptyEducation();
+    dispatchDocument({ type: "legacy-update", update: (document) => {
+      const projection = toLegacyResume(document);
+      return mergeLegacyResume(document, { ...projection, education: [...projection.education, education] }, templateId);
+    } });
+    setExpandedEducationId(education.id ?? null);
   };
 
-  const handleRemoveEducation = (educationIndex: number) => {
-    setResume((current) => ({
-      ...current,
-      education: current.education.filter((_, index) => index !== educationIndex),
-    }));
-    setExpandedEducationIndex((currentExpandedIndex) => {
-      if (currentExpandedIndex === null) {
-        return null;
-      }
-
-      if (currentExpandedIndex === educationIndex) {
-        const nextLength = resume.education.length - 1;
-        return nextLength > 0 ? Math.max(0, educationIndex - 1) : null;
-      }
-
-      return currentExpandedIndex > educationIndex
-        ? currentExpandedIndex - 1
-        : currentExpandedIndex;
+  const handleRemoveEducation = (educationId: string | number) => {
+    const resolvedId = typeof educationId === "number" ? resume.education[educationId]?.id ?? "" : educationId;
+    dispatchDocument({ type: "legacy-update", update: (document) => {
+      const projection = toLegacyResume(document);
+      return mergeLegacyResume(document, { ...projection, education: projection.education.filter((item) => item.id !== resolvedId) }, templateId);
+    } });
+    setExpandedEducationId((currentExpandedId) => {
+      if (currentExpandedId !== resolvedId) return currentExpandedId;
+      const resolvedIndex = resume.education.findIndex((item) => item.id === resolvedId);
+      const nextEntry = resume.education[resolvedIndex + 1] ?? resume.education[resolvedIndex - 1];
+      return nextEntry?.id ?? null;
     });
   };
 
-  const rawPageFillPercent = pageAwareness.firstPageHeight
-    ? Math.round((pageAwareness.contentHeight / pageAwareness.firstPageHeight) * 100)
+  const getSectionTitle = (section: ResumeSection) => {
+    switch (section.type) {
+      case "summary":
+        return "Summary";
+      case "experience":
+        return "Experience";
+      case "projects":
+        return "Projects";
+      case "technicalSkills":
+        return "Technical Skills";
+      case "education":
+        return "Education";
+      case "certifications":
+        return "Certifications";
+      case "custom":
+        return section.content.title.trim() || "Custom Section";
+    }
+  };
+
+  const getSectionSummary = (section: ResumeSection) => {
+    switch (section.type) {
+      case "summary":
+        return summarySectionSummary;
+      case "experience":
+        return experienceSectionSummary;
+      case "projects":
+        return section.content.entries.length > 0
+          ? `${section.content.entries.length} ${section.content.entries.length === 1 ? "project" : "projects"}`
+          : "No projects";
+      case "technicalSkills":
+        return skillsSectionSummary;
+      case "education":
+        return educationSectionSummary;
+      case "certifications":
+        return section.content.entries.length > 0
+          ? `${section.content.entries.length} ${section.content.entries.length === 1 ? "certification" : "certifications"}`
+          : "No certifications";
+      case "custom":
+        return truncateEditorSectionSummary(
+          section.content.lines.length > 0
+            ? `${section.content.lines.length} ${section.content.lines.length === 1 ? "line" : "lines"}`
+            : "No lines",
+        );
+    }
+  };
+
+  const toggleEditorSection = (sectionId: string) => {
+    const nextSectionId = openSectionId === sectionId ? null : sectionId;
+    setOpenSectionId(nextSectionId);
+    if (activeDocument) writeLastOpenSectionId(activeDocument.id, nextSectionId);
+  };
+
+  const toggleHeaderSection = () => {
+    const nextSectionId = openSectionId === "header" ? null : "header";
+    setOpenSectionId(nextSectionId);
+    if (activeDocument) writeLastOpenSectionId(activeDocument.id, nextSectionId);
+  };
+
+  const getInsertionPosition = (container: HTMLElement, pointerY: number) => {
+    const itemBounds = Array.from(container.children)
+      .filter((child): child is HTMLElement => child instanceof HTMLElement && child.dataset.reorderItem === "true")
+      .map((child) => child.getBoundingClientRect());
+    return getReorderInsertionPosition(pointerY, itemBounds);
+  };
+
+  const getInsertionIndicator = (container: HTMLElement, position: number) => {
+    const items = Array.from(container.children)
+      .filter((child): child is HTMLElement => child instanceof HTMLElement && child.dataset.reorderItem === "true");
+    const containerBounds = container.getBoundingClientRect();
+    const itemBounds = items.map((item) => item.getBoundingClientRect());
+    const boundaryY = itemBounds.length === 0
+      ? containerBounds.top
+      : position === 0
+        ? itemBounds[0].top
+        : position >= itemBounds.length
+          ? itemBounds[itemBounds.length - 1].bottom
+          : itemBounds[position].top;
+
+    return {
+      top: boundaryY - containerBounds.top,
+      left: 0,
+      width: containerBounds.width,
+    };
+  };
+
+  const getContainerFromElement = (element: Element | null | undefined): ReorderContainer | null => {
+    const containerElement = element?.closest<HTMLElement>("[data-reorder-container]");
+    if (!containerElement) return null;
+    const kind = containerElement.dataset.reorderKind;
+    const key = containerElement.dataset.reorderContainer;
+    if (!key || (kind !== "section" && kind !== "experience" && kind !== "project" && kind !== "education" && kind !== "project-bullet" && kind !== "experience-bullet")) return null;
+    return {
+      key,
+      kind,
+      sectionId: containerElement.dataset.reorderSectionId,
+      entryId: containerElement.dataset.reorderEntryId,
+    };
+  };
+
+  const updatePointerReorderTarget = useCallback((clientX: number, clientY: number) => {
+    const session = pointerReorderSessionRef.current;
+    if (!session?.active) return;
+    const containerElement = document.elementFromPoint(clientX, clientY)?.closest<HTMLElement>("[data-reorder-container]");
+    const container = getContainerFromElement(containerElement);
+    if (!container || !isPayloadForContainer(session.payload, container) || !containerElement) {
+      const nextSession = { ...session, clientX, clientY, container: null, position: null };
+      pointerReorderSessionRef.current = nextSession;
+      setPointerReorder(nextSession);
+      setReorderDropTarget(null);
+      return;
+    }
+
+    const position = getInsertionPosition(containerElement, clientY);
+    const indicator = getInsertionIndicator(containerElement, position);
+    const nextSession = { ...session, clientX, clientY, container, position };
+    pointerReorderSessionRef.current = nextSession;
+    setPointerReorder(nextSession);
+    setReorderDropTarget({ containerKey: container.key, position, ...indicator });
+  }, []);
+  useEffect(() => {
+    updatePointerReorderTargetRef.current = updatePointerReorderTarget;
+  }, [updatePointerReorderTarget]);
+
+  const resetPointerReorder = useCallback((element?: HTMLButtonElement, pointerId?: number) => {
+    stopSectionAutoScroll();
+    const session = pointerReorderSessionRef.current;
+    if (element && pointerId !== undefined && element.hasPointerCapture(pointerId)) {
+      element.releasePointerCapture(pointerId);
+    }
+    pointerReorderSessionRef.current = null;
+    setPointerReorder(null);
+    setReorderDropTarget(null);
+    return session;
+  }, [stopSectionAutoScroll]);
+
+  const commitPointerReorder = (session: PointerReorderSession) => {
+    if (!activeDocument || !session.active || !session.container || session.position === null) return;
+    const { payload, container, position } = session;
+    if (payload.kind === "section") {
+      const sourceIndex = activeDocument.sections.findIndex((section) => section.id === payload.itemId);
+      const toIndex = resolveReorderInsertionIndex(sourceIndex, position, activeDocument.sections.length);
+      if (toIndex !== null) dispatchDocument({ type: "move-section", sectionId: payload.itemId, toIndex });
+    } else if (payload.kind === "experience" || payload.kind === "project" || payload.kind === "education") {
+      const sectionType = payload.kind === "experience" ? "experience" : payload.kind === "project" ? "projects" : "education";
+      const section = getSection(activeDocument, sectionType);
+      const itemCount = section && "entries" in section.content ? section.content.entries.length : 0;
+      const sourceIndex = section && "entries" in section.content
+        ? section.content.entries.findIndex((entry) => entry.id === payload.itemId)
+        : -1;
+      const toIndex = resolveReorderInsertionIndex(sourceIndex, position, itemCount);
+      if (toIndex !== null) dispatchDocument({ type: "move-entry", sectionId: container.sectionId ?? payload.sectionId, entryId: payload.itemId, toIndex });
+    } else {
+      const section = getSection(activeDocument, payload.kind === "project-bullet" ? "projects" : "experience");
+      const entry = section && "entries" in section.content
+        ? section.content.entries.find((candidate) => candidate.id === payload.entryId)
+        : undefined;
+      const itemCount = entry && "bullets" in entry ? entry.bullets.length : 0;
+      const sourceIndex = entry && "bullets" in entry
+        ? entry.bullets.findIndex((bullet) => bullet.id === payload.itemId)
+        : -1;
+      const toIndex = resolveReorderInsertionIndex(sourceIndex, position, itemCount);
+      if (toIndex !== null) dispatchDocument({ type: "move-bullet", sectionId: container.sectionId ?? payload.sectionId, entryId: container.entryId ?? payload.entryId, bulletId: payload.itemId, toIndex });
+    }
+  };
+
+  const handleReorderPointerDown = (payload: ReorderDragPayload, event: React.PointerEvent<HTMLButtonElement>) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    event.preventDefault();
+    event.currentTarget.focus();
+    const session: PointerReorderSession = {
+      payload,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      clientX: event.clientX,
+      clientY: event.clientY,
+      active: false,
+      container: null,
+      position: null,
+    };
+    pointerReorderSessionRef.current = session;
+    setPointerReorder(session);
+    setReorderDropTarget(null);
+    autoScrollDirectionRef.current = 0;
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handleReorderPointerMove = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const session = pointerReorderSessionRef.current;
+    if (!session || session.pointerId !== event.pointerId) return;
+    if (!session.active && !hasPointerMovedBeyondThreshold(session.startX, session.startY, event.clientX, event.clientY, POINTER_REORDER_THRESHOLD_PX)) return;
+    const nextSession = { ...session, active: true, clientX: event.clientX, clientY: event.clientY };
+    pointerReorderSessionRef.current = nextSession;
+    setPointerReorder(nextSession);
+    updatePointerReorderTarget(event.clientX, event.clientY);
+    updateSectionAutoScroll(event.clientY);
+  };
+
+  const handleReorderPointerUp = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const session = pointerReorderSessionRef.current;
+    if (!session || session.pointerId !== event.pointerId) return;
+    if (session.active) commitPointerReorder(session);
+    resetPointerReorder(event.currentTarget, event.pointerId);
+  };
+
+  const handleReorderPointerCancel = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const session = pointerReorderSessionRef.current;
+    if (session?.pointerId === event.pointerId) resetPointerReorder(event.currentTarget, event.pointerId);
+  };
+
+  useEffect(() => {
+    if (!pointerReorder?.active) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      resetPointerReorder();
+    };
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [pointerReorder?.active, resetPointerReorder]);
+
+  if (!selectedTemplate) {
+    return null;
+  }
+
+  const SelectedTemplate = selectedTemplate.component;
+
+  const printedPageMetrics = pageAwareness.firstPageHeight
+    ? calculatePrintedPageMetrics(pageAwareness.contentHeight, pageAwareness.firstPageHeight)
+    : null;
+  const rawPageFillPercent = printedPageMetrics
+    ? Math.round(printedPageMetrics.pageFillRatio * 100)
     : 0;
   const pageFillPercent = Math.min(100, rawPageFillPercent);
   const documentTitle = resume.title.trim() || resume.header.name.trim() || "Untitled resume";
   const templateLabel = selectedTemplate?.name ?? "Template";
+  const developmentBuildId = process.env.NODE_ENV !== "production"
+    ? process.env.NEXT_PUBLIC_RESUME_STUDIO_BUILD_ID
+    : null;
   const pageCountLabel = `${pageAwareness.pageCount} ${
     pageAwareness.pageCount === 1 ? "page" : "pages"
   }`;
-  const previewStateLabel = pageAwareness.isOverflowing
-    ? "Saved locally · page 2 active"
-    : pageAwareness.isNearLimit
-      ? `Saved locally · ${pageFillPercent}% used`
-      : "Saved locally";
+  const previewStateLabel = getPreviewStatusLabel({
+    saveStatus,
+    isOverflowing: pageAwareness.isOverflowing,
+    isNearLimit: pageAwareness.isNearLimit,
+    pageFillPercent,
+  });
   const headerSectionSummary = truncateEditorSectionSummary(
     [
       resume.header.name.trim(),
@@ -1383,22 +1560,6 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
           .join(" · ")}`
       : "No skill categories",
   );
-  const customSectionsSummary = truncateEditorSectionSummary(
-    resume.customSections.length > 0
-      ? `${resume.customSections.length} ${
-          resume.customSections.length === 1 ? "section" : "sections"
-        } · ${resume.customSections
-          .slice(0, 2)
-          .map((section) => section.title.trim() || "Untitled")
-          .join(" · ")}`
-      : "No custom sections",
-  );
-  const toggleEditorSection = (sectionId: EditorSectionId) => {
-    setOpenEditorSection((currentSection) =>
-      currentSection === sectionId ? null : sectionId,
-    );
-  };
-
   return (
     <main className="resume-app-shell">
       <header className="resume-shell-toolbar" aria-label="Workspace toolbar">
@@ -1436,38 +1597,40 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
             <div className="resume-editor-head-actions">
               <div className="resume-editor-head-undo">
                 <button
-                  className="resume-editor-head-action resume-editor-head-action--control is-disabled"
+                  className={`resume-editor-head-action resume-editor-head-action--control${canUndo ? "" : " is-disabled"}`}
                   type="button"
-                  disabled
+                  disabled={!canUndo}
+                  onClick={handleUndo}
                 >
                   Undo
                 </button>
                 <button
-                  className="resume-editor-head-action resume-editor-head-action--control is-disabled"
+                  className={`resume-editor-head-action resume-editor-head-action--control${canRedo ? "" : " is-disabled"}`}
                   type="button"
-                  disabled
+                  disabled={!canRedo}
+                  onClick={handleRedo}
                 >
                   Redo
                 </button>
               </div>
 
-              <button
-                className="resume-editor-head-action resume-editor-head-action--subtle resume-editor-head-action--utility"
-                type="button"
-                onClick={handleReset}
-              >
-                Reset sample
-              </button>
             </div>
           </div>
 
-          <div className="resume-editor-panel-scroll">
-            <div className="resume-editor-stack divide-y divide-slate-200">
+            <div
+              ref={editorScrollRef}
+              className="resume-editor-panel-scroll"
+            >
+            <div
+              className="resume-editor-stack divide-y divide-slate-200 rs-reorder-container"
+              data-reorder-container="sections"
+              data-reorder-kind="section"
+            >
               <EditorStackSection
               title="Header"
               summary={headerSectionSummary}
-              isOpen={openEditorSection === "header"}
-              onToggle={() => toggleEditorSection("header")}
+              isOpen={openSectionId === "header"}
+              onToggle={toggleHeaderSection}
             >
               <div className="space-y-3">
                 <p className={UI_NOTE_CLASSES}>
@@ -1482,10 +1645,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                         className="rs-property-control rs-header-control"
                         value={resume.header.name}
                         onChange={(event) =>
-                          setResume((current) => ({
-                            ...current,
-                            header: { ...current.header, name: event.target.value },
-                          }))
+                          dispatchDocument({ type: "set-header-field", field: "name", value: event.target.value }, { text: true, key: "header:name" })
                         }
                       />
                     </div>
@@ -1498,10 +1658,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                         className="rs-property-control rs-header-control"
                         value={resume.header.email}
                         onChange={(event) =>
-                          setResume((current) => ({
-                            ...current,
-                            header: { ...current.header, email: event.target.value },
-                          }))
+                          dispatchDocument({ type: "set-header-field", field: "email", value: event.target.value }, { text: true, key: "header:email" })
                         }
                       />
                     </div>
@@ -1514,10 +1671,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                         className="rs-property-control rs-header-control"
                         value={resume.header.phone}
                         onChange={(event) =>
-                          setResume((current) => ({
-                            ...current,
-                            header: { ...current.header, phone: event.target.value },
-                          }))
+                          dispatchDocument({ type: "set-header-field", field: "phone", value: event.target.value }, { text: true, key: "header:phone" })
                         }
                       />
                     </div>
@@ -1530,10 +1684,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                         className="rs-property-control rs-header-control"
                         value={resume.header.location}
                         onChange={(event) =>
-                          setResume((current) => ({
-                            ...current,
-                            header: { ...current.header, location: event.target.value },
-                          }))
+                          dispatchDocument({ type: "set-header-field", field: "location", value: event.target.value }, { text: true, key: "header:location" })
                         }
                       />
                     </div>
@@ -1542,12 +1693,53 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
               </div>
             </EditorStackSection>
 
-            <EditorStackSection
-              title="Summary"
-              summary={summarySectionSummary}
-              isOpen={openEditorSection === "summary"}
-              onToggle={() => toggleEditorSection("summary")}
-            >
+            <ReorderInsertionIndicator target={reorderDropTarget} containerKey="sections" />
+
+            {renderDocument.sections.map((section, sectionIndex) => {
+              const sectionProps = {
+                included: section.included,
+                onToggleIncluded: () => dispatchDocument({
+                  type: "set-section-included",
+                  sectionId: section.id,
+                  included: !section.included,
+                }),
+                canMoveUp: sectionIndex > 0,
+                canMoveDown: sectionIndex < renderDocument.sections.length - 1,
+                onMoveUp: () => dispatchDocument({
+                  type: "move-section",
+                  sectionId: section.id,
+                  toIndex: sectionIndex - 1,
+                }),
+                onMoveDown: () => dispatchDocument({
+                  type: "move-section",
+                  sectionId: section.id,
+                  toIndex: sectionIndex + 1,
+                }),
+                reorderItemId: section.id,
+                isDragging: pointerReorder?.active === true && pointerReorder.payload.kind === "section" && pointerReorder.payload.itemId === section.id,
+                reorderHandle: (
+                  <ReorderHandle
+                    label={`Reorder ${getSectionTitle(section)}`}
+                    onPointerDown={(event) => handleReorderPointerDown({ kind: "section", itemId: section.id }, event)}
+                    onPointerMove={handleReorderPointerMove}
+                    onPointerUp={handleReorderPointerUp}
+                    onPointerCancel={handleReorderPointerCancel}
+                    onLostPointerCapture={handleReorderPointerCancel}
+                  />
+                ),
+              };
+
+              switch (section.type) {
+                case "summary":
+                  return (
+                    <Fragment key={section.id}>
+                      <EditorStackSection
+                      title="Summary"
+                      summary={getSectionSummary(section)}
+                      isOpen={resolvedOpenSectionId === section.id}
+                      onToggle={() => toggleEditorSection(section.id)}
+                      {...sectionProps}
+                    >
               <div className="space-y-3">
                 <p className={UI_NOTE_CLASSES}>
                   Short professional summary shown below the header.
@@ -1560,37 +1752,62 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                       {...autosizeTextareaProps({ minHeight: 120, maxHeight: 220 })}
                       value={resume.summary}
                       onChange={(event) => {
-                        setResume((current) => ({ ...current, summary: event.target.value }));
+                        const summarySection = getSection(activeDocument ?? initialDocument, "summary");
+                        if (summarySection) dispatchDocument({ type: "set-summary", sectionId: summarySection.id, text: event.target.value }, { text: true, key: "summary" });
                         queueAutosizeTextarea(event.currentTarget);
                       }}
                     />
                   </label>
                 </div>
               </div>
-            </EditorStackSection>
+                      </EditorStackSection>
+                    </Fragment>
+                  );
 
-            <EditorStackSection
-              title="Experience"
-              summary={experienceSectionSummary}
-              isOpen={openEditorSection === "experience"}
-              onToggle={() => toggleEditorSection("experience")}
-            >
+                case "experience":
+                  return (
+                    <Fragment key={section.id}>
+                    <EditorStackSection
+                      title="Experience"
+                      summary={getSectionSummary(section)}
+                      isOpen={resolvedOpenSectionId === section.id}
+                      onToggle={() => toggleEditorSection(section.id)}
+                      {...sectionProps}
+                    >
               <div className="space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className={UI_NOTE_CLASSES}>
                     Expand a role to edit details.
                   </p>
                   <button
-                    className={BUTTON_PRIMARY_CLASSES}
+                    className={BUTTON_SECONDARY_CLASSES}
                     type="button"
                     onClick={handleAddExperience}
                   >
                     Add experience
                   </button>
                 </div>
-                <div className="space-y-3">
+                <div
+                  className="space-y-3 rs-reorder-container"
+                  data-reorder-container={`experience:${section.id}`}
+                  data-reorder-kind="experience"
+                  data-reorder-section-id={section.id}
+                >
+                <ReorderInsertionIndicator target={reorderDropTarget} containerKey={`experience:${section.id}`} />
                 {resume.experience.map((job, jobIndex) => {
-                  const isExpanded = expandedExperienceIndex === jobIndex;
+                  const isExpanded = job.id === resolvedExpandedExperienceId;
+                  const experienceSection = getSection(activeDocument ?? initialDocument, "experience");
+                  const canonicalJob = experienceSection?.type === "experience"
+                    ? experienceSection.content.entries.find((entry) => entry.id === job.id)
+                    : undefined;
+                  const experienceBullets = canonicalJob?.bullets ?? [];
+                  const experienceBodyId = `experience-${job.id}-body`;
+                  const experienceBulletContainer: ReorderContainer = {
+                    key: `experience-bullets:${job.id}`,
+                    kind: "experience-bullet",
+                    sectionId: experienceSection?.id,
+                    entryId: job.id,
+                  };
                   const bulletGuidance = analyzeExperienceBullets(job.bullets);
                   const experienceGuidanceLine = formatExperienceGuidanceLine(
                     bulletGuidance.bulletCount,
@@ -1598,54 +1815,58 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                   );
                   return (
                     <div
-                      key={jobIndex}
-                      className={ITEM_SURFACE_CLASSES}
+                      key={job.id ?? `experience-${jobIndex}`}
+                      data-reorder-item="true"
+                      className={`${ITEM_SURFACE_CLASSES}${pointerReorder?.active && pointerReorder.payload.kind === "experience" && pointerReorder.payload.itemId === job.id ? " is-dragging" : ""}`}
                     >
-                      <div className="flex flex-wrap items-start justify-between gap-2">
-                        <button
-                          className="min-w-0 flex-1 text-left"
-                          type="button"
-                          onClick={() =>
-                            setExpandedExperienceIndex((currentIndex) =>
-                              currentIndex === jobIndex ? null : jobIndex,
-                            )
-                          }
-                        >
-                          <p className={ITEM_INDEX_CLASSES}>
-                            Experience {jobIndex + 1}
-                          </p>
-                          <p className={ITEM_SUMMARY_CLASSES}>
-                            {formatExperienceCardSummary(job)}
-                          </p>
-                          <p className="rs-experience-guidance-line mt-2">
-                            {experienceGuidanceLine}
-                          </p>
-                        </button>
-                        <div className="rs-experience-role-actions">
+                      <div className="rs-entry-header">
+                        <div className="rs-entry-structure">
+                          <ReorderHandle
+                            label={`Reorder Experience ${jobIndex + 1}`}
+                            onPointerDown={(event) => handleReorderPointerDown({ kind: "experience", sectionId: experienceSection?.id ?? "", itemId: job.id ?? "" }, event)}
+                            onPointerMove={handleReorderPointerMove}
+                            onPointerUp={handleReorderPointerUp}
+                            onPointerCancel={handleReorderPointerCancel}
+                            onLostPointerCapture={handleReorderPointerCancel}
+                          />
                           <button
-                            className={`${BUTTON_SECONDARY_CLASSES} rs-experience-role-action`}
+                            className="rs-entry-disclosure-row"
                             type="button"
-                            onClick={() =>
-                              setExpandedExperienceIndex((currentIndex) =>
-                                currentIndex === jobIndex ? null : jobIndex,
-                              )
-                            }
+                            aria-expanded={isExpanded}
+                            aria-controls={experienceBodyId}
+                            aria-label={`${isExpanded ? "Collapse" : "Expand"} Experience ${jobIndex + 1}`}
+                            onClick={() => {
+                              const nextId = expandedExperienceId === job.id ? null : (job.id ?? null);
+                              setExpandedExperienceId(nextId);
+                              setIsExperienceExpansionExplicitlyCollapsed(nextId === null);
+                            }}
                           >
-                            {isExpanded ? "Collapse" : "Edit"}
+                            <span className="rs-entry-disclosure-mark"><EntryDisclosureMark isOpen={isExpanded} /></span>
+                            <span className="min-w-0 flex-1 text-left">
+                              <span className={ITEM_INDEX_CLASSES}>
+                                Experience {jobIndex + 1}
+                              </span>
+                              <span className={ITEM_SUMMARY_CLASSES}>
+                                {formatExperienceCardSummary(job)}
+                              </span>
+                              <span className="rs-experience-guidance-line mt-2">
+                                {experienceGuidanceLine}
+                              </span>
+                            </span>
                           </button>
-                          <button
-                            className={`${BUTTON_DANGER_CLASSES} rs-experience-role-action`}
-                            type="button"
-                            onClick={() => handleRemoveExperience(jobIndex)}
+                        </div>
+                        <div className="rs-entry-actions">
+                          <RemoveButton
+                            label={`Remove Experience ${jobIndex + 1}`}
+                            onClick={() => handleRemoveExperience(job.id ?? "")}
                             disabled={resume.experience.length <= 1}
-                          >
-                            Remove
-                          </button>
+                            variant="entry"
+                          />
                         </div>
                       </div>
 
                       {isExpanded ? (
-                        <div className="mt-3 border-t border-slate-200 pt-3">
+                        <div id={experienceBodyId} className="mt-3 border-t border-slate-200 pt-3">
                           <div className="rs-experience-metadata">
                             <div className="rs-property-row">
                               <div className="rs-property-label">Title</div>
@@ -1654,7 +1875,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                                   className="rs-property-control"
                                   value={job.title}
                                   onChange={(event) =>
-                                    updateExperience(jobIndex, (currentJob) => ({
+                                    updateExperience(job.id ?? "", (currentJob) => ({
                                       ...currentJob,
                                       title: event.target.value,
                                     }))
@@ -1670,7 +1891,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                                   className="rs-property-control"
                                   value={job.company}
                                   onChange={(event) =>
-                                    updateExperience(jobIndex, (currentJob) => ({
+                                    updateExperience(job.id ?? "", (currentJob) => ({
                                       ...currentJob,
                                       company: event.target.value,
                                     }))
@@ -1689,7 +1910,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                                       className="rs-property-control"
                                       value={job.dateRange.startMonth}
                                       onChange={(event) =>
-                                        updateExperience(jobIndex, (currentJob) => ({
+                                        updateExperience(job.id ?? "", (currentJob) => ({
                                           ...currentJob,
                                           dateRange: {
                                             ...currentJob.dateRange,
@@ -1712,7 +1933,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                                       className="rs-property-control"
                                       value={job.dateRange.startYear}
                                       onChange={(event) =>
-                                        updateExperience(jobIndex, (currentJob) => ({
+                                        updateExperience(job.id ?? "", (currentJob) => ({
                                           ...currentJob,
                                           dateRange: {
                                             ...currentJob.dateRange,
@@ -1736,7 +1957,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                                     type="checkbox"
                                     checked={Boolean(job.dateRange.current)}
                                     onChange={(event) =>
-                                      updateExperience(jobIndex, (currentJob) => ({
+                                      updateExperience(job.id ?? "", (currentJob) => ({
                                         ...currentJob,
                                         dateRange: {
                                           ...currentJob.dateRange,
@@ -1762,7 +1983,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                                         className="rs-property-control"
                                         value={job.dateRange.endMonth ?? MONTH_OPTIONS[0]}
                                         onChange={(event) =>
-                                          updateExperience(jobIndex, (currentJob) => ({
+                                          updateExperience(job.id ?? "", (currentJob) => ({
                                             ...currentJob,
                                             dateRange: {
                                               ...currentJob.dateRange,
@@ -1785,7 +2006,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                                         className="rs-property-control"
                                         value={job.dateRange.endYear ?? YEAR_OPTIONS[0]}
                                         onChange={(event) =>
-                                          updateExperience(jobIndex, (currentJob) => ({
+                                          updateExperience(job.id ?? "", (currentJob) => ({
                                             ...currentJob,
                                             dateRange: {
                                               ...currentJob.dateRange,
@@ -1813,7 +2034,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                                   className="rs-property-control"
                                   value={job.location}
                                   onChange={(event) =>
-                                    updateExperience(jobIndex, (currentJob) => ({
+                                    updateExperience(job.id ?? "", (currentJob) => ({
                                       ...currentJob,
                                       location: event.target.value,
                                     }))
@@ -1823,66 +2044,63 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                             </div>
                           </div>
 
-                          <div className="rs-bullet-composer">
+                          <div
+                            className="rs-bullet-composer"
+                            data-reorder-container={experienceBulletContainer.key}
+                            data-reorder-kind={experienceBulletContainer.kind}
+                            data-reorder-section-id={experienceBulletContainer.sectionId}
+                            data-reorder-entry-id={experienceBulletContainer.entryId}
+                          >
                             <div className="rs-bullet-composer-head">
                               <p className={ITEM_INDEX_CLASSES}>
                                 Bullets
                               </p>
                               <button
-                                className="rs-bullet-add-action"
+                                className={`${BUTTON_SECONDARY_CLASSES} rs-button--compact`}
                                 type="button"
-                                onClick={() =>
-                                  updateExperience(jobIndex, (currentJob) => ({
-                                    ...currentJob,
-                                    bullets: [...currentJob.bullets, ""],
-                                  }))
-                                }
+                                onClick={() => {
+                                  const section = getSection(activeDocument ?? initialDocument, "experience");
+                                  if (section?.type === "experience") dispatchDocument({ type: "add-experience-bullet", sectionId: section.id, entryId: job.id ?? "", bullet: { id: createId("bullet"), text: "", included: true } });
+                                }}
                               >
                                 Add bullet
                               </button>
                             </div>
-                            {job.bullets.map((bullet, bulletIndex) => {
+                            <ReorderInsertionIndicator target={reorderDropTarget} containerKey={experienceBulletContainer.key} />
+                            {experienceBullets.map((bullet, bulletIndex) => {
                               return (
+                                <Fragment key={bullet.id}>
                                 <div
-                                  key={bulletIndex}
-                                  className="rs-bullet-piece"
+                                  data-reorder-item="true"
+                                  className={`rs-bullet-piece${pointerReorder?.active && pointerReorder.payload.kind === "experience-bullet" && pointerReorder.payload.itemId === bullet.id ? " is-dragging" : ""}`}
                                 >
-                                  <div className="rs-bullet-piece-head">
-                                    <span className="rs-bullet-piece-label">
-                                      Bullet {bulletIndex + 1}
-                                    </span>
-                                    <button
-                                      className="rs-bullet-remove-action"
-                                      type="button"
-                                      onClick={() =>
-                                        updateExperience(jobIndex, (currentJob) => ({
-                                          ...currentJob,
-                                          bullets: currentJob.bullets.filter(
-                                            (_, currentBulletIndex) => currentBulletIndex !== bulletIndex,
-                                          ),
-                                        }))
-                                      }
-                                    >
-                                      Remove
-                                    </button>
+                                  <div className="rs-bullet-piece-row">
+                                    <ReorderHandle
+                                      label={`Reorder Experience bullet ${bulletIndex + 1}`}
+                                      onPointerDown={(event) => handleReorderPointerDown({ kind: "experience-bullet", sectionId: experienceSection?.id ?? "", entryId: job.id ?? "", itemId: bullet.id }, event)}
+                                      onPointerMove={handleReorderPointerMove}
+                                      onPointerUp={handleReorderPointerUp}
+                                      onPointerCancel={handleReorderPointerCancel}
+                                      onLostPointerCapture={handleReorderPointerCancel}
+                                    />
+                                    <textarea
+                                      className="rs-bullet-textarea"
+                                      {...autosizeTextareaProps({ minHeight: 72, maxHeight: 160 })}
+                                      value={bullet.text}
+                                      onChange={(event) => {
+                                        updateExperienceBullet(job.id ?? "", bullet.id, event.target.value);
+                                        queueAutosizeTextarea(event.currentTarget);
+                                      }}
+                                    />
+                                    <RemoveButton
+                                      label={`Remove Experience bullet ${bulletIndex + 1}`}
+                                      onClick={() => {
+                                        if (experienceSection?.type === "experience") dispatchDocument({ type: "delete-experience-bullet", sectionId: experienceSection.id, entryId: job.id ?? "", bulletId: bullet.id });
+                                      }}
+                                    />
                                   </div>
-                                  <textarea
-                                    className="rs-bullet-textarea"
-                                    {...autosizeTextareaProps({ minHeight: 72, maxHeight: 160 })}
-                                    value={bullet}
-                                    onChange={(event) => {
-                                      updateExperience(jobIndex, (currentJob) => ({
-                                        ...currentJob,
-                                        bullets: currentJob.bullets.map((currentBullet, currentBulletIndex) =>
-                                          currentBulletIndex === bulletIndex
-                                            ? event.target.value
-                                            : currentBullet,
-                                        ),
-                                      }));
-                                      queueAutosizeTextarea(event.currentTarget);
-                                    }}
-                                  />
                                 </div>
+                                </Fragment>
                               );
                             })}
                           </div>
@@ -1893,77 +2111,91 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                 })}
               </div>
               </div>
-            </EditorStackSection>
+                    </EditorStackSection>
+                    </Fragment>
+                  );
 
-            <EditorStackSection
-              title="Education"
-              summary={educationSectionSummary}
-              isOpen={openEditorSection === "education"}
-              onToggle={() => toggleEditorSection("education")}
-            >
+                case "education":
+                  return (
+                    <Fragment key={section.id}>
+                    <EditorStackSection
+                      title="Education"
+                      summary={getSectionSummary(section)}
+                      isOpen={resolvedOpenSectionId === section.id}
+                      onToggle={() => toggleEditorSection(section.id)}
+                      {...sectionProps}
+                    >
               <div className="space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className={UI_NOTE_CLASSES}>
                     Expand an entry to edit school details and structured dates.
                   </p>
                   <button
-                    className={BUTTON_PRIMARY_CLASSES}
+                    className={BUTTON_SECONDARY_CLASSES}
                     type="button"
                     onClick={handleAddEducation}
                   >
                     Add education
                   </button>
                 </div>
-                <div className="space-y-3">
+                <div
+                  className="space-y-3 rs-reorder-container"
+                  data-reorder-container={`education:${section.id}`}
+                  data-reorder-kind="education"
+                  data-reorder-section-id={section.id}
+                >
+                <ReorderInsertionIndicator target={reorderDropTarget} containerKey={`education:${section.id}`} />
                 {resume.education.map((item, itemIndex) => {
-                  const isExpanded = expandedEducationIndex === itemIndex;
+                  const educationId = item.id ?? `education-${itemIndex}`;
+                  const isExpanded = expandedEducationId === educationId;
+                  const educationBodyId = `education-${educationId}-body`;
                   return (
                     <div
-                      key={itemIndex}
-                      className={ITEM_SURFACE_CLASSES}
+                      key={educationId}
+                      data-reorder-item="true"
+                      className={`${ITEM_SURFACE_CLASSES}${pointerReorder?.active && pointerReorder.payload.kind === "education" && pointerReorder.payload.itemId === educationId ? " is-dragging" : ""}`}
                     >
-                      <div className="flex flex-wrap items-start justify-between gap-2">
-                        <button
-                          className="min-w-0 flex-1 text-left"
-                          type="button"
-                          onClick={() =>
-                            setExpandedEducationIndex((currentIndex) =>
-                              currentIndex === itemIndex ? null : itemIndex,
-                            )
-                          }
-                        >
-                          <p className={ITEM_INDEX_CLASSES}>
-                            Education {itemIndex + 1}
-                          </p>
-                          <p className={ITEM_SUMMARY_CLASSES}>
-                            {formatEducationCardSummary(item)}
-                          </p>
-                        </button>
-                        <div className="rs-experience-role-actions">
+                      <div className="rs-entry-header">
+                        <div className="rs-entry-structure">
+                          <ReorderHandle
+                            label={`Reorder Education ${itemIndex + 1}`}
+                            onPointerDown={(event) => handleReorderPointerDown({ kind: "education", sectionId: section.id, itemId: educationId }, event)}
+                            onPointerMove={handleReorderPointerMove}
+                            onPointerUp={handleReorderPointerUp}
+                            onPointerCancel={handleReorderPointerCancel}
+                            onLostPointerCapture={handleReorderPointerCancel}
+                          />
                           <button
-                            className={`${BUTTON_SECONDARY_CLASSES} rs-experience-role-action`}
+                            className="rs-entry-disclosure-row"
                             type="button"
-                            onClick={() =>
-                              setExpandedEducationIndex((currentIndex) =>
-                                currentIndex === itemIndex ? null : itemIndex,
-                              )
-                            }
+                            aria-expanded={isExpanded}
+                            aria-controls={educationBodyId}
+                            aria-label={`${isExpanded ? "Collapse" : "Expand"} Education ${itemIndex + 1}`}
+                            onClick={() => setExpandedEducationId((currentId) => currentId === educationId ? null : educationId)}
                           >
-                            {isExpanded ? "Collapse" : "Edit"}
+                            <span className="rs-entry-disclosure-mark"><EntryDisclosureMark isOpen={isExpanded} /></span>
+                            <span className="min-w-0 flex-1 text-left">
+                              <span className={ITEM_INDEX_CLASSES}>
+                                Education {itemIndex + 1}
+                              </span>
+                              <span className={ITEM_SUMMARY_CLASSES}>
+                                {formatEducationCardSummary(item)}
+                              </span>
+                            </span>
                           </button>
-                          <button
-                            className={`${BUTTON_DANGER_CLASSES} rs-experience-role-action`}
-                            type="button"
-                            onClick={() => handleRemoveEducation(itemIndex)}
+                        </div>
+                        <div className="rs-entry-actions">
+                          <RemoveButton
+                            label={`Remove Education ${itemIndex + 1}`}
+                            onClick={() => handleRemoveEducation(educationId)}
                             disabled={resume.education.length <= 1}
-                          >
-                            Remove
-                          </button>
+                            variant="entry"
+                          />
                         </div>
                       </div>
 
                       {isExpanded ? (
-                        <div className="mt-3 border-t border-slate-200 pt-3">
+                        <div id={educationBodyId} className="mt-3 border-t border-slate-200 pt-3">
                           <div className="rs-education-metadata">
                             <div className="rs-property-row">
                               <div className="rs-property-label">School</div>
@@ -1972,7 +2204,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                                   className="rs-property-control"
                                   value={item.school}
                                   onChange={(event) =>
-                                    updateEducation(itemIndex, (currentItem) => ({
+                                    updateEducation(item.id ?? "", (currentItem) => ({
                                       ...currentItem,
                                       school: event.target.value,
                                     }))
@@ -1988,7 +2220,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                                   className="rs-property-control"
                                   value={item.degree}
                                   onChange={(event) =>
-                                    updateEducation(itemIndex, (currentItem) => ({
+                                    updateEducation(item.id ?? "", (currentItem) => ({
                                       ...currentItem,
                                       degree: event.target.value,
                                     }))
@@ -2007,7 +2239,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                                       className="rs-property-control"
                                       value={item.dateRange.startMonth}
                                       onChange={(event) =>
-                                        updateEducation(itemIndex, (currentItem) => ({
+                                        updateEducation(item.id ?? "", (currentItem) => ({
                                           ...currentItem,
                                           dateRange: {
                                             ...currentItem.dateRange,
@@ -2030,7 +2262,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                                       className="rs-property-control"
                                       value={item.dateRange.startYear}
                                       onChange={(event) =>
-                                        updateEducation(itemIndex, (currentItem) => ({
+                                        updateEducation(item.id ?? "", (currentItem) => ({
                                           ...currentItem,
                                           dateRange: {
                                             ...currentItem.dateRange,
@@ -2054,7 +2286,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                                     type="checkbox"
                                     checked={Boolean(item.dateRange.current)}
                                     onChange={(event) =>
-                                      updateEducation(itemIndex, (currentItem) => ({
+                                      updateEducation(item.id ?? "", (currentItem) => ({
                                         ...currentItem,
                                         dateRange: {
                                           ...currentItem.dateRange,
@@ -2080,7 +2312,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                                         className="rs-property-control"
                                         value={item.dateRange.endMonth ?? MONTH_OPTIONS[0]}
                                         onChange={(event) =>
-                                          updateEducation(itemIndex, (currentItem) => ({
+                                          updateEducation(item.id ?? "", (currentItem) => ({
                                             ...currentItem,
                                             dateRange: {
                                               ...currentItem.dateRange,
@@ -2103,7 +2335,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                                         className="rs-property-control"
                                         value={item.dateRange.endYear ?? YEAR_OPTIONS[0]}
                                         onChange={(event) =>
-                                          updateEducation(itemIndex, (currentItem) => ({
+                                          updateEducation(item.id ?? "", (currentItem) => ({
                                             ...currentItem,
                                             dateRange: {
                                               ...currentItem.dateRange,
@@ -2131,7 +2363,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                                   className="rs-property-control"
                                   value={item.location ?? ""}
                                   onChange={(event) =>
-                                    updateEducation(itemIndex, (currentItem) => ({
+                                    updateEducation(item.id ?? "", (currentItem) => ({
                                       ...currentItem,
                                       location: event.target.value,
                                     }))
@@ -2150,9 +2382,9 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                                     {...autosizeTextareaProps({ minHeight: 96, maxHeight: 180 })}
                                     value={(item.coursework ?? []).join("\n")}
                                     onChange={(event) => {
-                                      updateEducation(itemIndex, (currentItem) => ({
+                                      updateEducation(item.id ?? "", (currentItem) => ({
                                         ...currentItem,
-                                        coursework: parseTextareaItems(event.target.value),
+                                        coursework: parseCourseworkLines(event.target.value),
                                       }));
                                       queueAutosizeTextarea(event.currentTarget);
                                     }}
@@ -2168,37 +2400,33 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                 })}
               </div>
               </div>
-            </EditorStackSection>
+                    </EditorStackSection>
+                    </Fragment>
+                  );
 
-            <EditorStackSection
-              title="Skills"
-              summary={skillsSectionSummary}
-              isOpen={openEditorSection === "skills"}
-              onToggle={() => toggleEditorSection("skills")}
-            >
+                case "technicalSkills":
+                  return (
+                    <Fragment key={section.id}>
+                    <EditorStackSection
+                      title="Technical Skills"
+                      summary={getSectionSummary(section)}
+                      isOpen={resolvedOpenSectionId === section.id}
+                      onToggle={() => toggleEditorSection(section.id)}
+                      {...sectionProps}
+                    >
               <div className="space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className={UI_NOTE_CLASSES}>
                     Labels become bold prefixes. Skills appear after them in the resume.
                   </p>
                   <button
-                    className={BUTTON_PRIMARY_CLASSES}
+                    className={BUTTON_SECONDARY_CLASSES}
                     type="button"
                     onClick={() =>
-                      setResume((current) => ({
-                        ...current,
-                        technicalSkills: {
-                          ...current.technicalSkills,
-                          categories: [
-                            ...current.technicalSkills.categories,
-                            {
-                              id: createId("skill"),
-                              label: "New Category",
-                              value: "",
-                            },
-                          ],
-                        },
-                      }))
+                      dispatchDocument({ type: "legacy-update", update: (document) => {
+                        const projection = toLegacyResume(document);
+                        return mergeLegacyResume(document, { ...projection, technicalSkills: { ...projection.technicalSkills, categories: [...projection.technicalSkills.categories, { id: createId("skill"), label: "New Category", value: "" }] } }, templateId);
+                      } })
                     }
                   >
                     Add category
@@ -2210,16 +2438,8 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                     <div className="rs-property-value">
                       <input
                         className="rs-property-control rs-skill-control"
-                        value={resume.technicalSkills.title}
-                        onChange={(event) =>
-                          setResume((current) => ({
-                            ...current,
-                            technicalSkills: {
-                              ...current.technicalSkills,
-                              title: event.target.value,
-                            },
-                          }))
-                        }
+                        value="Technical Skills"
+                        readOnly
                       />
                     </div>
                   </div>
@@ -2235,18 +2455,10 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                         Category {categoryIndex + 1}
                       </p>
                       <button
-                        className="rs-skill-group-remove"
+                        className="rs-structural-remove-control"
                         type="button"
                         onClick={() =>
-                          setResume((current) => ({
-                            ...current,
-                            technicalSkills: {
-                              ...current.technicalSkills,
-                              categories: current.technicalSkills.categories.filter(
-                                (_, index) => index !== categoryIndex,
-                              ),
-                            },
-                          }))
+                          dispatchDocument({ type: "delete-skill-category", sectionId: getSection(activeDocument ?? initialDocument, "technicalSkills")?.id ?? "", categoryId: category.id })
                         }
                         disabled={resume.technicalSkills.categories.length <= 1}
                       >
@@ -2262,7 +2474,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                             className="rs-property-control rs-skill-control"
                             value={category.label}
                             onChange={(event) =>
-                              updateTechnicalSkillCategory(categoryIndex, (currentCategory) => ({
+                              updateTechnicalSkillCategory(category.id, (currentCategory) => ({
                                 ...currentCategory,
                                 label: event.target.value,
                               }))
@@ -2283,7 +2495,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                             {...autosizeTextareaProps({ minHeight: 64, maxHeight: 140 })}
                             value={category.value}
                             onChange={(event) => {
-                              updateTechnicalSkillCategory(categoryIndex, (currentCategory) => ({
+                              updateTechnicalSkillCategory(category.id, (currentCategory) => ({
                                 ...currentCategory,
                                 value: event.target.value,
                               }));
@@ -2297,58 +2509,259 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                 ))}
               </div>
               </div>
-            </EditorStackSection>
+                    </EditorStackSection>
+                    </Fragment>
+                  );
 
-            <EditorStackSection
-              title="Custom Sections"
-              summary={customSectionsSummary}
-              isOpen={openEditorSection === "customSections"}
-              onToggle={() => toggleEditorSection("customSections")}
-            >
+                case "projects":
+                  return (
+                    <Fragment key={section.id}>
+                    <EditorStackSection
+                      title="Projects"
+                      summary={getSectionSummary(section)}
+                      isOpen={resolvedOpenSectionId === section.id}
+                      onToggle={() => toggleEditorSection(section.id)}
+                      {...sectionProps}
+                    >
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap items-center justify-start gap-2">
+                          <button
+                            className={BUTTON_SECONDARY_CLASSES}
+                            type="button"
+                            onClick={handleAddProject}
+                          >
+                            Add project
+                          </button>
+                        </div>
+
+                        <div
+                          className="space-y-3 rs-reorder-container"
+                          data-reorder-container={`projects:${section.id}`}
+                          data-reorder-kind="project"
+                          data-reorder-section-id={section.id}
+                        >
+                          <ReorderInsertionIndicator target={reorderDropTarget} containerKey={`projects:${section.id}`} />
+                          {section.content.entries.map((project, projectIndex) => {
+                            const isExpanded = expandedProjectId === project.id;
+                            const projectBodyId = `project-${project.id}-body`;
+                            const projectBulletContainer: ReorderContainer = {
+                              key: `project-bullets:${section.id}:${project.id}`,
+                              kind: "project-bullet",
+                              sectionId: section.id,
+                              entryId: project.id,
+                            };
+                            const projectSummary = [
+                              project.name.trim() || "Untitled project",
+                              project.date?.trim(),
+                            ]
+                              .filter(Boolean)
+                              .join(" · ");
+
+                            return (
+                              <Fragment key={project.id}>
+                              <div
+                                data-reorder-item="true"
+                                className={`${ITEM_SURFACE_CLASSES}${pointerReorder?.active && pointerReorder.payload.kind === "project" && pointerReorder.payload.itemId === project.id ? " is-dragging" : ""}`}
+                              >
+                                <div className="rs-entry-header">
+                                  <div className="rs-entry-structure">
+                                    <ReorderHandle
+                                      label={`Reorder Project ${projectIndex + 1}`}
+                                      onPointerDown={(event) => handleReorderPointerDown({ kind: "project", sectionId: section.id, itemId: project.id }, event)}
+                                      onPointerMove={handleReorderPointerMove}
+                                      onPointerUp={handleReorderPointerUp}
+                                      onPointerCancel={handleReorderPointerCancel}
+                                      onLostPointerCapture={handleReorderPointerCancel}
+                                    />
+                                    <button
+                                      className="rs-entry-disclosure-row"
+                                      type="button"
+                                      aria-expanded={isExpanded}
+                                      aria-controls={projectBodyId}
+                                      aria-label={`${isExpanded ? "Collapse" : "Expand"} Project ${projectIndex + 1}`}
+                                      onClick={() => setExpandedProjectId((currentId) => currentId === project.id ? null : project.id)}
+                                    >
+                                      <span className="rs-entry-disclosure-mark"><EntryDisclosureMark isOpen={isExpanded} /></span>
+                                      <span className="min-w-0 flex-1 text-left">
+                                        <span className={ITEM_INDEX_CLASSES}>
+                                          Project {projectIndex + 1}
+                                        </span>
+                                        <span className={ITEM_SUMMARY_CLASSES}>{projectSummary}</span>
+                                      </span>
+                                    </button>
+                                  </div>
+                                  <div className="rs-entry-actions">
+                                    <RemoveButton label={`Remove Project ${projectIndex + 1}`} onClick={() => handleRemoveProject(project.id)} variant="entry" />
+                                  </div>
+                                </div>
+
+                                {isExpanded ? (
+                                  <div id={projectBodyId} className="mt-3 border-t border-slate-200 pt-3">
+                                    <div className="rs-property-row">
+                                      <div className="rs-property-label">Name</div>
+                                      <div className="rs-property-value">
+                                        <input
+                                          className="rs-property-control"
+                                          ref={(element) => {
+                                            projectNameRefs.current[project.id] = element;
+                                          }}
+                                          value={project.name}
+                                          onChange={(event) => updateProject(project.id, (currentProject) => ({ ...currentProject, name: event.target.value }), `project:${project.id}:name`)}
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="rs-property-row">
+                                      <div className="rs-property-label">Date</div>
+                                      <div className="rs-property-value">
+                                        <input
+                                          className="rs-property-control"
+                                          value={project.date ?? ""}
+                                          onChange={(event) => updateProject(project.id, (currentProject) => ({ ...currentProject, date: event.target.value }), `project:${project.id}:date`)}
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="rs-property-row">
+                                      <div className="rs-property-label">Technologies</div>
+                                      <div className="rs-property-value">
+                                        <input
+                                          className="rs-property-control"
+                                          value={project.technologies ?? ""}
+                                          onChange={(event) => updateProject(project.id, (currentProject) => ({ ...currentProject, technologies: event.target.value }), `project:${project.id}:technologies`)}
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="rs-property-row">
+                                      <div className="rs-property-label">URL</div>
+                                      <div className="rs-property-value">
+                                        <input
+                                          className="rs-property-control"
+                                          value={project.url ?? ""}
+                                          onChange={(event) => updateProject(project.id, (currentProject) => ({ ...currentProject, url: event.target.value }), `project:${project.id}:url`)}
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="rs-property-row">
+                                      <div className="rs-property-label">Description</div>
+                                      <div className="rs-property-value">
+                                        <textarea
+                                          className="rs-property-control rs-property-control--textarea"
+                                          style={{ minHeight: "72px" }}
+                                          {...autosizeTextareaProps({ minHeight: 72, maxHeight: 160 })}
+                                          value={project.description ?? ""}
+                                          onChange={(event) => {
+                                            updateProject(project.id, (currentProject) => ({ ...currentProject, description: event.target.value }), `project:${project.id}:description`);
+                                            queueAutosizeTextarea(event.currentTarget);
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div
+                                      className="rs-bullet-composer"
+                                      data-reorder-container={projectBulletContainer.key}
+                                      data-reorder-kind={projectBulletContainer.kind}
+                                      data-reorder-section-id={projectBulletContainer.sectionId}
+                                      data-reorder-entry-id={projectBulletContainer.entryId}
+                                    >
+                                      <ReorderInsertionIndicator target={reorderDropTarget} containerKey={projectBulletContainer.key} />
+                                      <div className="rs-bullet-composer-head">
+                                        <p className={ITEM_INDEX_CLASSES}>Bullets</p>
+                                        <button
+                                          className={`${BUTTON_SECONDARY_CLASSES} rs-button--compact`}
+                                          type="button"
+                                          onClick={() => handleAddProjectBullet(project.id)}
+                                        >
+                                          Add bullet
+                                        </button>
+                                      </div>
+
+                                      {project.bullets.map((bullet, bulletIndex) => (
+                                        <Fragment key={bullet.id}>
+                                <div
+                                  data-reorder-item="true"
+                                  className={`rs-bullet-piece${pointerReorder?.active && pointerReorder.payload.kind === "project-bullet" && pointerReorder.payload.itemId === bullet.id ? " is-dragging" : ""}`}
+                                >
+                                          <div className="rs-bullet-piece-row">
+                                            <ReorderHandle
+                                              label={`Reorder Project bullet ${bulletIndex + 1}`}
+                                              onPointerDown={(event) => handleReorderPointerDown({ kind: "project-bullet", sectionId: section.id, entryId: project.id, itemId: bullet.id }, event)}
+                                              onPointerMove={handleReorderPointerMove}
+                                              onPointerUp={handleReorderPointerUp}
+                                              onPointerCancel={handleReorderPointerCancel}
+                                              onLostPointerCapture={handleReorderPointerCancel}
+                                            />
+                                            <textarea
+                                              className="rs-bullet-textarea"
+                                              {...autosizeTextareaProps({ minHeight: 72, maxHeight: 160 })}
+                                              value={bullet.text}
+                                              onChange={(event) => {
+                                                updateProjectBullet(project.id, bullet.id, event.target.value);
+                                                queueAutosizeTextarea(event.currentTarget);
+                                              }}
+                                            />
+                                            <RemoveButton label={`Remove Project bullet ${bulletIndex + 1}`} onClick={() => handleRemoveProjectBullet(project.id, bullet.id)} />
+                                          </div>
+                                        </div>
+                                        </Fragment>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ) : null}
+                              </div>
+                              </Fragment>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </EditorStackSection>
+                    </Fragment>
+                  );
+
+                case "certifications":
+                  return (
+                    <Fragment key={section.id}>
+                    <EditorStackSection
+                      title="Certifications"
+                      summary={getSectionSummary(section)}
+                      isOpen={resolvedOpenSectionId === section.id}
+                      onToggle={() => toggleEditorSection(section.id)}
+                      {...sectionProps}
+                    >
+                      <p className={UI_NOTE_CLASSES}>No certification editor available yet.</p>
+                    </EditorStackSection>
+                    </Fragment>
+                  );
+
+                case "custom":
+                  return (
+                    <Fragment key={section.id}>
+                    <EditorStackSection
+                      title={getSectionTitle(section)}
+                      summary={getSectionSummary(section)}
+                      isOpen={resolvedOpenSectionId === section.id}
+                      onToggle={() => toggleEditorSection(section.id)}
+                      {...sectionProps}
+                    >
               <div className="space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className={UI_NOTE_CLASSES}>
-                    Optional sections for Projects, Certifications, Awards, Languages, or Volunteer work.
+                    Optional section content.
                   </p>
-                  <button
-                    className={BUTTON_SECONDARY_CLASSES}
-                    type="button"
-                    onClick={() =>
-                      setResume((current) => ({
-                        ...current,
-                        customSections: [
-                          ...current.customSections,
-                          {
-                            id: createId("section"),
-                            title: "New Section",
-                            lines: [],
-                          },
-                        ],
-                      }))
-                    }
-                  >
-                    Add custom section
-                  </button>
                 </div>
                 <div className="space-y-3">
-                {resume.customSections.map((section, sectionIndex) => (
                   <div
-                    key={section.id}
                     className={ITEM_SURFACE_CLASSES}
                   >
                     <div className="mb-2 flex items-center justify-between gap-2">
-                      <p className={ITEM_INDEX_CLASSES}>
-                        Section {sectionIndex + 1}
-                      </p>
+                      <p className={ITEM_INDEX_CLASSES}>Custom section</p>
                       <button
                         className={BUTTON_DANGER_CLASSES}
                         type="button"
-                        onClick={() =>
-                          setResume((current) => ({
-                            ...current,
-                            customSections: current.customSections.filter((_, index) => index !== sectionIndex),
-                          }))
-                        }
+                        onClick={() => dispatchDocument({ type: "delete-custom-section", sectionId: section.id })}
                       >
                         Remove
                       </button>
@@ -2358,12 +2771,9 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                       <span className="mb-1 block text-xs font-medium text-slate-600">Section title</span>
                       <input
                         className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
-                        value={section.title}
+                        value={section.content.title}
                         onChange={(event) =>
-                          updateCustomSection(sectionIndex, (currentSection) => ({
-                            ...currentSection,
-                            title: event.target.value,
-                          }))
+                          dispatchDocument({ type: "set-custom-section", sectionId: section.id, section: { ...section, content: { ...section.content, title: event.target.value } } }, { text: true, key: `custom:${section.id}:title` })
                         }
                       />
                     </label>
@@ -2375,23 +2785,42 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                       <textarea
                         className="h-24 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-slate-300 transition focus:ring-2"
                         {...autosizeTextareaProps({ minHeight: 96, maxHeight: 220 })}
-                        value={section.lines.join("\n")}
+                        value={section.content.lines.join("\n")}
                         onChange={(event) => {
-                          updateCustomSection(sectionIndex, (currentSection) => ({
-                            ...currentSection,
-                            lines: parseTextareaItems(event.target.value),
-                          }));
+                          dispatchDocument({ type: "set-custom-section", sectionId: section.id, section: { ...section, content: { ...section.content, lines: parseCustomSectionLines(event.target.value) } } }, { text: true, key: `custom:${section.id}:lines` });
                           queueAutosizeTextarea(event.currentTarget);
                         }}
                       />
                     </label>
                   </div>
-                ))}
+                </div>
               </div>
-              </div>
-              </EditorStackSection>
+                    </EditorStackSection>
+                    </Fragment>
+                  );
+              }
+            })}
+
+
+            <div className="rs-editor-add-custom-section">
+              <button
+                className={BUTTON_SECONDARY_CLASSES}
+                type="button"
+                onClick={() =>
+                  dispatchDocument({ type: "add-custom-section", section: { id: createId("section"), type: "custom", included: true, content: { title: "New Section", lines: [] } } })
+                }
+              >
+                Add custom section
+              </button>
+            </div>
             </div>
           </div>
+
+          {developmentBuildId ? (
+            <p className="resume-editor-build-id" aria-label="Development build identifier">
+              Build {developmentBuildId}
+            </p>
+          ) : null}
         </section>
 
         <section
@@ -2414,12 +2843,16 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
               className="resume-preview-scale-wrap"
               style={{
                 width: `${scaledPreviewSurfaceWidth}px`,
-                minHeight: `${scaledPreviewPageHeight}px`,
+                height: `${scaledPreviewSurfaceHeight}px`,
+                minHeight: `${scaledPreviewPageHeight + previewSurfaceChromeHeight}px`,
               }}
             >
-              <div className="resume-preview-page-surface">
+              <div
+                className="resume-preview-page-surface"
+                style={{ height: "100%" }}
+              >
                 <div className="resume-preview-scale-inner" style={previewScaleStyle}>
-                  <SelectedTemplate resume={renderResume} />
+                  <SelectedTemplate document={renderDocument} />
                 </div>
               </div>
             </div>

@@ -1,139 +1,126 @@
 # Resume Studio
 
-Resume Studio is an open source, self hosted resume editing and formatting tool designed for creating tailored resumes from structured templates.
+**Resume Studio v1.0.0 — Production**
 
-The goal is to make resume tailoring faster without fighting document formatting while keeping user data local, private, and fully owned by the user.
+Resume Studio is a focused, self-hosted resume-authoring workstation for tailoring structured resume content, organizing document structure, reviewing a live preview, and exporting reliable PDF resumes.
 
-Users can choose a template, edit resume sections such as summary, skills, experience, projects, and education, preview the result in real time, and export polished PDFs with consistent formatting.
+The resume document is the primary artifact. Resume Studio keeps content structured and presentation controlled so that editing remains predictable and exported documents remain consistent.
 
----
+![Resume Studio structured editor and live preview](docs/images/resume-studio-v1.png)
 
-## Why this exists
+## Design philosophy
 
-Most resume builders:
-- lock useful features behind subscriptions
-- rely heavily on cloud services
-- store personal resume data remotely
-- focus more on AI generated writing than editing workflows
-- make formatting fragile and frustrating
+Resume Studio is document-first software:
 
-Resume Studio focuses on:
-- structured editing
-- consistent formatting
-- local ownership
-- self hosting
-- privacy
-- open source accessibility
+- content is edited through known resume sections rather than a freeform page canvas;
+- section order, entries, and bullets remain explicit and controllable;
+- templates control typography, spacing, hierarchy, and print presentation;
+- local ownership and self-hosting are preferred over account-based services;
+- the interface stays restrained so the document remains the focus.
 
-The app is designed to work well alongside the user's preferred writing workflow, including manual editing, AI assistance, or local LLM tools.
+External writing tools can be used separately. Resume Studio itself is the structured document-authoring surface.
 
----
+## Current capabilities
 
-## Core Principles
+### Structured content
 
-- Local first
-- Privacy focused
-- Open source
-- Self hostable
-- Template driven
-- AI optional, not required
-- Structured editing over document chaos
+The editor currently supports:
 
----
+- Header and contact information
+- Summary
+- Experience
+- Projects
+- Technical Skills
+- Education
+- Custom Sections
 
-## Design Philosophy
+### Structural editing
 
-Resume Studio prioritizes clarity, consistency, and editing speed over excessive customization.
+The current editor supports:
 
-The application should feel lightweight, predictable, and distraction free while still producing polished, professional resumes.
+- reordering sections;
+- reordering Experience, Project, and Education entries;
+- reordering Experience and Project bullets;
+- including or excluding sections without deleting their stored content;
+- adding, editing, and removing supported structured content.
 
----
+### Undo and Redo
 
-## Template Philosophy
+Undo and Redo are scoped to the active resume document and kept in memory. History is intentionally not restored after a browser reload.
 
-Templates are controlled presentation layers that enforce formatting consistency.
+### Preview and page awareness
 
-Users edit structured content while templates manage:
-- typography
-- spacing
-- alignment
-- section hierarchy
-- print layout
-- page formatting
+The live preview updates from the canonical resume document. The preview reports page count and provides one-page usage feedback where appropriate. It is a continuous document surface rather than a physical stack of page sheets.
 
-Templates are intentionally opinionated to reduce formatting instability.
+### PDF export
 
----
+PDF export uses the same template/rendering path as the browser preview. The current Classic presentation produces conservative, text-based, single-column output intended to remain readable and ATS-friendly. Resume Studio does not provide ATS scoring or guarantee acceptance by any particular ATS.
 
-## MVP Goals
+### Templates
 
-- Create and edit resumes
-- Choose from controlled resume templates
-- Edit common resume sections
-- Add, remove, reorder, and edit bullet points
-- Preview the resume in real time
-- Export to PDF
-- Keep formatting consistent across edits
+The current release includes one template: **Classic**. Template support is intentionally controlled; there is no template marketplace or freeform layout editor.
 
----
+## Architecture overview
 
-## Not in MVP
+- `ResumeDocument` v4 is the canonical resume model.
+- Header is fixed outside the ordered `sections` collection.
+- Sections are typed structured content, with the array order defining below-header presentation order.
+- A versioned `ResumeLibrary` is persisted in browser `localStorage`.
+- Undo and Redo use resume-scoped, in-memory document history.
+- Browser preview and server PDF export resolve the same template registry and rendering components.
+- Server-side PDF generation uses Playwright.
 
-- AI generated writing
-- Billing or subscriptions
-- DOCX export
-- Drag and drop visual editing
-- Multi user collaboration
-- Public sharing links
+## Local development
 
----
+### Prerequisites
 
-## Core Workflow
+Use a current Node.js installation with npm. The repository includes a lockfile for repeatable dependency installation.
 
-1. Create a new resume
-2. Choose a template
-3. Edit sections and bullet points
-4. Preview formatting
-5. Adjust content as needed
-6. Export PDF
+### Install and run
 
----
+```bash
+npm ci
+npm run dev
+```
 
-## Privacy
+Open [http://localhost:3000](http://localhost:3000).
 
-Resume Studio is designed with a local first mindset.
+Normal local development does not require application environment variables.
 
-Users should be able to:
-- host the application themselves
-- retain ownership of their data
-- use the application without cloud dependencies
-- optionally integrate AI providers without requiring them
+### Validation commands
 
----
+```bash
+npm test
+npx tsc --noEmit --incremental false
+npm run lint
+npm run build
+node --experimental-strip-types scripts/validate-pagination.ts
+```
 
-## Future Considerations
+The pagination validation script checks browser page awareness against exported PDF page counts for representative fixtures.
 
-Future releases may include optional integrations with local or external LLM providers for workflows such as:
-- bullet refinement
-- keyword optimization
-- resume tailoring assistance
-- summary rewriting
-- job posting analysis
+## Deployment overview
 
-AI features are intentionally optional and are not required for core functionality.
+The repository includes a container-based deployment path:
 
----
+- [Dockerfile](Dockerfile) builds the application image with its Playwright runtime;
+- [deploy/docker-compose.yaml](deploy/docker-compose.yaml) runs the production container;
+- [cicd.app.yaml](cicd.app.yaml) defines the image, deployment, and health-check contract;
+- [GitHub Actions workflow](.github/workflows/build-deploy.yaml) builds and publishes the image to GHCR, then runs the deployment and verification workflow;
+- production routing uses Traefik;
+- the application health endpoint is `/api/health`.
 
-## Planned Tech Stack
+Operational deployment details belong in the deployment configuration and workflow files rather than in this README.
 
-- Frontend: React or Next.js
-- Backend: Lightweight API backend
-- Storage: SQLite for local self hosted use
-- PDF Export: HTML/CSS rendering with Puppeteer
-- Deployment: Docker Compose
+## Known limitations
 
----
+- Resume data is persisted in the browser locally; there is no database, server-backed resume storage, or account synchronization.
+- Undo and Redo history does not survive a browser reload.
+- Classic is currently the only available template.
+- Certifications can be represented and rendered, but do not yet have a complete editor workflow.
+- The preview reports page awareness but does not yet display physical page-sheet surfaces.
+- The application is designed primarily for one local or self-hosted user, not collaborative multi-user operation.
 
-## License
+## Future direction
 
-To be decided.
+Future development is workflow-driven and will be guided by needs discovered through real resume tailoring and use. The v1 application remains focused on structured editing, reliable preview, and PDF export.

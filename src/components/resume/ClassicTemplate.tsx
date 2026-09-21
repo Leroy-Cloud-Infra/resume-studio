@@ -1,12 +1,26 @@
 import type {
   ResumeDateRange,
-  Resume,
-  ResumeEducationItem,
-  ResumeExperienceItem,
+  ResumeDocument,
+  Bullet,
+  ExperienceEntry,
+  EducationEntry,
+  ProjectEntry,
+  SkillCategory,
+  ResumeSection as ResumeSectionModel,
 } from "@/types/resume";
 import type { CSSProperties } from "react";
 
 import { ResumeSection } from "./ResumeSection";
+import {
+  getIncludedBullets,
+  getIncludedEducationEntries,
+  getIncludedExperienceEntries,
+  getIncludedSectionRenderPlan,
+  getIncludedSkillCategories,
+  getCertificationMetadataParts,
+  getEducationIdentityParts,
+  getProjectSupportingMetadataParts,
+} from "@/lib/resume-rendering";
 
 function formatDateRange(dateRange: ResumeDateRange) {
   const start = `${dateRange.startMonth} ${dateRange.startYear}`.trim();
@@ -144,20 +158,30 @@ const locationTextStyle: CSSProperties = {
   color: "#111111",
 };
 
-function getRenderableBullets(bullets: string[]) {
-  return bullets.filter((bullet) => bullet.trim().length > 0);
+function getRenderableBullets(bullets: Bullet[]) {
+  return getIncludedBullets(bullets).filter((bullet) => bullet.text.trim().length > 0);
+}
+
+function hasText(value: string | undefined) {
+  return Boolean(value?.trim());
 }
 
 function InlineSkillSection({
-  title,
   categories,
+  showTopRule,
 }: {
-  title: string;
-  categories: Resume["technicalSkills"]["categories"];
+  categories: SkillCategory[];
+  showTopRule: boolean;
 }) {
+  const renderableCategories = getIncludedSkillCategories(categories)
+    .map((category) => ({ ...category, skills: category.skills.filter((skill) => hasText(skill.name)) }))
+    .filter((category) => category.skills.length > 0);
+
+  if (renderableCategories.length === 0) return null;
+
   return (
-    <div style={{ marginTop: "1pt" }}>
-      <ResumeSection title={title || "Technical Skills"}>
+    <div style={{ marginTop: showTopRule ? "1pt" : "0pt" }}>
+      <ResumeSection title="Technical Skills" showTopRule={showTopRule}>
         <div
           className="resume-skills-content"
           style={{
@@ -166,7 +190,7 @@ function InlineSkillSection({
             paddingBottom: "1pt",
           }}
         >
-          {categories.map((category, index) => (
+          {renderableCategories.map((category, index) => (
             <p
               key={category.id}
               className="resume-skill-line"
@@ -189,7 +213,7 @@ function InlineSkillSection({
                 {category.label}:
               </span>
               <span className="resume-skill-value" style={{ fontWeight: 400 }}>
-                {category.value}
+                {category.skills.map((skill) => skill.name).join(", ")}
               </span>
             </p>
           ))}
@@ -199,7 +223,7 @@ function InlineSkillSection({
   );
 }
 
-function ExperienceRow({ item }: { item: ResumeExperienceItem }) {
+function ExperienceRow({ item }: { item: ExperienceEntry }) {
   const experienceBulletIndent = "7.4pt";
   const experienceBulletGap = "3.3pt";
   const bullets = getRenderableBullets(item.bullets);
@@ -276,14 +300,14 @@ function ExperienceRow({ item }: { item: ResumeExperienceItem }) {
         >
           {bullets.map((bullet, index) => (
             <li
-              key={`${index}-${bullet}`}
+              key={bullet.id}
               style={{
                 display: "list-item",
                 marginBottom:
                   index === bullets.length - 1 ? "0pt" : experienceBulletGap,
               }}
             >
-              {bullet}
+              {bullet.text}
             </li>
           ))}
         </ul>
@@ -292,7 +316,9 @@ function ExperienceRow({ item }: { item: ResumeExperienceItem }) {
   );
 }
 
-function EducationRow({ item, isFirst }: { item: ResumeEducationItem; isFirst: boolean }) {
+function EducationRow({ item, isFirst }: { item: EducationEntry; isFirst: boolean }) {
+  const identity = getEducationIdentityParts(item);
+
   return (
     <article
       className={`resume-row ${isFirst ? "mt-[4pt]" : "mt-[5pt]"} break-inside-avoid`}
@@ -325,8 +351,9 @@ function EducationRow({ item, isFirst }: { item: ResumeEducationItem; isFirst: b
             color: "#111111",
           }}
         >
-          {item.degree},{" "}
-          <span style={{ fontSize: DOC_TOKENS.companySize }}>{item.school}</span>
+          {identity.degree}
+          {identity.showSeparator ? ", " : null}
+          <span style={{ fontSize: DOC_TOKENS.companySize }}>{identity.school}</span>
         </p>
         <p
           className="resume-row-location"
@@ -360,7 +387,207 @@ function EducationRow({ item, isFirst }: { item: ResumeEducationItem; isFirst: b
   );
 }
 
-export function ClassicTemplate({ resume }: { resume: Resume }) {
+function SummarySection({ section, showTopRule }: { section: Extract<ResumeSectionModel, { type: "summary" }>; showTopRule: boolean }) {
+  if (!hasText(section.content.text)) return null;
+  return (
+    <div
+      className="resume-summary-section"
+      style={{
+        marginTop: showTopRule ? "6pt" : `calc(${HEADER_LAYOUT.ruleToSummaryGap} + ${DOC_LAYOUT.summaryBlockSeparationFromHeaderRule})`,
+        marginBottom: DOC_LAYOUT.summaryToWorkExperienceGap,
+        borderTop: showTopRule ? "0.5pt solid #000000" : undefined,
+        width: DOC_LAYOUT.sectionDividerWidth,
+        maxWidth: DOC_LAYOUT.sectionDividerWidth,
+        boxSizing: "border-box",
+      }}
+    >
+      <section className="resume-section mt-[0pt]">
+        <div className="resume-summary-row" style={{ display: "grid", gridTemplateColumns: `${DOC_LAYOUT.dateColumnWidth} ${DOC_LAYOUT.summaryTextWidth}`, columnGap: DOC_LAYOUT.summaryColumnGap, width: DOC_LAYOUT.flowTextRail, maxWidth: DOC_LAYOUT.flowTextRail, boxSizing: "border-box", alignItems: "start" }}>
+          <h3 className="font-semibold uppercase tracking-[0.04em] text-black" style={{ fontSize: DOC_TOKENS.sectionLabelSize, fontWeight: 600, lineHeight: 1.05, paddingTop: DOC_LAYOUT.sectionLabelTopPadding }}>Summary</h3>
+          <p className="resume-summary-content" style={summaryTextStyle}>{section.content.text}</p>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function ExperienceSection({ section, showTopRule }: { section: Extract<ResumeSectionModel, { type: "experience" }>; showTopRule: boolean }) {
+  const entries = getIncludedExperienceEntries(section.content.entries).filter((entry) => hasText(entry.company) || hasText(entry.title) || hasText(entry.location) || getRenderableBullets(entry.bullets).length > 0);
+  if (entries.length === 0) return null;
+  return <ResumeSection title="Work Experience" showTopRule={showTopRule}>{entries.map((entry) => <ExperienceRow key={entry.id} item={entry} />)}</ResumeSection>;
+}
+
+function ProjectRow({ project }: { project: ProjectEntry }) {
+  const bullets = getRenderableBullets(project.bullets);
+  const supportingMetadata = getProjectSupportingMetadataParts(project);
+
+  return (
+    <article
+      className="resume-row mt-[7pt] break-inside-avoid"
+      style={{ pageBreakInside: "avoid" }}
+    >
+      <div className="resume-row-head" style={rowHeadStyle}>
+        <p
+          className="resume-row-date whitespace-nowrap"
+          style={{
+            fontSize: DOC_TOKENS.dateSize,
+            lineHeight: 1.12,
+            paddingRight: "2pt",
+            paddingTop: "0.8pt",
+            color: "#111111",
+          }}
+        >
+          {hasText(project.date) ? project.date : null}
+        </p>
+        <div
+          className="resume-row-main min-w-0"
+          style={{
+            paddingLeft: DOC_LAYOUT.contentRailInset,
+            paddingRight: 0,
+            color: "#111111",
+            overflowWrap: "break-word",
+            wordBreak: "normal",
+          }}
+        >
+          {hasText(project.name) ? (
+            <h4
+              style={{
+                fontSize: DOC_TOKENS.jobTitleSize,
+                lineHeight: 1.16,
+                fontWeight: 500,
+                color: "#111111",
+              }}
+            >
+              {project.name}
+            </h4>
+          ) : null}
+          {supportingMetadata.length > 0 ? (
+            <p
+              className="resume-project-metadata"
+              style={{
+                marginTop: hasText(project.name) ? "1pt" : 0,
+                fontSize: DOC_TOKENS.bodySize,
+                lineHeight: 1.08,
+                color: "#111111",
+                fontWeight: 400,
+                overflowWrap: "break-word",
+                wordBreak: "normal",
+              }}
+            >
+              {supportingMetadata.join(" · ")}
+            </p>
+          ) : null}
+        </div>
+        <p className="resume-row-location" style={locationTextStyle} />
+      </div>
+
+      {hasText(project.description) ? (
+        <p
+          className="resume-project-description"
+          style={{
+            ...flowContentStyle,
+            marginTop: "3pt",
+            marginBottom: 0,
+            fontSize: DOC_TOKENS.bodySize,
+            lineHeight: 1.12,
+            color: "#111111",
+            fontWeight: 400,
+            overflowWrap: "break-word",
+            wordBreak: "normal",
+          }}
+        >
+          {project.description}
+        </p>
+      ) : null}
+
+      {bullets.length > 0 ? (
+        <ul
+          className="resume-row-bullets mt-[3pt] list-disc"
+          style={{
+            marginLeft: DOC_LAYOUT.bulletLeftRail,
+            width: DOC_LAYOUT.flowTextWidthFromBullet,
+            maxWidth: DOC_LAYOUT.flowTextWidthFromBullet,
+            boxSizing: "border-box",
+            paddingLeft: "7.4pt",
+            paddingRight: 0,
+            listStylePosition: "outside",
+            listStyleType: "disc",
+            fontSize: DOC_TOKENS.bulletSize,
+            lineHeight: 1.18,
+            fontWeight: 400,
+            color: "#111111",
+            overflowWrap: "break-word",
+            wordBreak: "normal",
+          }}
+        >
+          {bullets.map((bullet, index) => (
+            <li
+              key={bullet.id}
+              style={{
+                display: "list-item",
+                marginBottom: index === bullets.length - 1 ? "0pt" : "3.3pt",
+              }}
+            >
+              {bullet.text}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </article>
+  );
+}
+
+function ProjectsSection({ section, showTopRule }: { section: Extract<ResumeSectionModel, { type: "projects" }>; showTopRule: boolean }) {
+  const entries = section.content.entries.filter((entry) => entry.included && (hasText(entry.name) || hasText(entry.description) || hasText(entry.date) || hasText(entry.technologies) || hasText(entry.url) || getRenderableBullets(entry.bullets).length > 0));
+  if (entries.length === 0) return null;
+  return (
+    <ResumeSection title="Projects" showTopRule={showTopRule}>
+      {entries.map((project) => <ProjectRow key={project.id} project={project} />)}
+    </ResumeSection>
+  );
+}
+
+function EducationSection({ section, showTopRule }: { section: Extract<ResumeSectionModel, { type: "education" }>; showTopRule: boolean }) {
+  const entries = getIncludedEducationEntries(section.content.entries).filter((entry) => hasText(entry.school) || hasText(entry.degree) || hasText(entry.location) || Boolean(entry.coursework?.some(hasText)));
+  if (entries.length === 0) return null;
+  return <div><ResumeSection title="Education" showTopRule={showTopRule}>{entries.map((entry) => <EducationRow key={entry.id} item={entry} isFirst={entries[0] === entry} />)}</ResumeSection></div>;
+}
+
+function CertificationsSection({ section, showTopRule }: { section: Extract<ResumeSectionModel, { type: "certifications" }>; showTopRule: boolean }) {
+  const entries = section.content.entries.filter((entry) => entry.included && [entry.name, entry.issuer, entry.date, entry.expirationDate, entry.credentialId, entry.credentialUrl].some(hasText));
+  if (entries.length === 0) return null;
+  return (
+    <ResumeSection title="Certifications" showTopRule={showTopRule}>
+      {entries.map((entry) => (
+        <div key={entry.id} className="mt-[4pt]" style={flowContentStyle}>
+          {hasText(entry.name) ? <p style={{ fontSize: DOC_TOKENS.bodySize, lineHeight: 1.08, fontWeight: 500, color: "#111111" }}>{entry.name}</p> : null}
+          {getCertificationMetadataParts(entry).length > 0 ? <p style={{ fontSize: DOC_TOKENS.bodySize, lineHeight: 1.08, color: "#111111" }}>{getCertificationMetadataParts(entry).join(" · ")}</p> : null}
+        </div>
+      ))}
+    </ResumeSection>
+  );
+}
+
+function CustomSectionRenderer({ section, showTopRule }: { section: Extract<ResumeSectionModel, { type: "custom" }>; showTopRule: boolean }) {
+  const lines = section.content.lines.filter((line) => hasText(line));
+  if (lines.length === 0 || !hasText(section.content.title)) return null;
+  return <ResumeSection title={section.content.title} showTopRule={showTopRule}>{lines.map((line, index) => <p key={`${section.id}-${index}`} style={{ ...flowContentStyle, fontSize: DOC_TOKENS.bodySize, lineHeight: 1.08, marginBottom: DOC_LAYOUT.paragraphAfter, color: "#111111", fontWeight: 400 }}>{line}</p>)}</ResumeSection>;
+}
+
+function renderSection(section: ResumeSectionModel, showTopRule: boolean) {
+  if (!section.included) return null;
+  switch (section.type) {
+    case "summary": return <SummarySection key={section.id} section={section} showTopRule={showTopRule} />;
+    case "experience": return <ExperienceSection key={section.id} section={section} showTopRule={showTopRule} />;
+    case "projects": return <ProjectsSection key={section.id} section={section} showTopRule={showTopRule} />;
+    case "technicalSkills": return <InlineSkillSection key={section.id} categories={section.content.categories} showTopRule={showTopRule} />;
+    case "education": return <EducationSection key={section.id} section={section} showTopRule={showTopRule} />;
+    case "certifications": return <CertificationsSection key={section.id} section={section} showTopRule={showTopRule} />;
+    case "custom": return <CustomSectionRenderer key={section.id} section={section} showTopRule={showTopRule} />;
+  }
+}
+
+export function ClassicTemplate({ document }: { document: ResumeDocument }) {
   const documentStyle: CSSProperties & Record<`--${string}`, string> = {
     "--rs-section-right-edge": DOC_LAYOUT.sectionRightEdge,
     "--rs-section-divider-width": DOC_LAYOUT.sectionDividerWidth,
@@ -403,7 +630,7 @@ export function ClassicTemplate({ resume }: { resume: Resume }) {
             lineHeight: HEADER_LAYOUT.nameLineHeight,
           }}
         >
-          {resume.header.name}
+          {document.header.name}
         </h2>
         <p
           style={{
@@ -412,11 +639,11 @@ export function ClassicTemplate({ resume }: { resume: Resume }) {
             marginTop: HEADER_LAYOUT.nameToContactGap,
           }}
         >
-          {[resume.header.location, resume.header.email, resume.header.phone]
+          {[document.header.location, document.header.email, document.header.phone]
             .filter(Boolean)
             .join(" | ")}
         </p>
-        {resume.header.links.length > 0 ? (
+        {document.header.links.length > 0 ? (
           <p
             style={{
               fontSize: DOC_TOKENS.contactSize,
@@ -424,142 +651,12 @@ export function ClassicTemplate({ resume }: { resume: Resume }) {
               marginTop: HEADER_LAYOUT.nameToContactGap,
             }}
           >
-            {resume.header.links.join(" | ")}
+            {document.header.links.join(" | ")}
           </p>
         ) : null}
       </header>
 
-      <div
-        className="resume-summary-section"
-        style={{
-          marginTop: `calc(${HEADER_LAYOUT.ruleToSummaryGap} + ${DOC_LAYOUT.summaryBlockSeparationFromHeaderRule})`,
-          marginBottom: DOC_LAYOUT.summaryToWorkExperienceGap,
-        }}
-      >
-        <section className="resume-section mt-[0pt]">
-          <div
-            className="resume-summary-row"
-            style={{
-              display: "grid",
-              gridTemplateColumns: `${DOC_LAYOUT.dateColumnWidth} ${DOC_LAYOUT.summaryTextWidth}`,
-              columnGap: DOC_LAYOUT.summaryColumnGap,
-              width: DOC_LAYOUT.flowTextRail,
-              maxWidth: DOC_LAYOUT.flowTextRail,
-              boxSizing: "border-box",
-              alignItems: "start",
-            }}
-          >
-            <h3
-              className="font-semibold uppercase tracking-[0.04em] text-black"
-              style={{
-                fontSize: DOC_TOKENS.sectionLabelSize,
-                fontWeight: 600,
-                lineHeight: 1.05,
-                paddingTop: DOC_LAYOUT.sectionLabelTopPadding,
-              }}
-            >
-              Summary
-            </h3>
-            <p className="resume-summary-content" style={summaryTextStyle}>
-              {resume.summary}
-            </p>
-          </div>
-        </section>
-      </div>
-
-      <ResumeSection title="Work Experience">
-        {resume.experience.map((job) => (
-          <ExperienceRow
-            key={`${job.company}-${job.title}-${job.dateRange.startYear}`}
-            item={job}
-          />
-        ))}
-      </ResumeSection>
-
-      {resume.projects.length > 0 ? (
-        <ResumeSection title="Projects">
-          {resume.projects.map((project) => (
-            <div key={project.name} className="mt-[4pt]">
-              <h4 style={{ ...flowContentStyle, fontSize: DOC_TOKENS.jobTitleSize, fontWeight: 500, lineHeight: 1.14, color: "#111111" }}>
-                {project.name}
-              </h4>
-              <p style={{ ...flowContentStyle, fontSize: DOC_TOKENS.bodySize, lineHeight: 1.08, color: "#111111", fontWeight: 400 }}>
-                {project.description}
-              </p>
-              {getRenderableBullets(project.bullets).length > 0 ? (
-                <ul
-                  className="mt-[1pt] list-disc"
-                  style={{
-                    marginLeft: DOC_LAYOUT.bulletLeftRail,
-                    width: DOC_LAYOUT.flowTextWidthFromBullet,
-                    maxWidth: DOC_LAYOUT.flowTextWidthFromBullet,
-                    boxSizing: "border-box",
-                    fontSize: DOC_TOKENS.bulletSize,
-                    lineHeight: 1.12,
-                    paddingLeft: DOC_LAYOUT.bulletIndent,
-                    listStylePosition: "outside",
-                    listStyleType: "disc",
-                    color: "#111111",
-                    fontWeight: 400,
-                    overflowWrap: "break-word",
-                    wordBreak: "normal",
-                  }}
-                >
-                  {getRenderableBullets(project.bullets).map((bullet, index, bullets) => (
-                    <li
-                      key={`${index}-${bullet}`}
-                      style={{
-                        display: "list-item",
-                        marginBottom:
-                          index === bullets.length - 1 ? "0pt" : DOC_LAYOUT.paragraphAfter,
-                      }}
-                    >
-                      {bullet}
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </div>
-          ))}
-        </ResumeSection>
-      ) : null}
-
-      <div>
-        <ResumeSection title="Education">
-          {resume.education.map((item, index) => (
-            <EducationRow
-              key={`${item.school}-${item.degree}`}
-              item={item}
-              isFirst={index === 0}
-            />
-          ))}
-        </ResumeSection>
-      </div>
-
-      <InlineSkillSection
-        title={resume.technicalSkills.title}
-        categories={resume.technicalSkills.categories}
-      />
-
-      {resume.customSections.map((section) => (
-        <ResumeSection key={section.id} title={section.title}>
-          {section.lines.map((line, lineIndex) => (
-            <p
-              key={`${section.id}-${lineIndex}`}
-              style={{
-                ...flowContentStyle,
-                fontSize: DOC_TOKENS.bodySize,
-                lineHeight: 1.08,
-                marginBottom: DOC_LAYOUT.paragraphAfter,
-                color: "#111111",
-                fontWeight: 400,
-              }}
-            >
-              {line}
-            </p>
-          ))}
-        </ResumeSection>
-      ))}
+      {getIncludedSectionRenderPlan(document).map(({ section, showTopRule }) => renderSection(section, showTopRule))}
     </article>
   );
 }

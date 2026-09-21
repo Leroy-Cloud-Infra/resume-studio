@@ -22,7 +22,7 @@ export function ResumeSection({
 
   return (
     <section
-      className="resume-section mt-[6pt]"
+      className={`resume-section ${showTopRule ? "mt-[6pt]" : "mt-[0pt]"}`}
       style={{
         width: "var(--rs-section-divider-width)",
         maxWidth: "var(--rs-section-divider-width)",

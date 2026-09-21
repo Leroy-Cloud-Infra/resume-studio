@@ -298,7 +298,16 @@ If the goal is to make the product usable quickly, implement in this order:
 5. add lightweight guidance labels for density, overflow, and scanability
 6. implement whole-row drag reorder behavior with subtle feedback
 7. keep preview live and stable throughout editing
+
 8. add small motion only where it clarifies state changes
+
+## AR-C Reorder Amendment
+
+The later AR-C decision supersedes the exploratory handle guidance above:
+
+- Resume sections, Projects, Project bullets, and Experience bullets use a permanently visible, restrained three-line reorder handle.
+- Reordering uses an application-controlled Pointer Events interaction rather than native HTML drag-and-drop.
+- Full keyboard reorder mode remains deferred; existing accessible fallback controls must remain available without adding visible Move up/down chrome.
 
 ## Remaining Unresolved, But Non-Blocking, Questions
 

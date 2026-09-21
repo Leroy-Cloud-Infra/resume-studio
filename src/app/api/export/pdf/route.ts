@@ -5,44 +5,22 @@ import { NextResponse } from "next/server";
 import { chromium } from "playwright";
 import { createElement } from "react";
 
-import { ClassicTemplate } from "@/components/resume/ClassicTemplate";
-import type { Resume } from "@/types/resume";
+import { getResumeTemplate, type ResumeTemplateId } from "@/templates/resume-templates";
+import { isValidResumeDocument } from "@/lib/resume-migrations";
+import {
+  LETTER_PAGE_HEIGHT_PX,
+  LETTER_PAGE_WIDTH_PX,
+  PDF_EXPORT_SCALE,
+} from "@/lib/resume-print-layout";
+import type { ResumeDocument } from "@/types/resume";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 type ExportPdfRequest = {
   templateId?: string;
-  resume?: Resume;
+  document?: ResumeDocument;
 };
-
-function isStringArray(value: unknown): value is string[] {
-  return Array.isArray(value) && value.every((item) => typeof item === "string");
-}
-
-function isResume(value: unknown): value is Resume {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-
-  const candidate = value as Partial<Resume>;
-
-  return (
-    typeof candidate.title === "string" &&
-    typeof candidate.summary === "string" &&
-    typeof candidate.header?.name === "string" &&
-    typeof candidate.header.email === "string" &&
-    typeof candidate.header.phone === "string" &&
-    typeof candidate.header.location === "string" &&
-    isStringArray(candidate.header.links) &&
-    Array.isArray(candidate.experience) &&
-    Array.isArray(candidate.education) &&
-    Array.isArray(candidate.projects) &&
-    Array.isArray(candidate.customSections) &&
-    typeof candidate.technicalSkills?.title === "string" &&
-    Array.isArray(candidate.technicalSkills.categories)
-  );
-}
 
 function sanitizeFilenamePart(value: string) {
   const sanitizedValue = value
@@ -54,9 +32,11 @@ function sanitizeFilenamePart(value: string) {
   return sanitizedValue || "resume";
 }
 
-async function createResumePdfHtml(resume: Resume) {
+async function createResumePdfHtml(document: ResumeDocument, templateId: ResumeTemplateId) {
   const { renderToStaticMarkup } = await import("react-dom/server");
-  const resumeMarkup = renderToStaticMarkup(createElement(ClassicTemplate, { resume }));
+  const template = getResumeTemplate(templateId);
+  if (!template) throw new Error("Unsupported resume template.");
+  const resumeMarkup = renderToStaticMarkup(createElement(template.component, { document }));
   const regularFontUrl = pathToFileURL(
     path.resolve(process.cwd(), "public/fonts/LiberationSerif-Regular.ttf"),
   ).href;
@@ -267,9 +247,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unsupported resume template." }, { status: 400 });
   }
 
-  if (!isResume(payload.resume)) {
+  if (!isValidResumeDocument(payload.document)) {
     return NextResponse.json({ error: "Invalid resume payload." }, { status: 400 });
   }
+
+  const requestedTemplateId = payload.templateId ?? payload.document.metadata.templateId;
+  if (requestedTemplateId !== "classic") {
+    return NextResponse.json({ error: "Unsupported resume template." }, { status: 400 });
+  }
+  const templateId: ResumeTemplateId = "classic";
 
   let browser: Awaited<ReturnType<typeof chromium.launch>> | null = null;
 
@@ -281,12 +267,12 @@ export async function POST(request: Request) {
     const page = await browser.newPage({
       deviceScaleFactor: 1,
       viewport: {
-        width: 816,
-        height: 1056,
+        width: LETTER_PAGE_WIDTH_PX,
+        height: LETTER_PAGE_HEIGHT_PX,
       },
     });
 
-    await page.setContent(await createResumePdfHtml(payload.resume), {
+    await page.setContent(await createResumePdfHtml(payload.document, templateId), {
       waitUntil: "load",
     });
     await page.evaluate(async () => {
@@ -303,9 +289,9 @@ export async function POST(request: Request) {
       },
       printBackground: true,
       preferCSSPageSize: true,
-      scale: 0.96,
+      scale: PDF_EXPORT_SCALE,
     });
-    const filename = `${sanitizeFilenamePart(payload.resume.header.name)}-resume.pdf`;
+    const filename = `${sanitizeFilenamePart(payload.document.header.name)}-resume.pdf`;
 
     return new NextResponse(new Uint8Array(pdf), {
       headers: {

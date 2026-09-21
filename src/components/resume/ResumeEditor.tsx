@@ -4,11 +4,11 @@ import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useReducer,
 
 import { getResumeTemplate, type ResumeTemplateId } from "@/templates/resume-templates";
 import {
-  createStableId,
   mergeLegacyResume,
   migrateLegacyResume,
   toLegacyResume,
 } from "@/lib/resume-migrations";
+import { createStableId } from "@/lib/stable-id";
 import {
   loadResumeLibrary,
   saveResumeLibrary,

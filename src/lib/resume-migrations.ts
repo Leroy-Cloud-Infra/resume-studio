@@ -13,16 +13,11 @@ import type {
   SkillCategory,
   TechnicalSkillsSection,
 } from "../types/resume.ts";
+import { createStableId } from "./stable-id.ts";
+
+export { createStableId } from "./stable-id.ts";
 
 export const CURRENT_SCHEMA_VERSION = 4;
-
-export function createStableId() {
-  if (typeof globalThis.crypto?.randomUUID !== "function") {
-    throw new Error("Resume Studio requires crypto.randomUUID for stable IDs.");
-  }
-
-  return globalThis.crypto.randomUUID();
-}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);

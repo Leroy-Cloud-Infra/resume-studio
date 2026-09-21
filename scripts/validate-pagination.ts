@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { createStableId } from "../src/lib/stable-id.ts";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -12,11 +13,11 @@ function addCustomContent(document: JsonRecord, lines: string[]) {
   const next = clone(document);
   const sections = next.sections as JsonRecord[];
 
-  next.id = crypto.randomUUID();
+  next.id = createStableId();
   next.sections = [
     ...sections.filter((section) => section.type !== "custom"),
     {
-      id: crypto.randomUUID(),
+      id: createStableId(),
       type: "custom",
       included: true,
       content: { title: "Pagination Fixture", lines },
@@ -30,7 +31,7 @@ function makeComfortablyUnderPage(document: JsonRecord) {
   const next = clone(document);
   const sections = next.sections as JsonRecord[];
 
-  next.id = crypto.randomUUID();
+  next.id = createStableId();
   next.sections = sections.map((section) =>
     section.type === "experience" || section.type === "technicalSkills"
       ? { ...section, included: false }

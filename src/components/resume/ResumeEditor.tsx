@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, type CSSProperties } from "react";
+import { AppearanceControl } from "./AppearanceControl";
 
 import { getResumeTemplate, type ResumeTemplateId } from "@/templates/resume-templates";
 import {
@@ -16,6 +17,13 @@ import {
 import { getSection, type DocumentAction } from "@/lib/resume-actions";
 import { createWorkspaceState, workspaceReducer } from "@/lib/resume-workspace";
 import { parseCourseworkLines, parseCustomSectionLines } from "@/lib/resume-text";
+import {
+  getSkillSignature,
+  rebaseSkillTextDraft,
+  serializeSkillNames,
+  updateSkillTextDraft,
+  type SkillTextDraft,
+} from "@/lib/resume-skills";
 import { getPreviewStatusLabel } from "@/lib/resume-preview-status";
 import {
   calculatePrintedPageMetrics,
@@ -520,6 +528,7 @@ function RemoveButton({ label, onClick, disabled = false, variant = "text" }: { 
 function EditorStackSection({
   title,
   summary,
+  isFixedHeader = false,
   isOpen,
   onToggle,
   included,
@@ -535,6 +544,7 @@ function EditorStackSection({
 }: {
   title: string;
   summary: string;
+  isFixedHeader?: boolean;
   isOpen: boolean;
   onToggle: () => void;
   included?: boolean;
@@ -553,7 +563,7 @@ function EditorStackSection({
       className={`rs-editor-section${included === false ? " is-excluded" : ""}${isDragging ? " is-dragging" : ""}`}
       data-reorder-item={reorderItemId ? "true" : undefined}
     >
-      <div className={`rs-editor-section-head${reorderHandle ? " has-reorder-handle" : ""}`}>
+      <div className={`rs-editor-section-head${reorderHandle ? " has-reorder-handle" : ""}${isFixedHeader ? " is-fixed-header" : ""}`}>
         {reorderHandle}
         <button
           className="rs-editor-section-toggle"
@@ -631,6 +641,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
   const [isExperienceExpansionExplicitlyCollapsed, setIsExperienceExpansionExplicitlyCollapsed] = useState(false);
   const [expandedProjectId, setExpandedProjectId] = useState<string | null>(null);
   const [expandedEducationId, setExpandedEducationId] = useState<string | null>(() => getSection(initialDocument, "education")?.content.entries[0]?.id ?? null);
+  const [skillTextDrafts, setSkillTextDrafts] = useState<Record<string, SkillTextDraft>>({});
   const [pointerReorder, setPointerReorder] = useState<PointerReorderSession | null>(null);
   const [reorderDropTarget, setReorderDropTarget] = useState<ReorderDropTarget | null>(null);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
@@ -667,6 +678,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
   const activeDocument = workspace.library.resumes.find((document) => document.id === workspace.library.activeResumeId) ?? null;
   const resume = useMemo(() => activeDocument ? toLegacyResume(activeDocument) : initialResume, [activeDocument, initialResume]);
   const renderDocument = activeDocument ?? initialDocument;
+  const technicalSkillsSection = activeDocument ? getSection(activeDocument, "technicalSkills") : undefined;
   const experienceEntries = activeDocument ? getSection(activeDocument, "experience")?.content.entries ?? [] : [];
   const resolvedExpandedExperienceId = expandedExperienceId && experienceEntries.some((entry) => entry.id === expandedExperienceId)
     ? expandedExperienceId
@@ -1112,11 +1124,13 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
   const canRedo = Boolean(activeHistory?.future.length);
   const handleUndo = () => {
     setSaveStatus("saving");
+    setSkillTextDrafts({});
     flushTextHistory();
     dispatchWorkspace({ type: "undo" });
   };
   const handleRedo = () => {
     setSaveStatus("saving");
+    setSkillTextDrafts({});
     flushTextHistory();
     dispatchWorkspace({ type: "redo" });
   };
@@ -1569,6 +1583,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
           </div>
 
           <div className="resume-shell-toolbar-actions">
+            <AppearanceControl />
             <button
               className="resume-shell-toolbar-button resume-shell-toolbar-button--export"
               type="button"
@@ -1622,13 +1637,14 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
               className="resume-editor-panel-scroll"
             >
             <div
-              className="resume-editor-stack divide-y divide-slate-200 rs-reorder-container"
+              className="resume-editor-stack divide-y divide-[var(--rs-line-soft)] rs-reorder-container"
               data-reorder-container="sections"
               data-reorder-kind="section"
             >
               <EditorStackSection
               title="Header"
               summary={headerSectionSummary}
+              isFixedHeader
               isOpen={openSectionId === "header"}
               onToggle={toggleHeaderSection}
             >
@@ -1866,7 +1882,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                       </div>
 
                       {isExpanded ? (
-                        <div id={experienceBodyId} className="mt-3 border-t border-slate-200 pt-3">
+                        <div id={experienceBodyId} className="mt-3 border-t border-[var(--rs-line-soft)] pt-3">
                           <div className="rs-experience-metadata">
                             <div className="rs-property-row">
                               <div className="rs-property-label">Title</div>
@@ -2195,7 +2211,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                       </div>
 
                       {isExpanded ? (
-                        <div id={educationBodyId} className="mt-3 border-t border-slate-200 pt-3">
+                        <div id={educationBodyId} className="mt-3 border-t border-[var(--rs-line-soft)] pt-3">
                           <div className="rs-education-metadata">
                             <div className="rs-property-row">
                               <div className="rs-property-label">School</div>
@@ -2445,7 +2461,16 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                   </div>
                 </div>
                 <div className="space-y-2">
-                {resume.technicalSkills.categories.map((category, categoryIndex) => (
+                {resume.technicalSkills.categories.map((category, categoryIndex) => {
+                  const canonicalCategory = technicalSkillsSection?.type === "technicalSkills"
+                    ? technicalSkillsSection.content.categories.find((item) => item.id === category.id)
+                    : undefined;
+                  const categorySkills = canonicalCategory?.skills ?? [];
+                  const skillDraft = skillTextDrafts[category.id];
+                  const displayedSkillText = skillDraft
+                    ? rebaseSkillTextDraft(skillDraft, categorySkills).value
+                    : serializeSkillNames(categorySkills);
+                  return (
                   <div
                     key={category.id}
                     className="rs-skill-group"
@@ -2488,25 +2513,58 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                         <div className="rs-property-value">
                           <textarea
                             className={`rs-property-control rs-skill-control rs-skill-textarea${
-                              category.value.length > 90 || category.value.includes("\n")
+                              displayedSkillText.length > 90 || displayedSkillText.includes("\n")
                                 ? " is-expanded"
                                 : ""
                             }`}
                             {...autosizeTextareaProps({ minHeight: 64, maxHeight: 140 })}
-                            value={category.value}
+                            value={displayedSkillText}
+                            onFocus={() => {
+                              setSkillTextDrafts((current) => current[category.id]
+                                ? current
+                                : {
+                                    ...current,
+                                    [category.id]: {
+                                      value: serializeSkillNames(categorySkills),
+                                      canonicalSignature: getSkillSignature(categorySkills),
+                                    },
+                                  });
+                            }}
                             onChange={(event) => {
-                              updateTechnicalSkillCategory(category.id, (currentCategory) => ({
-                                ...currentCategory,
-                                value: event.target.value,
+                              const rawValue = event.target.value;
+                              const update = updateSkillTextDraft(rawValue, categorySkills);
+                              setSkillTextDrafts((current) => ({
+                                ...current,
+                                [category.id]: update.draft,
                               }));
+                              if (update.changed && technicalSkillsSection?.type === "technicalSkills" && canonicalCategory) {
+                                dispatchDocument({
+                                  type: "set-skill-category",
+                                  sectionId: technicalSkillsSection.id,
+                                  categoryId: category.id,
+                                  category: {
+                                    ...canonicalCategory,
+                                    skills: update.skills,
+                                  },
+                                }, { text: true, key: `skills:${category.id}` });
+                              }
                               queueAutosizeTextarea(event.currentTarget);
+                            }}
+                            onBlur={() => {
+                              setSkillTextDrafts((current) => {
+                                if (!current[category.id]) return current;
+                                const next = { ...current };
+                                delete next[category.id];
+                                return next;
+                              });
                             }}
                           />
                         </div>
                       </div>
                     </div>
                   </div>
-                ))}
+                );
+                })}
               </div>
               </div>
                     </EditorStackSection>
@@ -2596,7 +2654,7 @@ export function ResumeEditor({ initialResume, templateId }: ResumeEditorProps) {
                                 </div>
 
                                 {isExpanded ? (
-                                  <div id={projectBodyId} className="mt-3 border-t border-slate-200 pt-3">
+                                  <div id={projectBodyId} className="mt-3 border-t border-[var(--rs-line-soft)] pt-3">
                                     <div className="rs-property-row">
                                       <div className="rs-property-label">Name</div>
                                       <div className="rs-property-value">

@@ -2,6 +2,26 @@
 
 All notable changes to Resume Studio will be documented in this file.
 
+## [1.0.2] - 2026-09-28
+
+### Fixed
+
+- Fixed Technical Skills editing so natural trailing-space typing works without weakening structured Skill data or stable IDs.
+
+### Improved
+
+- Reworked the Classic resume presentation into a consistent professional document system with standardized section headings, full-width Summary, improved Experience entry hierarchy, and cleaner section typography and spacing.
+- Added restrained continuation headers and improved multi-page PDF pagination while preserving selectable ATS-friendly text.
+- Added System / Light / Dark workstation appearance modes with a neutral-charcoal dark theme while keeping the resume document and PDF output unchanged.
+- Refined the Appearance menu and Header disclosure alignment.
+
+### Validation
+
+- Full automated test, type, lint, and production-build validation.
+- One-, two-, and three-page PDF validation, including PDF text extraction and reading-order checks.
+- Editor, state, reorder, include/exclude, Undo/Redo, and persistence regression pass.
+- Safari manual acceptance.
+
 ## [1.0.0] - 2026-09-21
 
 ## Overview

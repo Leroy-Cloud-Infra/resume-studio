@@ -18,6 +18,7 @@
 
 :root {
   color-scheme: light;
+  --rs-app-background: linear-gradient(180deg, #eff1ee 0%, #e8ebe7 100%);
   --background: #e8ebe7;
   --foreground: #181c21;
   --rs-shell-bg: #e8ebe7;
@@ -42,6 +43,51 @@
   --rs-danger-ink: #6c534f;
   --rs-danger-line: rgba(108, 83, 79, 0.18);
   --rs-danger-fill: rgba(108, 83, 79, 0.05);
+  --rs-control-bg: rgba(252, 252, 251, 0.96);
+  --rs-control-hover: #ffffff;
+  --rs-control-focus: rgba(255, 255, 255, 0.99);
+  --rs-control-border: rgba(24, 28, 33, 0.14);
+  --rs-label-ink: #525c67;
+  --rs-placeholder-ink: #66707b;
+  --rs-nested-bg: rgba(246, 247, 245, 0.58);
+  --rs-section-hover: rgba(236, 239, 236, 0.72);
+  --rs-excluded-bg: rgba(248, 249, 247, 0.72);
+  --rs-drag-ink: #6f7882;
+  --rs-drag-target: rgba(72, 81, 91, 0.76);
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #17191b;
+  --foreground: #e7e9ea;
+  --rs-app-background: #17191b;
+  --rs-shell-bg: #17191b;
+  --rs-shell-bg-soft: #17191b;
+  --rs-shell-panel: #1e2124;
+  --rs-shell-panel-strong: #24282c;
+  --rs-shell-panel-solid: #24282c;
+  --rs-line-soft: rgba(231, 233, 234, 0.12);
+  --rs-line-strong: rgba(231, 233, 234, 0.19);
+  --rs-line-hard: rgba(231, 233, 234, 0.3);
+  --rs-text-muted: #aeb4b8;
+  --rs-text-soft: #c6cacc;
+  --rs-shell-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+  --rs-shell-shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --rs-focus-ring: #90aabb;
+  --rs-danger-ink: #e2aaa4;
+  --rs-danger-line: #986a65;
+  --rs-danger-fill: #342a2b;
+  --rs-control-bg: #30353a;
+  --rs-control-hover: #383d42;
+  --rs-control-focus: #343a3f;
+  --rs-control-border: #7a8186;
+  --rs-label-ink: #c6cacc;
+  --rs-placeholder-ink: #aeb4b8;
+  --rs-nested-bg: #24282c;
+  --rs-section-hover: #292d31;
+  --rs-excluded-bg: #222629;
+  --rs-drag-ink: #aeb4b8;
+  --rs-drag-target: #c2c6c9;
 }
 
 @theme inline {
@@ -58,7 +104,7 @@ body {
 }
 
 body {
-  background: linear-gradient(180deg, var(--rs-shell-bg-soft) 0%, var(--rs-shell-bg) 100%);
+  background: var(--rs-app-background);
   color: var(--foreground);
   font-family: var(--font-sans);
 }
@@ -105,6 +151,110 @@ body {
 .resume-shell-toolbar-actions {
   margin-left: auto;
   justify-content: flex-end;
+}
+
+.resume-shell-appearance {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  color: var(--rs-text-soft);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+
+.resume-shell-appearance-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 27px;
+  border: 1px solid var(--rs-line-hard);
+  border-radius: 5px;
+  background: var(--rs-control-bg);
+  padding: 0 8px;
+  color: var(--foreground);
+  font: inherit;
+  font-size: 11.5px;
+  line-height: 1;
+  cursor: default;
+}
+
+.resume-shell-appearance-trigger:hover {
+  background: var(--rs-control-hover);
+}
+
+.resume-shell-appearance-trigger:focus-visible {
+  outline: 2px solid var(--rs-focus-ring);
+  outline-offset: 1px;
+}
+
+.resume-shell-appearance-icon {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.resume-shell-appearance-chevron {
+  width: 12px;
+  height: 12px;
+  flex: none;
+  fill: none;
+  stroke: var(--rs-text-muted);
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.resume-shell-appearance-menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 5px);
+  right: 0;
+  width: 122px;
+  padding: 3px;
+  border: 1px solid var(--rs-line-strong);
+  border-radius: 4px;
+  background: var(--rs-shell-panel-solid);
+  color: var(--foreground);
+  box-shadow: 0 4px 12px rgba(24, 28, 33, 0.14);
+}
+
+.resume-shell-appearance-menu-item {
+  display: grid;
+  width: 100%;
+  min-height: 27px;
+  grid-template-columns: 16px minmax(0, 1fr);
+  align-items: center;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  padding: 0 7px;
+  color: inherit;
+  font: inherit;
+  font-size: 11.5px;
+  line-height: 1;
+  text-align: left;
+  cursor: default;
+}
+
+.resume-shell-appearance-menu-item:hover,
+.resume-shell-appearance-menu-item:focus-visible {
+  background: var(--rs-section-hover);
+}
+
+.resume-shell-appearance-menu-item:focus-visible {
+  outline: 2px solid var(--rs-focus-ring);
+  outline-offset: -2px;
+}
+
+.resume-shell-appearance-check {
+  color: var(--foreground);
+  font-size: 12px;
 }
 
 .resume-shell-toolbar-button {
@@ -352,6 +502,7 @@ body {
   min-height: 100%;
   overflow: hidden;
   background: #ffffff;
+  color-scheme: light;
   border: 1px solid rgba(24, 28, 33, 0.14);
   box-shadow: 0 1px 3px rgba(24, 28, 33, 0.05);
 }
@@ -385,6 +536,18 @@ body {
 .rs-editor-section-head.has-reorder-handle {
   grid-template-columns: 40px minmax(0, 1fr) auto;
   column-gap: 4px;
+}
+
+.rs-editor-section-head.is-fixed-header {
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  column-gap: 4px;
+}
+
+.rs-editor-section-head.is-fixed-header::before {
+  content: "";
+  grid-column: 1;
+  grid-row: 1;
+  width: 40px;
 }
 
 .rs-editor-section-head:hover,
@@ -693,6 +856,12 @@ body {
     border-color 140ms ease,
     background-color 140ms ease,
     box-shadow 140ms ease;
+}
+
+html[data-theme="dark"] .resume-editor-panel input::placeholder,
+html[data-theme="dark"] .resume-editor-panel textarea::placeholder {
+  color: var(--rs-placeholder-ink);
+  opacity: 1;
 }
 
 .resume-editor-panel textarea {
@@ -1423,6 +1592,205 @@ body {
   border-color: rgba(24, 28, 33, 0.16);
   background: rgba(24, 28, 33, 0.055);
   color: #444b54;
+}
+
+/* Workstation-only dark surfaces. The resume paper and PDF remain light. */
+html[data-theme="dark"] .resume-shell-toolbar-button,
+html[data-theme="dark"] .resume-editor-head-action--control,
+html[data-theme="dark"] .rs-button {
+  background: var(--rs-control-bg);
+  color: var(--foreground);
+}
+
+html[data-theme="dark"] .resume-shell-toolbar-button:hover:not(:disabled),
+html[data-theme="dark"] .rs-button:hover:not(:disabled) {
+  background: var(--rs-control-hover);
+}
+
+html[data-theme="dark"] .resume-shell-toolbar-button--subtle {
+  background: transparent;
+  color: var(--rs-text-muted);
+}
+
+html[data-theme="dark"] .resume-editor-head-action.is-disabled {
+  border-color: var(--rs-line-soft);
+  background: var(--rs-nested-bg);
+  color: var(--rs-text-muted);
+}
+
+html[data-theme="dark"] .resume-editor-head-action--utility,
+html[data-theme="dark"] .rs-editor-section-title,
+html[data-theme="dark"] .rs-skill-group-index,
+html[data-theme="dark"] .rs-item-index,
+html[data-theme="dark"] .rs-bullet-piece-label {
+  color: var(--rs-label-ink);
+}
+
+html[data-theme="dark"] .rs-item-summary {
+  color: var(--foreground);
+}
+
+html[data-theme="dark"] .rs-editor-section-head:hover,
+html[data-theme="dark"] .rs-editor-section-head:focus-within {
+  background: var(--rs-section-hover);
+}
+
+html[data-theme="dark"] .rs-editor-section.is-excluded {
+  background: var(--rs-excluded-bg);
+}
+
+html[data-theme="dark"] .rs-reorder-handle,
+html[data-theme="dark"] .rs-reorder-handle-mark line {
+  color: var(--rs-drag-ink);
+  stroke: var(--rs-drag-ink);
+}
+
+html[data-theme="dark"] .rs-reorder-handle:hover,
+html[data-theme="dark"] .rs-reorder-handle:focus-visible {
+  color: var(--foreground);
+}
+
+html[data-theme="dark"] .rs-reorder-insertion-indicator {
+  background: rgba(231, 233, 234, 0.12);
+}
+
+html[data-theme="dark"] .rs-reorder-insertion-indicator::after {
+  background: var(--rs-drag-target);
+}
+
+html[data-theme="dark"] .rs-editor-section-disclosure,
+html[data-theme="dark"] .rs-section-item,
+html[data-theme="dark"] .rs-subitem-surface {
+  background: var(--rs-nested-bg);
+}
+
+html[data-theme="dark"] .rs-editor-section-disclosure {
+  border-color: var(--rs-control-border);
+}
+
+html[data-theme="dark"] .resume-editor-panel label > span:first-child,
+html[data-theme="dark"] .rs-field-label,
+html[data-theme="dark"] .rs-summary-label,
+html[data-theme="dark"] .rs-header-identity-block .rs-property-label,
+html[data-theme="dark"] .rs-skill-section-title .rs-property-label,
+html[data-theme="dark"] .rs-skill-group-fields .rs-property-label,
+html[data-theme="dark"] .rs-education-metadata .rs-property-label,
+html[data-theme="dark"] .rs-property-label,
+html[data-theme="dark"] .rs-property-toggle,
+html[data-theme="dark"] .rs-education-date-toggle {
+  color: var(--rs-label-ink);
+}
+
+html[data-theme="dark"] .resume-editor-panel input:not([type="checkbox"]),
+html[data-theme="dark"] .resume-editor-panel select,
+html[data-theme="dark"] .resume-editor-panel textarea,
+html[data-theme="dark"] .resume-editor-panel .rs-property-control,
+html[data-theme="dark"] .resume-editor-panel .rs-summary-control,
+html[data-theme="dark"] .resume-editor-panel .rs-header-control,
+html[data-theme="dark"] .resume-editor-panel .rs-skill-control,
+html[data-theme="dark"] .resume-editor-panel .rs-education-coursework-textarea,
+html[data-theme="dark"] .resume-editor-panel .rs-bullet-textarea {
+  border-color: var(--rs-control-border);
+  background: var(--rs-control-bg);
+  color: var(--foreground);
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .resume-editor-panel input:not([type="checkbox"]):focus,
+html[data-theme="dark"] .resume-editor-panel select:focus,
+html[data-theme="dark"] .resume-editor-panel textarea:focus,
+html[data-theme="dark"] .resume-editor-panel .rs-property-control:focus,
+html[data-theme="dark"] .resume-editor-panel .rs-summary-control:focus,
+html[data-theme="dark"] .resume-editor-panel .rs-header-control:focus,
+html[data-theme="dark"] .resume-editor-panel .rs-skill-control:focus,
+html[data-theme="dark"] .resume-editor-panel .rs-education-coursework-textarea:focus,
+html[data-theme="dark"] .resume-editor-panel .rs-bullet-textarea:focus {
+  border-color: var(--rs-focus-ring);
+  background: var(--rs-control-focus);
+  box-shadow: 0 0 0 2px var(--rs-focus-ring);
+}
+
+html[data-theme="dark"] .resume-editor-panel input[type="checkbox"],
+html[data-theme="dark"] .rs-checkbox {
+  accent-color: #91a9bb;
+}
+
+html[data-theme="dark"] .rs-button--secondary,
+html[data-theme="dark"] .rs-bullet-add-action,
+html[data-theme="dark"] .rs-guidance-chip,
+html[data-theme="dark"] .rs-guidance-flag {
+  color: var(--rs-text-soft);
+}
+
+html[data-theme="dark"] .rs-button--danger,
+html[data-theme="dark"] .rs-structural-remove-control,
+html[data-theme="dark"] .rs-remove-control,
+html[data-theme="dark"] .rs-bullet-remove-action {
+  border-color: var(--rs-danger-line);
+  background: var(--rs-danger-fill);
+  color: var(--rs-danger-ink);
+}
+
+html[data-theme="dark"] .rs-remove-control:hover:not(:disabled),
+html[data-theme="dark"] .rs-remove-control:focus-visible:not(:disabled) {
+  color: #f1c1bb;
+}
+
+html[data-theme="dark"] .rs-bullet-add-action:hover,
+html[data-theme="dark"] .rs-bullet-remove-action:hover {
+  background: var(--rs-control-hover);
+}
+
+html[data-theme="dark"] .rs-skill-group,
+html[data-theme="dark"] .rs-skill-section-title,
+html[data-theme="dark"] .rs-header-identity-block,
+html[data-theme="dark"] .rs-summary-block,
+html[data-theme="dark"] .rs-experience-metadata,
+html[data-theme="dark"] .rs-education-metadata,
+html[data-theme="dark"] .rs-property-row,
+html[data-theme="dark"] .rs-property-grid--end,
+html[data-theme="dark"] .rs-bullet-composer,
+html[data-theme="dark"] .rs-bullet-piece {
+  border-color: var(--rs-line-soft);
+}
+
+html[data-theme="dark"] .rs-education-date-toggle,
+html[data-theme="dark"] .rs-guidance-chip,
+html[data-theme="dark"] .rs-guidance-flag {
+  border-color: var(--rs-line-strong);
+  background: var(--rs-nested-bg);
+}
+
+html[data-theme="dark"] .rs-guidance-chip--medium,
+html[data-theme="dark"] .rs-guidance-chip--high,
+html[data-theme="dark"] .rs-guidance-flag--medium,
+html[data-theme="dark"] .rs-guidance-flag--high {
+  color: var(--foreground);
+}
+
+html[data-theme="dark"] .rs-entry-disclosure-row:hover,
+html[data-theme="dark"] .rs-entry-disclosure-row:focus-visible {
+  color: var(--foreground);
+}
+
+.resume-editor-head-action:focus-visible,
+.rs-editor-section-visibility:focus-visible {
+  outline: 2px solid var(--rs-focus-ring);
+  outline-offset: 2px;
+}
+
+.rs-editor-section-toggle:focus-visible .rs-editor-section-disclosure {
+  box-shadow: 0 0 0 2px var(--rs-focus-ring);
+}
+
+html[data-theme="dark"] .rs-bullet-add-action:focus-visible,
+html[data-theme="dark"] .rs-bullet-remove-action:focus-visible {
+  box-shadow: 0 0 0 2px var(--rs-focus-ring);
+}
+
+html[data-theme="dark"] .resume-preview-page-surface {
+  border-color: rgba(0, 0, 0, 0.55);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
 }
 
 @media (min-width: 1024px) {

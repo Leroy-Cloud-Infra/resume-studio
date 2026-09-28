@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { migrateLegacyPayload } from "../src/lib/resume-migrations.ts";
+import { formatClassicDateRange } from "../src/lib/classic-formatting.ts";
 import {
   getIncludedBullets,
   getIncludedSections,
-  getIncludedSectionRenderPlan,
   getIncludedSkillCategories,
   getCertificationMetadataParts,
   getProjectMetadataParts,
@@ -41,7 +41,7 @@ test("included sections follow canonical array order and custom sections partici
   assert.deepEqual(getIncludedSections(reordered).map((section) => section.type), ["technicalSkills", "summary", "custom", "experience", "projects", "education"]);
 });
 
-test("classic render plan applies the header boundary rule by included position", () => {
+test("included section rendering does not depend on which section is first", () => {
   const document = renderingDocument();
   const byType = (type: (typeof document.sections)[number]["type"]) =>
     document.sections.find((section) => section.type === type)!;
@@ -54,10 +54,7 @@ test("classic render plan applies the header boundary rule by included position"
       byType("education"),
     ],
   };
-  assert.deepEqual(
-    getIncludedSectionRenderPlan(summaryFirst).map(({ section, showTopRule }) => [section.type, showTopRule]),
-    [["summary", false], ["experience", true], ["education", true]],
-  );
+  assert.deepEqual(getIncludedSections(summaryFirst).map((section) => section.type), ["summary", "experience", "education"]);
 
   const experienceFirst = {
     ...document,
@@ -67,10 +64,7 @@ test("classic render plan applies the header boundary rule by included position"
       byType("education"),
     ],
   };
-  assert.deepEqual(
-    getIncludedSectionRenderPlan(experienceFirst).map(({ section, showTopRule }) => [section.type, showTopRule]),
-    [["experience", false], ["education", true]],
-  );
+  assert.deepEqual(getIncludedSections(experienceFirst).map((section) => section.type), ["experience", "education"]);
 
   const educationFirst = {
     ...document,
@@ -80,28 +74,25 @@ test("classic render plan applies the header boundary rule by included position"
       byType("experience"),
     ],
   };
-  assert.deepEqual(
-    getIncludedSectionRenderPlan(educationFirst).map(({ section, showTopRule }) => [section.type, showTopRule]),
-    [["education", false], ["experience", true]],
-  );
+  assert.deepEqual(getIncludedSections(educationFirst).map((section) => section.type), ["education", "experience"]);
 
   const experienceThenSummary = {
     ...document,
     sections: [byType("experience"), byType("summary"), byType("education")],
   };
-  assert.deepEqual(
-    getIncludedSectionRenderPlan(experienceThenSummary).map(({ section, showTopRule }) => [section.type, showTopRule]),
-    [["experience", false], ["summary", true], ["education", true]],
-  );
+  assert.deepEqual(getIncludedSections(experienceThenSummary).map((section) => section.type), ["experience", "summary", "education"]);
 
   const educationThenSummary = {
     ...document,
     sections: [byType("education"), byType("summary"), byType("experience")],
   };
-  assert.deepEqual(
-    getIncludedSectionRenderPlan(educationThenSummary).map(({ section, showTopRule }) => [section.type, showTopRule]),
-    [["education", false], ["summary", true], ["experience", true]],
-  );
+  assert.deepEqual(getIncludedSections(educationThenSummary).map((section) => section.type), ["education", "summary", "experience"]);
+});
+
+test("Classic structured dates abbreviate recognized months and preserve unknown values", () => {
+  assert.equal(formatClassicDateRange({ startMonth: "September", startYear: "2021", endMonth: "February", endYear: "2025" }), "Sep 2021\u00A0—\u00A0Feb 2025");
+  assert.equal(formatClassicDateRange({ startMonth: "Unrecognized month", startYear: "2021", current: true }), "Unrecognized month 2021\u00A0—\u00A0Present");
+  assert.equal(formatClassicDateRange({ startMonth: "Aug", startYear: "2021", current: true }), "Aug 2021\u00A0—\u00A0Present");
 });
 
 test("excluded sections, bullets, categories, and skills are omitted without deleting stored data", () => {

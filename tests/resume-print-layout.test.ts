@@ -40,3 +40,8 @@ test("subpixel print overflow is ignored without hiding a real overflow", () => 
   assert.equal(calculatePrintedPageMetrics(1096, LETTER_PAGE_HEIGHT_PX).pageCount, 1);
   assert.equal(calculatePrintedPageMetrics(1102, LETTER_PAGE_HEIGHT_PX).pageCount, 2);
 });
+
+test("later pages account for continuation-header space", () => {
+  assert.equal(calculatePrintedPageMetrics(2079.39 / 0.96, LETTER_PAGE_HEIGHT_PX).pageCount, 3);
+  assert.equal(calculatePrintedPageMetrics(3092.79 / 0.96, LETTER_PAGE_HEIGHT_PX).pageCount, 4);
+});

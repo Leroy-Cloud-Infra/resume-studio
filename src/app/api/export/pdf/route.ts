@@ -1,4 +1,5 @@
 import path from "node:path";
+import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
 import { NextResponse } from "next/server";
@@ -7,6 +8,7 @@ import { createElement } from "react";
 
 import { getResumeTemplate, type ResumeTemplateId } from "@/templates/resume-templates";
 import { isValidResumeDocument } from "@/lib/resume-migrations";
+import { createContinuationPageCss } from "@/lib/resume-pdf-pages";
 import {
   LETTER_PAGE_HEIGHT_PX,
   LETTER_PAGE_WIDTH_PX,
@@ -43,6 +45,10 @@ async function createResumePdfHtml(document: ResumeDocument, templateId: ResumeT
   const boldFontUrl = pathToFileURL(
     path.resolve(process.cwd(), "public/fonts/LiberationSerif-Bold.ttf"),
   ).href;
+  const continuationFont = await readFile(
+    path.resolve(process.cwd(), "public/fonts/LiberationSerif-Regular.ttf"),
+  );
+  const continuationFontUrl = `data:font/ttf;base64,${continuationFont.toString("base64")}`;
 
   return `<!doctype html>
 <html>
@@ -57,16 +63,20 @@ async function createResumePdfHtml(document: ResumeDocument, templateId: ResumeT
       }
 
       @font-face {
+        font-family: "Continuation Serif";
+        src: url("${continuationFontUrl}") format("truetype");
+        font-weight: 400;
+        font-style: normal;
+      }
+
+      @font-face {
         font-family: "Resume Serif";
         src: url("${boldFontUrl}") format("truetype");
         font-weight: 700;
         font-style: normal;
       }
 
-      @page {
-        size: Letter;
-        margin: 0;
-      }
+      ${createContinuationPageCss(document.header.name)}
 
       html,
       body {
@@ -92,6 +102,9 @@ async function createResumePdfHtml(document: ResumeDocument, templateId: ResumeT
 
       .resume-document {
         margin: 0 !important;
+        /* The first-page margin replaces Classic's scaled top padding;
+           @page owns continuation clearance and its accepted 15pt shift. */
+        padding-top: 0 !important;
         overflow: visible;
         font-family: "Resume Serif", "Times New Roman", Times, serif !important;
         print-color-adjust: exact;
@@ -276,6 +289,9 @@ export async function POST(request: Request) {
       waitUntil: "load",
     });
     await page.evaluate(async () => {
+      // Margin-box text is not part of the DOM and does not itself trigger an
+      // @font-face load before printing in this Chromium build.
+      await document.fonts.load('9.3pt "Continuation Serif"');
       await document.fonts.ready;
     });
 

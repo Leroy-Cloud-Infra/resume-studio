@@ -1,6 +1,6 @@
 # Resume Studio
 
-**Resume Studio v1.0.0 — Production**
+**Resume Studio v1.0.2 — Production**
 
 Resume Studio is a focused, self-hosted resume-authoring workstation for tailoring structured resume content, organizing document structure, reviewing a live preview, and exporting reliable PDF resumes.
 

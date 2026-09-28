@@ -13,19 +13,6 @@ export function getIncludedSections(document: ResumeDocument): ResumeSection[] {
   return document.sections.filter((section) => section.included);
 }
 
-/**
- * The Header owns the boundary rule before the first included section. Later
- * section headings keep their normal top rule. Keeping this plan alongside
- * the canonical filtering makes the boundary position-based rather than
- * dependent on a particular section type (Summary, Experience, etc.).
- */
-export function getIncludedSectionRenderPlan(document: ResumeDocument) {
-  return getIncludedSections(document).map((section, index) => ({
-    section,
-    showTopRule: index > 0,
-  }));
-}
-
 export function getIncludedExperienceEntries(entries: ExperienceEntry[]) {
   return entries.filter((entry) => entry.included);
 }

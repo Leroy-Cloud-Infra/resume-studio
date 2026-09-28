@@ -1,47 +1,52 @@
 export function ResumeSection({
   title,
   children,
-  showTopRule = true,
-  headingTopPadding = "var(--rs-section-label-top-padding)",
 }: {
   title: string;
   children: React.ReactNode;
-  showTopRule?: boolean;
-  headingTopPadding?: string;
 }) {
-  const sectionHeadingStyle: React.CSSProperties = {
-    fontSize: "9pt",
-    fontWeight: 600,
-    lineHeight: 1.05,
-    borderTopWidth: showTopRule ? "0.5pt" : undefined,
-    paddingTop: headingTopPadding,
-    width: "var(--rs-section-divider-width)",
-    maxWidth: "var(--rs-section-divider-width)",
-    boxSizing: "border-box",
-  };
-
   return (
     <section
-      className={`resume-section ${showTopRule ? "mt-[6pt]" : "mt-[0pt]"}`}
+      className="resume-section"
       style={{
-        width: "var(--rs-section-divider-width)",
-        maxWidth: "var(--rs-section-divider-width)",
+        width: "100%",
+        maxWidth: "100%",
         boxSizing: "border-box",
+        marginTop: "8pt",
       }}
     >
       <h3
-        className={`${showTopRule ? "border-t border-black" : ""} font-semibold uppercase tracking-[0.04em] text-black`}
-        style={sectionHeadingStyle}
+        className="resume-section-heading"
+        style={{
+          width: "100%",
+          maxWidth: "100%",
+          boxSizing: "border-box",
+          margin: 0,
+          padding: 0,
+          paddingBottom: "2pt",
+          borderBottom: "0.5pt solid #000000",
+          fontSize: "9.5pt",
+          fontWeight: 700,
+          lineHeight: 1.1,
+          letterSpacing: "0.04em",
+          textTransform: "uppercase",
+          color: "#111111",
+          breakAfter: "avoid",
+          pageBreakAfter: "avoid",
+        }}
       >
         {title}
       </h3>
 
       <div
-        className="mt-[2pt]"
+        className="resume-section-content"
         style={{
-          width: "var(--rs-section-divider-width)",
-          maxWidth: "var(--rs-section-divider-width)",
+          width: "100%",
+          maxWidth: "100%",
           boxSizing: "border-box",
+          marginTop: "4pt",
+          breakBefore: "avoid",
+          pageBreakBefore: "avoid",
         }}
       >
         {children}
